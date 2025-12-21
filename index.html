@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - GAS 穩定版 (v1.9.0)</title>
+    <title>FLEX Hub Pro - GAS 穩定版 (v1.9.2)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -23,6 +23,14 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #000000; border-radius: 10px; }
         .drawer-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .overlay-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(2px); }
+        
+        .toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #000; color: white; padding: 14px 28px; border-radius: 999px;
+            z-index: 10000; font-weight: 900; box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            animation: slideDown 0.3s ease-out; border: 2px solid #06C755;
+        }
+        @keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 20px; opacity: 1; } }
     </style>
 </head>
 <body>
@@ -31,8 +39,9 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        const APP_VERSION = "v1.9.0";
+        const APP_VERSION = "v1.9.2";
         const LIFF_ID = "2008541971-XPIDtaaj";
+        const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
 
         // 您最新的 GAS 部署網址
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
@@ -43,17 +52,15 @@
             VOOM: { id: 'VOOM', name: "VOOM 解析器", parent: 'TOOL' }
         };
 
-        // --- 功能：清洗 Excel 污染的 JSON 文字 ---
+        // 清洗 Excel 污染字元
         const cleanJsonText = (str) => {
             let s = String(str || "").trim();
-            // 如果開頭結尾有引號 (Excel 儲存格特性)，則進行脫殼
             if (s.startsWith('"') && s.endsWith('"')) {
                 s = s.substring(1, s.length - 1).replace(/""/g, '"');
             }
             return s;
         };
 
-        // --- 子組件：圖示 ---
         const Icon = ({ name, className = "w-4 h-4" }) => {
             const icons = {
                 left: <polyline points="15 18 9 12 15 6" />,
@@ -68,16 +75,17 @@
                 shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
                 user: <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />,
                 x: <React.Fragment><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></React.Fragment>,
-                clock: <React.Fragment><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></React.Fragment>
+                clock: <React.Fragment><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></React.Fragment>,
+                send: <React.Fragment><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></React.Fragment>,
+                link: <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
             };
             const pathData = icons[name] || null;
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{pathData}</svg>;
         };
 
-        const CopyButton = ({ text, label, theme = "slate" }) => {
+        const CopyButton = ({ text, label, theme = "slate", icon="copy" }) => {
             const [copied, setCopied] = useState(false);
             const handleCopy = () => {
-                // 複製前先清洗代碼
                 const finalCode = cleanJsonText(text);
                 const textArea = document.createElement("textarea");
                 textArea.value = finalCode;
@@ -91,12 +99,13 @@
             };
             const styles = {
                 slate: copied ? 'bg-green-100 text-green-600 border-green-300' : 'bg-slate-100 text-black border-slate-300 hover:bg-slate-200 font-bold',
-                github: copied ? 'bg-green-600 text-white border-green-700' : 'bg-[#24292f] text-white border-black hover:bg-[#1b1f23]'
+                github: copied ? 'bg-green-600 text-white border-green-700 font-black' : 'bg-[#24292f] text-white border-black hover:bg-[#1b1f23]',
+                blue: copied ? 'bg-green-600 text-white border-green-700' : 'bg-blue-600 text-white border-blue-800 hover:bg-blue-700 font-black'
             };
             return (
                 <button onClick={handleCopy} className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs transition-all shadow-sm border font-black ${styles[theme]}`}>
-                    <Icon name={copied ? "check" : (theme === "github" ? "github" : "copy")} className="w-4 h-4" />
-                    <span>{copied ? "代碼已清洗並複製！" : label}</span>
+                    <Icon name={copied ? "check" : icon} className="w-4 h-4" />
+                    <span>{copied ? "已複製！" : label}</span>
                 </button>
             );
         };
@@ -106,24 +115,24 @@
                 <div className="flex justify-between items-end border-b border-slate-300 pb-6 mb-6">
                     <div>
                         <h2 className="text-2xl font-black text-black flex items-center gap-2 font-black uppercase tracking-tighter">{projectName} {isAdmin && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-black uppercase tracking-widest">ADMIN</span>}</h2>
-                        <p className="text-black text-sm mt-1 font-black italic opacity-60">數據源：Google Apps Script (v1.9.0)</p>
+                        <p className="text-black text-sm mt-1 font-black italic opacity-60">數據源：Google Apps Script (v1.9.2)</p>
                     </div>
-                    <button onClick={onAdd} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 active:scale-95 transition-all shadow-md hover:bg-[#05b34c]"><Icon name="plus" /> 建立新設計</button>
+                    <button onClick={onAdd} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 active:scale-95 transition-all shadow-md hover:bg-[#05b34c] font-black"><Icon name="plus" /> 建立新設計</button>
                 </div>
                 <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
                     <table className="w-full text-left text-base font-bold text-black font-black">
                         <thead className="bg-slate-100 border-b border-slate-300 text-black font-black uppercase text-sm">
-                            <tr><th className="p-5 text-black font-black uppercase tracking-widest">設計專案名稱</th>{isAdmin && <th className="p-5 text-center text-black font-black">擁有者</th>}<th className="p-5 text-center text-black font-black">狀態</th><th className="p-5 text-right text-black font-black">操作</th></tr>
+                            <tr><th className="p-5 text-black font-black uppercase tracking-widest text-lg">設計專案名稱</th>{isAdmin && <th className="p-5 text-center text-black font-black uppercase">擁有者</th>}<th className="p-5 text-center text-black font-black uppercase">內容</th><th className="p-5 text-right text-black font-black uppercase">管理</th></tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 font-black">
                             {files.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-black italic font-black opacity-30">目前試算表無存檔記錄...</td></tr> : files.map(f => (
                                 <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors">
-                                    <td className="p-5 font-black text-lg text-black">{f.name}</td>
+                                    <td className="p-5 font-black text-xl text-black">{f.name}</td>
                                     {isAdmin && <td className="p-5 text-xs font-mono text-black text-center opacity-60 italic">{f.userId}</td>}
                                     <td className="p-5 text-center"><span className={`px-3 py-1 rounded-full text-xs font-black ${f.content ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-slate-200 text-black'}`}>{f.content ? '✓ 已存代碼' : '○ 空白'}</span></td>
                                     <td className="p-5 text-right space-x-6 text-black">
-                                        <button onClick={()=>onEdit(f)} className="text-blue-700 font-black hover:underline text-lg font-black">編輯內容</button>
-                                        <button onClick={()=>onDelete(f.id)} className="text-red-600 hover:text-red-800 transition-colors font-black"><Icon name="trash" className="w-6 h-6" /></button>
+                                        <button onClick={()=>onEdit(f)} className="text-blue-700 font-black hover:underline text-xl font-black">編輯內容</button>
+                                        <button onClick={()=>onDelete(f.id)} className="text-red-600 hover:text-red-800 transition-colors font-black"><Icon name="trash" className="w-8 h-8" /></button>
                                     </td>
                                 </tr>
                             ))}
@@ -137,37 +146,75 @@
             const [localName, setLocalName] = useState("");
             const [localJson, setLocalJson] = useState("");
             const [showJson, setShowJson] = useState(false);
+            const [toast, setToast] = useState(null);
 
             useEffect(() => {
                 if (file) {
                     setLocalName(file.name || "未命名設計");
-                    // 載入時清洗一次內容
                     setLocalJson(cleanJsonText(file.content));
                     if (!file.content) setShowJson(true);
                 }
             }, [file.id, file.content]);
 
+            const showMsg = (msg) => {
+                setToast(msg);
+                setTimeout(() => setToast(null), 3000);
+            };
+
+            const handleSendDesigner = async () => {
+                try {
+                    const finalCode = cleanJsonText(localJson);
+                    if(!finalCode) throw new Error("empty");
+                    const flexMessage = JSON.parse(finalCode);
+                    
+                    if (liff.isApiAvailable('shareTargetPicker')) {
+                        const result = await liff.shareTargetPicker([
+                            {
+                                type: "flex",
+                                altText: `FLEX設計：${localName}`,
+                                contents: flexMessage
+                            }
+                        ]);
+                        if (result) showMsg("✅ FLEX 訊息已成功發送！");
+                    } else {
+                        showMsg("❌ 此環境不支援 LINE 發送功能");
+                    }
+                } catch (e) {
+                    showMsg("⚠️ 代碼格式有誤，無法發送");
+                }
+            };
+
             return (
                 <div className="h-full flex flex-col bg-white overflow-hidden relative animate-in fade-in duration-300 font-bold text-black font-black">
+                    {toast && <div className="toast">{toast}</div>}
                     <div className="h-14 border-b border-slate-300 px-6 flex items-center justify-between shrink-0 bg-white z-20 shadow-sm">
                         <div className="flex items-center gap-4 flex-1">
                             <button onClick={onCancel} className="text-black hover:text-green-600 transition-colors font-black" title="返回列表"><Icon name="left" className="w-6 h-6" /></button>
                             <input type="text" value={localName} onChange={e=>setLocalName(e.target.value)} className="bg-transparent border-none p-0 text-black font-black outline-none focus:text-[#06C755] text-lg w-full max-w-sm transition-all" />
                         </div>
-                        <div className="flex items-center gap-4 text-black">
-                            {/* 您要求的位置：編輯器頂部工具列最右側，專供去 GITHUB 貼上 */}
+                        <div className="flex items-center gap-3 text-black font-black">
+                            {/* 您要求的功能：發送按鈕 */}
+                            <button onClick={handleSendDesigner} className="bg-[#06C755] text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2 active:scale-95 shadow-md border border-[#05b34c] font-black font-bold">
+                                <Icon name="send" className="w-4 h-4" />
+                                <span>發送設計 (LINE)</span>
+                            </button>
+
+                            {/* 您要求的 ID 相關功能：複製 LIFF URL 按鈕 */}
+                            <CopyButton text={LIFF_URL} label="複製 LIFF 連結" theme="blue" icon="link" />
+                            
                             <CopyButton text={localJson} label="複製 JSON 代碼 (去 GITHUB 貼上)" theme="github" />
+                            
                             <button onClick={()=>setShowJson(!showJson)} className={`p-2 rounded-md border transition-all ${showJson ? 'bg-blue-600 text-white shadow-inner border-blue-700' : 'text-black border-slate-400 hover:bg-slate-50'}`} title="打開代碼同步區"><Icon name="code" /></button>
-                            <button onClick={()=>onSave(file.id, localName, localJson)} className="bg-[#06C755] text-white px-6 py-2 rounded-md font-black text-sm flex items-center gap-2 active:scale-95 shadow-md hover:bg-[#05b34c] font-bold"><Icon name="save" /> 儲存至雲端</button>
+                            <button onClick={()=>onSave(file.id, localName, localJson)} className="bg-[#06C755] text-white px-6 py-2 rounded-md font-black text-sm flex items-center gap-2 active:scale-95 shadow-md hover:bg-[#05b34c] font-black font-bold"><Icon name="save" /> 儲存至雲端</button>
                         </div>
                     </div>
                     <div className="flex-1 flex relative overflow-hidden text-black font-black">
                         <div className={`absolute right-0 top-0 bottom-0 w-96 bg-slate-900 border-l border-slate-800 z-30 shadow-2xl p-6 flex flex-col gap-4 drawer-transition ${showJson ? 'translate-x-0' : 'translate-x-full'}`}>
                             <div className="flex justify-between items-center text-white font-black text-sm uppercase">
-                                <span className="flex items-center gap-2 text-green-400 font-black uppercase font-black"><Icon name="code" />JSON 同步緩衝區</span>
+                                <span className="flex items-center gap-2 text-green-400 font-black uppercase font-black tracking-widest"><Icon name="code" />JSON 同步緩衝區</span>
                                 <button onClick={()=>setShowJson(false)} className="text-white hover:text-red-400 transition-colors font-black"><Icon name="x" /></button>
                             </div>
-                            <p className="text-xs text-slate-300 font-medium leading-relaxed font-black opacity-80">將設計好的內容貼入此處，點右上「儲存至雲端」。</p>
+                            <p className="text-xs text-slate-300 font-medium leading-relaxed font-black opacity-80 italic">將設計代碼貼入下方。發送按鈕會自動讀取此區內容。</p>
                             <textarea 
                                 value={localJson} 
                                 onChange={e=>setLocalJson(e.target.value)} 
@@ -197,7 +244,6 @@
                     const isAdmin = role === '系統管理員';
                     const res = await fetch(`${GAS_URL}?userId=${uid}&action=getFiles&role=${isAdmin ? 'ADMIN' : 'USER'}`);
                     const data = await res.json();
-                    // 讀取時清洗資料
                     const cleaned = data.map(f => ({ ...f, content: cleanJsonText(f.content) }));
                     setUserFiles(cleaned || []);
                 } catch(e) {}
@@ -246,7 +292,6 @@
             const handleSave = async (id, name, content) => {
                 setIsGlobalLoading(true);
                 const fileId = String(id);
-                // 儲存前先清洗
                 const cleanContent = cleanJsonText(content);
                 try {
                     const res = await fetch(GAS_URL, { 
@@ -263,7 +308,7 @@
                         });
                         setActiveFile(null);
                     } else { throw new Error("Save Failed"); }
-                } catch (e) { alert("儲存失敗，請檢查 GAS 部署權限。"); }
+                } catch (e) { alert("儲存失敗，請檢查網路。"); }
                 finally { setIsGlobalLoading(false); }
             };
 
@@ -284,39 +329,39 @@
                 finally { setIsGlobalLoading(false); }
             };
 
-            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white text-black font-black uppercase italic animate-pulse font-black"><div className="loader mb-4 font-black"></div>Connecting GAS...</div>;
-            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black text-black font-black font-bold"><button onClick={handleLogin} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all font-black">使用 LINE 帳號登入系統</button></div>;
+            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white text-black font-black uppercase italic animate-pulse font-black"><div className="loader mb-4 font-black"></div>Connecting...</div>;
+            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black text-black font-black font-bold font-black"><button onClick={handleLogin} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all font-black">使用 LINE 帳號登入系統</button></div>;
             if (viewState === 'PENDING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white p-10 text-center font-black text-black font-bold border-8 border-black shadow-2xl font-black"><Icon name="clock" className="w-16 h-16 mb-6 text-blue-500 animate-pulse font-black" /><h1 className="text-2xl font-black font-black uppercase">帳戶審核中</h1><p className="mt-2 font-bold text-black font-black font-black">UID: {user?.uid}</p></div>;
 
             const currentProject = PROJECTS[activeLevel2];
 
             return (
-                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black font-black font-bold">
-                    {isGlobalLoading && <div className="overlay-loading font-black uppercase italic text-black font-black text-xl font-black font-bold"><div className="loader mb-4 font-black"></div>正在同步數據至試算表...</div>}
-                    <aside className="w-64 line-sidebar flex flex-col shrink-0 border-r border-slate-300 font-bold font-black font-black font-bold">
+                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black font-black font-bold font-black">
+                    {isGlobalLoading && <div className="overlay-loading font-black uppercase italic text-black font-black text-xl font-black font-bold"><div className="loader mb-4 font-black"></div>正在同步雲端資料庫...</div>}
+                    <aside className="w-64 line-sidebar flex flex-col shrink-0 border-r border-slate-300 font-bold font-black font-black font-bold font-black">
                         <div className="h-16 flex flex-col justify-center px-6 border-b border-slate-300 bg-white shadow-sm z-10 font-bold font-black font-black font-bold">
                             <span className="font-black text-[#06C755] text-xl uppercase italic tracking-tighter leading-none mb-1 font-black">Flex Hub OA</span>
-                            <span className="text-[8px] text-black font-black tracking-widest opacity-40 leading-none font-black font-black uppercase">{APP_VERSION}</span>
+                            <span className="text-[8px] text-black font-black tracking-widest opacity-40 leading-none font-black font-black uppercase font-black">{APP_VERSION}</span>
                         </div>
-                        <nav className="flex-1 overflow-y-auto custom-scrollbar pt-4 text-black font-black font-black font-bold">
-                            <div className="mb-2 text-black font-black font-black">
+                        <nav className="flex-1 overflow-y-auto custom-scrollbar pt-4 text-black font-black font-black font-bold font-black">
+                            <div className="mb-2 text-black font-black font-black font-bold">
                                 <button onClick={()=>setExpandedCategories(p=>({...p, MSG: !p.MSG}))} className="w-full flex items-center justify-between px-6 py-4 text-[11px] font-black text-black uppercase tracking-widest hover:bg-white transition-colors font-black">
                                     <span>專案項目管理</span><Icon name={expandedCategories.MSG ? "chevronDown" : "chevronRight"} className="w-4 h-4 text-black font-black font-black" />
                                 </button>
                                 {expandedCategories.MSG && (
                                     <div className="animate-in fade-in duration-200 font-black">
                                         {Object.keys(PROJECTS).filter(k=>PROJECTS[k].parent==='MSG').map(key => (
-                                            <button key={key} onClick={()=>{setActiveLevel2(key); setActiveFile(null);}} className={`w-full text-left px-10 py-4 text-sm transition-all border-r-4 ${activeLevel2 === key && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent text-black font-bold font-black font-black font-black'}`}>{PROJECTS[key].name}</button>
+                                            <button key={key} onClick={()=>{setActiveLevel2(key); setActiveFile(null);}} className={`w-full text-left px-10 py-4 text-sm transition-all border-r-4 ${activeLevel2 === key && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent text-black font-bold font-black font-black font-black font-black'}`}>{PROJECTS[key].name}</button>
                                         ))}
                                     </div>
                                 )}
                             </div>
-                            <div className="mt-2 border-t border-slate-200 pt-2 text-black font-black font-black">
-                                <button onClick={()=>setExpandedCategories(p=>({...p, TOOL: !p.TOOL}))} className="w-full flex items-center justify-between px-6 py-4 text-[11px] font-black text-black uppercase tracking-widest hover:bg-white transition-colors font-black font-black">
-                                    <span>自動化工具模組</span><Icon name={expandedCategories.TOOL ? "chevronDown" : "chevronRight"} className="w-4 h-4 text-black font-black font-black" />
+                            <div className="mt-2 border-t border-slate-200 pt-2 text-black font-black font-black font-bold">
+                                <button onClick={()=>setExpandedCategories(p=>({...p, TOOL: !p.TOOL}))} className="w-full flex items-center justify-between px-6 py-4 text-[11px] font-black text-black uppercase tracking-widest hover:bg-white transition-colors font-black font-black font-black">
+                                    <span>自動化工具模組</span><Icon name={expandedCategories.TOOL ? "chevronDown" : "chevronRight"} className="w-4 h-4 text-black font-black font-black font-black" />
                                 </button>
                                 {expandedCategories.TOOL && (
-                                    <button key="VOOM" onClick={()=>{setActiveLevel2('VOOM'); setActiveFile(null);}} className={`w-full text-left px-10 py-4 text-sm transition-all border-r-4 ${activeLevel2 === 'VOOM' && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent text-black font-bold font-black font-black font-black'}`}>VOOM 解析核心</button>
+                                    <button key="VOOM" onClick={()=>{setActiveLevel2('VOOM'); setActiveFile(null);}} className={`w-full text-left px-10 py-4 text-sm transition-all border-r-4 ${activeLevel2 === 'VOOM' && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent text-black font-bold font-black font-black font-black font-black'}`}>VOOM 解析核心</button>
                                 )}
                             </div>
                         </nav>
@@ -330,11 +375,11 @@
                             </div>
                         </div>
                     </aside>
-                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner font-bold font-black font-black font-black font-bold">
+                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner font-bold font-black font-black font-black font-bold font-black">
                         {activeFile ? (
                             <EditorView key={String(activeFile.id)} file={activeFile} onSave={handleSave} onCancel={() => setActiveFile(null)} projectUrl={currentProject.url} />
                         ) : activeLevel2 === 'VOOM' ? (
-                            <div className="p-10 max-w-4xl mx-auto italic font-black uppercase tracking-widest opacity-20 font-black font-bold font-black font-black font-black font-bold">VOOM Engine Ready...</div>
+                            <div className="p-10 max-w-4xl mx-auto italic font-black uppercase tracking-widest opacity-20 font-black font-bold font-black font-black font-black font-bold font-black">VOOM Engine Ready...</div>
                         ) : (
                             <DirectoryView projectName={currentProject.name} files={userFiles} onAdd={()=>setActiveFile({id: String(Date.now()), name:"新設計專案", content:""})} onEdit={f=>setActiveFile(f)} onDelete={handleDelete} isAdmin={profile?.role === '系統管理員'} />
                         )}
