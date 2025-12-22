@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 專業儀表板 (v2.3.6)</title>
+    <title>FLEX Hub Pro - 專業儀表板 (v2.3.7)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -52,31 +52,28 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const APP_VERSION = "v2.3.6";
+        const APP_VERSION = "v2.3.7";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
-        // --- 核心工具：修復後的數據清洗函數 ---
+        // --- 核心工具：數據清洗 ---
         function processFinalJson(str) {
             if (!str) return "";
             let s = String(str).trim();
-            // 處理 GAS 傳回時可能被雙引號再次包裹且內容帶有轉義的情況
-            if (s.startsWith('"') && s.endsWith('"') && (s.includes('\\"') || s.includes('{'))) { 
+            if (s.startsWith('"') && s.endsWith('"') && (s.includes('{') || s.includes('['))) { 
                 try {
-                    // 嘗試解析一次，如果成功則是 JSON 字串
                     const parsed = JSON.parse(s);
                     if (typeof parsed === 'string') return parsed;
                     return JSON.stringify(parsed);
                 } catch(e) {
-                    // 傳統回退處理
                     s = s.substring(1, s.length - 1).replace(/""/g, '"'); 
                 }
             }
             return s;
         }
 
-        // --- 模板定義 ---
+        // --- 預設模板 ---
         const ECOMMERCE_FULL_TEMPLATE = JSON.stringify({
             "type": "bubble", "size": "mega",
             "hero": { "type": "video", "url": "https://lihi.cc/YsmAp", "previewUrl": "https://lihi.cc/5OXMZ", "aspectRatio": "16:9", "altContent": { "type": "image", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover", "url": "https://lihi.cc/5OXMZ" } },
@@ -140,7 +137,7 @@
             }
         ];
 
-        // --- 子組件：Icon ---
+        // --- 子組件：Icon (使用全名 React.Fragment 以確保 Babel 編譯穩定) ---
         const Icon = ({ name, className = "w-4 h-4" }) => {
             const icons = {
                 left: <polyline points="15 18 9 12 15 6" />,
@@ -164,7 +161,7 @@
                 <div className="bg-white rounded-3xl p-8 max-w-xs w-full shadow-2xl border-4 border-black font-black text-black text-center">
                     <div className="flex justify-center mb-4 text-red-600 animate-bounce"><Icon name="alert" className="w-12 h-12" /></div>
                     <h3 className="text-xl mb-2 font-black text-black">確定要刪除嗎？</h3>
-                    <p className="text-sm text-slate-500 mb-6 font-bold italic tracking-tight">「{name}」將會永久移除。</p>
+                    <p className="text-sm text-slate-500 mb-6 font-bold italic">「{name}」將會永久移除。</p>
                     <div className="flex gap-3">
                         <button onClick={onCancel} className="flex-1 py-3 border-2 border-slate-300 rounded-xl font-black transition-all hover:bg-slate-50">取消</button>
                         <button onClick={onConfirm} className="flex-1 py-3 bg-red-600 text-white rounded-xl shadow-lg active:scale-95 font-black transition-all hover:bg-red-700">確定</button>
@@ -193,8 +190,8 @@
                         </thead>
                         <tbody className="divide-y divide-slate-200 text-black">
                             {files.length === 0 ? <tr><td colSpan="3" className="p-10 text-center italic opacity-30">目前無存檔數據...</td></tr> : files.map(f => (
-                                <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors">
-                                    <td className="p-5 font-black text-base">{f.name}</td>
+                                <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors font-black">
+                                    <td className="p-5 text-base">{f.name}</td>
                                     <td className="p-5 text-center"><span className={`px-4 py-1 rounded-full text-xs font-black ${f.content ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>{f.content ? '✓ 已同步' : '○ 空白'}</span></td>
                                     <td className="p-5 text-right space-x-6">
                                         <button onClick={()=>onEdit(f)} className="text-blue-700 font-black hover:underline text-base transition-colors">編輯</button>
@@ -235,16 +232,14 @@
                 return () => window.removeEventListener('message', handleMessage);
             }, []);
 
-            // --- 修復後的發送邏輯 ---
             const handleSend = async () => {
                 try {
                     const currentCode = latestJsonRef.current;
                     if (!currentCode || currentCode === "{}") {
-                        alert("請先完成設計再發送。");
+                        alert("目前內容為空，無法發送。");
                         return;
                     }
 
-                    // 變數替換
                     const finalCode = currentCode
                         .replace(/\{\{LIFF_URL\}\}/g, LIFF_URL)
                         .replace(/\{\{LIFF_ID\}\}/g, LIFF_ID);
@@ -252,19 +247,18 @@
                     let flexMessage;
                     try {
                         flexMessage = JSON.parse(finalCode);
-                    } catch (parseErr) {
-                        alert("設計內容包含錯誤的 JSON 語法，請檢查標點符號或引號。");
+                    } catch (err) {
+                        alert("設計內容非正確 JSON 格式。");
                         return;
                     }
 
                     if (!liff.isLoggedIn()) {
-                        alert("連線逾時，請重新登入。");
                         liff.login();
                         return;
                     }
 
                     if (!liff.isApiAvailable('shareTargetPicker')) {
-                        alert("目前 LINE 帳號不支援此功能，或權限未開啟。");
+                        alert("您的帳號未開啟 shareTargetPicker 權限。");
                         return;
                     }
 
@@ -278,8 +272,8 @@
                         showMsg("✅ 已成功發送至 LINE！");
                     }
                 } catch (e) { 
-                    console.error("LINE Share Error:", e);
-                    alert(`發送失敗原因：${e.message || "未知錯誤"}\n請確認您的 LIFF 開發權限。`);
+                    console.error("LIFF Send Error:", e);
+                    alert(`發送失敗：${e.message || "未知原因"}`);
                 }
             };
 
@@ -290,12 +284,12 @@
                         <div className="flex items-center gap-6 flex-1">
                             <button onClick={onCancel} className="text-black hover:text-green-600 transition-colors shrink-0"><Icon name="left" className="w-10 h-10" /></button>
                             <div className="flex items-center gap-4 bg-slate-50 border-2 border-black rounded-2xl px-6 py-3 flex-1 max-w-2xl shadow-inner focus-within:bg-white focus-within:border-[#06C755] transition-all">
-                                <div className="flex flex-col shrink-0 border-r border-slate-200 pr-5"><span className="text-[10px] text-slate-400">FILENAME</span><span className="text-sm font-black uppercase">專案名稱</span></div>
+                                <div className="flex flex-col shrink-0 border-r border-slate-200 pr-5"><span className="text-[10px] text-slate-400">FILENAME</span><span className="text-sm font-black uppercase tracking-widest">檔案名稱</span></div>
                                 <input type="text" value={localName} onChange={e=>setLocalName(e.target.value)} placeholder="請輸入專案名稱..." className="bg-transparent border-none outline-none text-xl w-full font-black text-black focus:ring-0" />
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <button onClick={handleSend} className="bg-[#06C755] text-white px-8 py-4 rounded-2xl text-lg flex items-center gap-2 active:scale-95 shadow-xl font-black uppercase tracking-wider transition-all hover:bg-[#05b34c]"><Icon name="send" className="w-6 h-6" /> <span>發送設計</span></button>
+                            <button onClick={handleSend} className="bg-[#06C755] text-white px-8 py-4 rounded-2xl text-lg flex items-center gap-2 active:scale-95 shadow-xl font-black uppercase tracking-wider hover:bg-[#05b34c] transition-all"><Icon name="send" className="w-6 h-6" /> <span>發送設計</span></button>
                             <button onClick={()=>onSave(file.id, localName || "未命名設計", latestJsonRef.current)} className="bg-black text-white px-8 py-4 rounded-2xl font-black text-lg active:scale-95 shadow-xl flex items-center gap-2 hover:bg-slate-800 transition-all border-2 border-transparent"><Icon name="save" className="w-6 h-6" /> <span>儲存</span></button>
                         </div>
                     </div>
@@ -357,7 +351,7 @@
                 try {
                     const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: String(user.uid), id: String(id), name, content }) });
                     if ((await res.json()).success) { await refreshFiles(user.uid, profile.role); setActiveFile(null); }
-                } catch (e) { alert("儲存失敗，請檢查網路連線。"); }
+                } catch (e) { alert("連線失敗。"); }
                 setIsGlobalLoading(false);
             };
 
@@ -383,7 +377,7 @@
             const currentProject = findCurrentModule();
 
             return (
-                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black">
+                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black text-sm">
                     {isGlobalLoading && <div className="overlay-loading font-black text-xl italic uppercase tracking-widest text-black"><div className="loader mb-4"></div>數據同步中...</div>}
                     {deleteTarget && <DeleteModal name={deleteTarget.name} onConfirm={confirmDelete} onCancel={()=>setDeleteTarget(null)} />}
                     
@@ -406,7 +400,7 @@
                                 <div key={group.id} className="mb-4">
                                     {!isSidebarCollapsed ? (
                                         <div 
-                                            className="px-6 py-3 text-xs text-slate-400 uppercase tracking-[0.2em] font-black flex items-center justify-between cursor-pointer hover:text-[#06C755] transition-colors"
+                                            className="px-6 py-3 text-sm text-slate-600 uppercase tracking-[0.2em] font-black flex items-center justify-between cursor-pointer hover:text-[#06C755] transition-colors"
                                             onClick={() => toggleGroup(group.id)}
                                         >
                                             <span>{group.name}</span>
@@ -428,7 +422,7 @@
                                                     title={isSidebarCollapsed ? item.name : ""}
                                                 >
                                                     <span className="shrink-0"><Icon name={item.icon} className="w-5 h-5" /></span>
-                                                    {!isSidebarCollapsed && <span className="text-sm truncate">{item.name}</span>}
+                                                    {!isSidebarCollapsed && <span className="text-sm truncate font-black">{item.name}</span>}
                                                 </button>
                                             ))}
                                         </div>
@@ -441,7 +435,7 @@
                             <div className="w-8 h-8 bg-[#06C755] rounded-full flex items-center justify-center text-white text-[10px] shrink-0">
                                 {user?.displayName?.charAt(0) || 'U'}
                             </div>
-                            {!isSidebarCollapsed && <div className="truncate text-xs opacity-60 uppercase">{profile?.name || user?.displayName}</div>}
+                            {!isSidebarCollapsed && <div className="truncate text-xs opacity-60 uppercase font-black">{profile?.name || user?.displayName}</div>}
                         </div>
                     </aside>
 
