@@ -3,158 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 全功能修復版 (v2.4.1)</title>
+    <title>FLEX Hub Pro - 全功能分類儀表板 (v2.5.2)</title>
     <!-- 核心庫載入 -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- LINE LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f5f7; margin: 0; overflow: hidden; color: #000000; font-weight: 700; }
-        .sidebar-item-active { background-color: #ffffff !important; color: #06C755 !important; font-weight: 900; border-right: 4px solid #06C755; }
-        .line-sidebar { background-color: #F4F5F7; border-right: 1px solid #E5E7EB; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; display: flex; flex-direction: column; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f5f7; margin: 0; overflow: hidden; color: #000; font-weight: 700; }
+        .sidebar-item-active { background-color: #ffffff !important; color: #06C755 !important; border-right: 4px solid #06C755; font-weight: 900; }
+        .line-sidebar { 
+            background-color: #F4F5F7; 
+            border-right: 1px solid #E5E7EB; 
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
         .iframe-container { width: 100%; height: 100%; border: none; background: #fff; }
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #06C755; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .overlay-loading { position: fixed; inset: 0; background: rgba(255,255,255,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(2px); }
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #000; color: white; padding: 14px 28px; border-radius: 15px; z-index: 10000; font-weight: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideDown 0.3s ease-out; border: 2px solid #06C755; text-align: center; }
-        @keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 20px; opacity: 1; } }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #000; border-radius: 10px; }
+        
+        .chevron-rotate { transition: transform 0.2s ease; }
+        .chevron-up { transform: rotate(180deg); }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, Fragment } = React;
 
-        const APP_VERSION = "v2.4.1";
+        const APP_VERSION = "v2.5.2";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
-        function processFinalJson(str) {
-            if (!str) return "";
-            let s = String(str).trim();
-            if (s.startsWith('"') && s.endsWith('"') && (s.includes('{') || s.includes('['))) { 
-                try {
-                    const parsed = JSON.parse(s);
-                    return (typeof parsed === 'string') ? parsed : JSON.stringify(parsed);
-                } catch(e) {
-                    return s.substring(1, s.length - 1).replace(/""/g, '"'); 
-                }
+        // --- 定義導覽群組 (包含恢復的電商版與分類編排) ---
+        const NAV_GROUPS = [
+            {
+                name: "數位名片區",
+                id: "CARDS",
+                items: [
+                    { id: 'CAROUSEL_PRO', name: "專業多頁型卡片", url: "./tool-carousel-pro.html", icon: 'layers' },
+                    { id: 'SEQUENTIAL_PRO', name: "業務名片版", url: "./tool-sequential-pro.html", icon: 'award' },
+                    { id: 'PERSONAL', name: "個人名片版", url: "./tool-personal.html", icon: 'user' },
+                    { id: 'ECOMMERCE', name: "電商商品版", url: "./tool-ecommerce.html", icon: 'shopping' }
+                ]
+            },
+            {
+                name: "系統工具",
+                id: "TOOLS",
+                items: [
+                    { id: 'MEDIA', name: "媒體擷取工具", url: "./tool-media.html", icon: 'tool' }
+                ]
             }
-            return s;
-        }
-
-        // 專案入口清單 (已恢復電商版)
-        const PROJECTS = [
-            { id: 'PERSONAL', name: "個人名片版", url: "./tool-personal.html", icon: 'user' },
-            { id: 'SEQUENTIAL_PRO', name: "專業業務版", url: "./tool-sequential-pro.html", icon: 'award' },
-            { id: 'ECOMMERCE', name: "電商商品版", url: "./tool-ecommerce.html", icon: 'shopping' }
         ];
 
         const Icon = ({ name, className = "w-4 h-4" }) => {
             const icons = {
-                left: <polyline points="15 18 9 12 15 6" />,
-                plus: <React.Fragment><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></React.Fragment>,
-                save: <React.Fragment><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></React.Fragment>,
-                send: <React.Fragment><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></React.Fragment>,
-                menu: <React.Fragment><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></React.Fragment>,
-                user: <React.Fragment><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></React.Fragment>,
-                award: <React.Fragment><circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" /></React.Fragment>,
-                shopping: <React.Fragment><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></React.Fragment>,
-                trash: <React.Fragment><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></React.Fragment>
+                menu: <path d="M3 12h18M3 6h18M3 18h18" />,
+                chevron: <polyline points="6 9 12 15 18 9" />,
+                layers: <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />,
+                user: <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />,
+                award: <circle cx="12" cy="8" r="7" />,
+                shopping: <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" />,
+                tool: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />,
+                copy: <Fragment><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></Fragment>,
+                trash: <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
             };
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || null}</svg>;
-        };
-
-        const EditorView = ({ file, onSave, onCancel, projectUrl }) => {
-            const [localName, setLocalName] = useState(file.name || "");
-            const [localJson, setLocalJson] = useState(processFinalJson(file.content));
-            const iframeRef = useRef(null);
-            const latestJsonRef = useRef(processFinalJson(file.content));
-            const [toast, setToast] = useState(null);
-
-            const showMsg = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
-            useEffect(() => { latestJsonRef.current = localJson; }, [localJson]);
-
-            useEffect(() => {
-                const handleMessage = (event) => {
-                    if (event.data?.type === 'SYNC_FLEX_DATA') {
-                        const received = processFinalJson(event.data.json);
-                        if (received) setLocalJson(received);
-                    }
-                    if (event.data?.type === 'CHILD_READY' && iframeRef.current) {
-                        iframeRef.current.contentWindow.postMessage({ type: 'LOAD_FLEX_DATA', json: latestJsonRef.current }, '*');
-                    }
-                };
-                window.addEventListener('message', handleMessage);
-                return () => window.removeEventListener('message', handleMessage);
-            }, []);
-
-            const handleSend = async () => {
-                try {
-                    const currentCode = latestJsonRef.current;
-                    if (!currentCode || currentCode.length < 50) {
-                        alert("⚠️ 請等待編輯器完成同步後再試一次。");
-                        return;
-                    }
-
-                    const flexMessage = JSON.parse(currentCode);
-                    if (!liff.isLoggedIn()) { liff.login(); return; }
-                    if (!liff.isApiAvailable('shareTargetPicker')) { alert("LIFF 權限未開啟。"); return; }
-
-                    const result = await liff.shareTargetPicker([{ 
-                        type: "flex", 
-                        altText: `名片設計：${localName || "Flex"}`, 
-                        contents: flexMessage 
-                    }]);
-
-                    if (result) showMsg("✅ 已成功發送！");
-                } catch (e) {
-                    alert(`❌ 發送失敗：\n${e.message}\n可能原因：JSON 格式不符合 LINE 規範，請檢查 px 單位或逗號。`);
-                }
-            };
-
-            return (
-                <div className="h-full flex flex-col bg-white overflow-hidden relative font-black text-black">
-                    {toast && <div className="toast">{toast}</div>}
-                    <div className="h-24 border-b border-slate-300 px-6 flex items-center justify-between bg-white z-20 shadow-md shrink-0">
-                        <div className="flex items-center gap-6 flex-1">
-                            <button onClick={onCancel} className="text-black hover:text-green-600"><Icon name="left" className="w-10 h-10" /></button>
-                            <input type="text" value={localName} onChange={e=>setLocalName(e.target.value)} placeholder="專案名稱..." className="bg-transparent border-none outline-none text-xl w-full font-black text-black focus:ring-0" />
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <button onClick={handleSend} className="bg-[#06C755] text-white px-8 py-4 rounded-2xl text-lg flex items-center gap-2 active:scale-95 shadow-xl font-black uppercase hover:bg-[#05b34c]">
-                                <Icon name="send" className="w-6 h-6" /> <span>發送設計</span>
-                            </button>
-                            <button onClick={()=>onSave(file.id, localName || "未命名", latestJsonRef.current)} className="bg-black text-white px-8 py-4 rounded-2xl font-black text-lg active:scale-95 shadow-xl flex items-center gap-2 hover:bg-slate-800">
-                                <Icon name="save" className="w-6 h-6" /> <span>儲存</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div className="flex-1 relative bg-slate-100"><iframe ref={iframeRef} src={projectUrl} className="iframe-container" allow="clipboard-read; clipboard-write"></iframe></div>
-                </div>
-            );
         };
 
         const App = () => {
             const [viewState, setViewState] = useState('LOADING'); 
             const [user, setUser] = useState(null);
-            const [activeLevel2, setActiveLevel2] = useState('PERSONAL');
+            const [activeModuleId, setActiveModuleId] = useState('CAROUSEL_PRO');
             const [activeFile, setActiveFile] = useState(null);
             const [userFiles, setUserFiles] = useState([]);
-            const [isGlobalLoading, setIsGlobalLoading] = useState(false);
+            const [isLoading, setIsLoading] = useState(false);
+            const [collapsedGroups, setCollapsedGroups] = useState({ CARDS: false, TOOLS: false });
             const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
             const refreshFiles = async (uid) => {
                 try {
                     const res = await fetch(`${GAS_URL}?userId=${uid}&action=getFiles`);
-                    const data = await res.json();
-                    setUserFiles(data || []);
-                } catch(e) {}
+                    setUserFiles(await res.json() || []);
+                } catch (e) { setUserFiles([]); }
             };
 
             useEffect(() => {
@@ -162,7 +101,7 @@
                     try {
                         const isPreview = window.location.href.includes('usercontent.goog');
                         if (isPreview) {
-                            setUser({ uid: 'DEBUG_USER', displayName: '測試員' });
+                            setUser({ uid: 'DEBUG_USER', displayName: '管理員' });
                             await refreshFiles('DEBUG_USER'); setViewState('MAIN'); return;
                         }
                         await liff.init({ liffId: LIFF_ID });
@@ -175,62 +114,165 @@
                 init();
             }, []);
 
-            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white italic font-black animate-pulse text-black"><div className="loader mb-4"></div>載入中...</div>;
-            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95">登入系統</button></div>;
+            const toggleGroup = (groupId) => {
+                if (isSidebarCollapsed) return;
+                setCollapsedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
+            };
 
-            const currentProject = PROJECTS.find(i => i.id === activeLevel2);
+            const handleClone = async (file) => {
+                setIsLoading(true);
+                const newName = `${file.name} (複製)`;
+                const newId = String(Date.now());
+                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: user.uid, id: newId, name: newName, content: file.content }) });
+                await refreshFiles(user.uid);
+                setIsLoading(false);
+            };
+
+            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white font-black italic animate-pulse">數據載入中...</div>;
+            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black shadow-2xl active:scale-95 transition-all">登入系統</button></div>;
+
+            const allItems = NAV_GROUPS.flatMap(g => g.items);
+            const currentProject = allItems.find(i => i.id === activeModuleId);
 
             return (
                 <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black">
-                    {isGlobalLoading && <div className="overlay-loading font-black text-xl italic text-black"><div className="loader mb-4"></div>同步中...</div>}
+                    {isLoading && <div className="fixed inset-0 bg-white/80 z-[9999] flex items-center justify-center font-black">同步中...</div>}
+                    
+                    {/* 側邊欄：恢復收合功能與分類編排 */}
                     <aside className={`line-sidebar border-r border-slate-300 ${isSidebarCollapsed ? 'w-16' : 'w-64'}`}>
-                        <div className={`h-24 flex items-center border-b border-slate-300 bg-white shadow-sm z-10 cursor-pointer ${isSidebarCollapsed ? 'justify-center' : 'px-6'}`} onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}>
-                            <span className="text-[#06C755]"><Icon name="menu" className="w-8 h-8" /></span>
-                            {!isSidebarCollapsed && <div className="flex flex-col ml-4 font-black"><span className="text-xl uppercase italic">Flex Hub Pro</span></div>}
+                        <div 
+                            className={`h-24 flex items-center border-b border-slate-300 bg-white shadow-sm shrink-0 cursor-pointer hover:bg-slate-50 transition-all ${isSidebarCollapsed ? 'justify-center px-0' : 'px-6'}`}
+                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                        >
+                            <span className={`text-[#06C755] ${isSidebarCollapsed ? '' : 'mr-4'}`}><Icon name="menu" className="w-8 h-8" /></span>
+                            {!isSidebarCollapsed && (
+                                <div className="flex flex-col">
+                                    <span className="font-black text-[#06C755] text-xl uppercase italic leading-none">FLEX HUB PRO</span>
+                                    <span className="text-[8px] opacity-40 uppercase mt-1 tracking-widest">{APP_VERSION}</span>
+                                </div>
+                            )}
                         </div>
+                        
                         <nav className="flex-1 overflow-y-auto pt-4 custom-scrollbar">
-                            {PROJECTS.map(item => (
-                                <button key={item.id} onClick={()=>{setActiveLevel2(item.id); setActiveFile(null);}} className={`w-full flex items-center transition-all border-r-4 ${activeLevel2 === item.id && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent'} ${isSidebarCollapsed ? 'justify-center py-6' : 'px-8 py-4 gap-4'}`}>
-                                    <Icon name={item.icon} className="w-5 h-5 shrink-0" />
-                                    {!isSidebarCollapsed && <span className="text-sm truncate font-black">{item.name}</span>}
-                                </button>
+                            {NAV_GROUPS.map(group => (
+                                <div key={group.id} className="mb-4">
+                                    {!isSidebarCollapsed ? (
+                                        <div 
+                                            className="px-6 py-3 text-xs text-slate-400 uppercase tracking-widest flex items-center justify-between cursor-pointer hover:text-black transition-colors"
+                                            onClick={() => toggleGroup(group.id)}
+                                        >
+                                            <span>{group.name}</span>
+                                            <span className={`chevron-rotate ${collapsedGroups[group.id] ? '' : 'chevron-up'}`}>
+                                                <Icon name="chevron" className="w-3 h-3" />
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="border-b border-slate-200 mx-4 mb-4"></div>
+                                    )}
+
+                                    {(!collapsedGroups[group.id] || isSidebarCollapsed) && (
+                                        <div className="flex flex-col">
+                                            {group.items.map(item => (
+                                                <button 
+                                                    key={item.id} 
+                                                    onClick={()=>{setActiveModuleId(item.id); setActiveFile(null);}} 
+                                                    className={`w-full flex items-center transition-all ${activeModuleId === item.id && !activeFile ? 'sidebar-item-active' : 'hover:bg-white'} ${isSidebarCollapsed ? 'justify-center py-6' : 'px-8 py-4 gap-4'}`}
+                                                    title={isSidebarCollapsed ? item.name : ""}
+                                                >
+                                                    <Icon name={item.icon} className="w-5 h-5 shrink-0" />
+                                                    {!isSidebarCollapsed && <span className="text-sm truncate">{item.name}</span>}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             ))}
                         </nav>
+                        
+                        {!isSidebarCollapsed && (
+                            <div className="p-4 border-t border-slate-200 text-[10px] text-slate-400 font-bold uppercase text-center italic">
+                                Built for Google Apps Script
+                            </div>
+                        )}
                     </aside>
-                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner text-black">
+
+                    {/* 主內容區 */}
+                    <main className="flex-1 bg-white relative flex flex-col">
                         {activeFile ? (
-                            <EditorView key={String(activeFile.id)} file={activeFile} onSave={async (id, name, content)=>{
-                                setIsGlobalLoading(true);
-                                try {
-                                    const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: user.uid, id: String(id), name, content }) });
-                                    if ((await res.json()).success) { await refreshFiles(user.uid); setActiveFile(null); }
-                                } catch(e) { alert("儲存失敗"); }
-                                setIsGlobalLoading(false);
-                            }} onCancel={() => setActiveFile(null)} projectUrl={currentProject.url} />
-                        ) : (
-                            <div className="p-8 h-full overflow-y-auto font-black">
-                                <div className="flex justify-between items-end border-b border-slate-300 pb-6 mb-6 text-black">
-                                    <h2 className="text-2xl font-black uppercase">{currentProject.name}</h2>
-                                    <button onClick={()=>setActiveFile({id: String(Date.now()), name:"", content: null})} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 shadow-md active:scale-95"><Icon name="plus" /> 建立新設計</button>
+                            <div className="h-full flex flex-col">
+                                <div className="h-20 border-b flex items-center px-6 justify-between bg-white shadow-md z-10">
+                                    <button onClick={()=>setActiveFile(null)} className="font-black text-black flex items-center gap-2 hover:text-[#06C755] transition-colors">
+                                        <span>← 返回清單</span>
+                                    </button>
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[10px] text-slate-400 uppercase tracking-widest">{currentProject.name}</span>
+                                        <h2 className="font-black text-xl">{activeFile.name || '未命名設計'}</h2>
+                                    </div>
+                                    <div className="w-24"></div>
                                 </div>
-                                <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
+                                <iframe 
+                                    src={currentProject.url} 
+                                    className="flex-1 border-none" 
+                                    onLoad={(e) => { 
+                                        e.target.contentWindow.postMessage({ type: 'LOAD_FLEX_DATA', json: activeFile.content }, '*'); 
+                                    }}
+                                ></iframe>
+                            </div>
+                        ) : (
+                            <div className="p-8 h-full overflow-y-auto font-black custom-scrollbar">
+                                <div className="flex justify-between items-end border-b border-slate-300 pb-6 mb-6">
+                                    <div className="flex flex-col">
+                                        <h2 className="text-2xl font-black uppercase tracking-tighter">{currentProject.name}</h2>
+                                        <p className="text-sm text-slate-400 mt-1 italic">管理您的設計存檔與範本</p>
+                                    </div>
+                                    <button 
+                                        onClick={()=>setActiveFile({id: String(Date.now()), name:"", content: null})} 
+                                        className="bg-[#06C755] text-white px-8 py-4 rounded-xl font-black text-sm flex items-center gap-2 shadow-xl active:scale-95 transition-all hover:bg-[#05b34c]"
+                                    >
+                                        ＋ 建立新設計
+                                    </button>
+                                </div>
+                                <div className="bg-white border border-slate-300 rounded-2xl overflow-hidden shadow-sm">
                                     <table className="w-full text-left">
-                                        <thead className="bg-slate-100 border-b border-slate-300 uppercase font-black text-slate-500">
-                                            <tr><th className="p-5 text-sm">專案名稱</th><th className="p-5 text-center text-sm">操作</th></tr>
+                                        <thead className="bg-slate-100 border-b border-slate-300 font-black text-slate-500 uppercase text-xs">
+                                            <tr>
+                                                <th className="p-5">專案名稱</th>
+                                                <th className="p-5 text-center">操作管理</th>
+                                            </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-200">
-                                            {userFiles.map(f => (
-                                                <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors font-black">
-                                                    <td className="p-5 text-base text-black">{f.name}</td>
-                                                    <td className="p-5 text-center space-x-6">
-                                                        <button onClick={()=>setActiveFile(f)} className="text-blue-700 hover:underline">編輯</button>
-                                                        <button onClick={async ()=>{
-                                                            if(!confirm("確定刪除？")) return;
-                                                            setIsGlobalLoading(true);
-                                                            await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteFile', userId: user.uid, id: String(f.id) }) });
-                                                            await refreshFiles(user.uid);
-                                                            setIsGlobalLoading(false);
-                                                        }} className="text-red-500 transition-colors"><Icon name="trash" className="w-6 h-6 inline" /></button>
+                                            {userFiles.length === 0 ? (
+                                                <tr><td colSpan="2" className="p-20 text-center text-slate-300 italic">目前尚無存檔數據...</td></tr>
+                                            ) : userFiles.map(f => (
+                                                <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="p-5 text-base font-black text-black">
+                                                        <div className="flex flex-col">
+                                                            <span>{f.name}</span>
+                                                            <span className="text-[10px] opacity-30">ID: {f.id}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-5 text-center">
+                                                        <div className="flex justify-center items-center gap-6">
+                                                            <button onClick={()=>setActiveFile(f)} className="text-blue-700 hover:underline font-black">編輯</button>
+                                                            <button 
+                                                                onClick={()=>handleClone(f)} 
+                                                                className="text-amber-600 flex items-center gap-1 hover:underline font-black"
+                                                            >
+                                                                <Icon name="copy" className="w-4 h-4" /> 複製
+                                                            </button>
+                                                            <button 
+                                                                onClick={async ()=>{
+                                                                    if(!confirm("確定要刪除此設計嗎？數據將無法還原。")) return; 
+                                                                    setIsLoading(true); 
+                                                                    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteFile', userId: user.uid, id: String(f.id) }) }); 
+                                                                    await refreshFiles(user.uid); 
+                                                                    setIsLoading(false); 
+                                                                }} 
+                                                                className="text-red-500 hover:text-red-700"
+                                                            >
+                                                                <Icon name="trash" className="w-6 h-6 inline" />
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
