@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人單頁名片 - 整合版</title>
+    <title>個人單頁名片 - 整合版 (v2.3.0)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -43,6 +43,8 @@
             LINE: { url: "https://cdn-icons-png.flaticon.com/512/124/124027.png", label: "LINE" },
             LINE_AT: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "LINE@" }, 
             PHONE: { url: "https://cdn-icons-png.flaticon.com/512/3616/3616215.png", label: "電話聯繫" },
+            MAIL: { url: "https://cdn-icons-png.flaticon.com/512/732/732200.png", label: "電子郵件" },
+            MAP: { url: "https://cdn-icons-png.flaticon.com/512/355/355980.png", label: "Google Map" },
             WEB: { url: "https://cdn-icons-png.flaticon.com/512/1006/1006771.png", label: "官方網站" }
         };
 
@@ -88,7 +90,7 @@
                 shortBtns: [
                     { type: "PHONE", label: "電話", uri: "tel:0900000000", themeColor: "#dddddd", textColor: "#444444", isSolid: false },
                     { type: "LINE_AT", label: "LINE@", uri: "https://line.me", themeColor: "#dddddd", textColor: "#444444", isSolid: false },
-                    { type: "WEB", label: "官網", uri: "https://google.com", themeColor: "#dddddd", textColor: "#444444", isSolid: false }
+                    { type: "MAP", label: "地點", uri: "https://goo.gl/maps/example", themeColor: "#dddddd", textColor: "#444444", isSolid: false }
                 ]
             }
         };
@@ -187,13 +189,9 @@
 
             // --- 整合通訊代碼 ---
             useEffect(() => {
-                // 1. 通知父視窗載入完成
                 window.parent.postMessage({ type: 'CHILD_READY' }, '*');
-
                 const handleMessage = (event) => {
                     if (event.data && event.data.type === 'LOAD_FLEX_DATA') {
-                        // 這裡可以加入將 JSON 解析回編輯器狀態的邏輯
-                        // 目前暫時維持編輯器初始狀態，父視窗會發送當前存檔
                         console.log("收到父視窗數據:", event.data.json);
                     }
                 };
@@ -201,14 +199,13 @@
                 return () => window.removeEventListener('message', handleMessage);
             }, []);
 
-            // 2. 當數據變動時，同步傳回父視窗
             useEffect(() => {
                 const currentJson = buildFinalJson();
                 window.parent.postMessage({
                     type: 'SYNC_FLEX_DATA',
                     json: JSON.stringify(currentJson, null, 2)
                 }, '*');
-            }, [data, mediaType, videoConfig, buildFinalJson]);
+            }, [data, buildFinalJson]);
 
             useEffect(() => {
                 if (window.lucide) window.lucide.createIcons();
@@ -228,10 +225,7 @@
             const handleUpdate = (section, field, value) => {
                 setData(prev => {
                     if (section === 'root') return { ...prev, [field]: value };
-                    return {
-                        ...prev,
-                        [section]: { ...prev[section], [field]: value }
-                    };
+                    return { ...prev, [section]: { ...prev[section], [field]: value } };
                 });
             };
 
@@ -255,6 +249,23 @@
                 const newList = [...data.footer.longBtns];
                 newList[idx] = { ...newList[idx], [field]: value };
                 setData(prev => ({ ...prev, footer: { ...prev.footer, longBtns: newList } }));
+            };
+
+            // --- 底部快捷按鈕功能 ---
+            const addShortBtn = () => {
+                if (data.footer.shortBtns.length >= 5) return;
+                const newBtn = { type: "WEB", label: "新連結", uri: "https://", themeColor: "#dddddd", textColor: "#444444", isSolid: false };
+                setData(prev => ({
+                    ...prev,
+                    footer: { ...prev.footer, shortBtns: [...prev.footer.shortBtns, newBtn] }
+                }));
+            };
+
+            const deleteShortBtn = (idx) => {
+                setData(prev => ({
+                    ...prev,
+                    footer: { ...prev.footer, shortBtns: prev.footer.shortBtns.filter((_, i) => i !== idx) }
+                }));
             };
 
             const updateShortBtn = (idx, field, value) => {
@@ -332,11 +343,6 @@
                                         <div className="space-y-4">
                                             <div><label className="text-sm font-bold text-slate-700 block mb-1.5">主圖網址</label><input type="text" value={data.media.url} onChange={(e) => handleUpdate('media', 'url', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none focus:border-[#00b900]" placeholder="https://圖片連結 (支援APNG)..." /></div>
                                             <div><label className="text-sm font-bold text-slate-700 block mb-1.5">主圖跳轉連結 (URI)</label><input type="text" value={data.media.uri} onChange={(e) => handleUpdate('media', 'uri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono focus:border-[#00b900] outline-none" placeholder="https://..." /></div>
-                                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
-                                                <div className="flex justify-between items-center"><label className="text-sm font-bold text-slate-700 flex items-center gap-2"><i data-lucide="tag" className="w-4 h-4 text-[#00b900]"></i> 標籤設定</label><div className="flex gap-2"><div className="flex bg-white rounded-lg p-0.5 border border-slate-300"><button onClick={() => handleUpdate('media', 'badgePos', 'left')} className={`p-1.5 rounded-md transition-all ${data.media.badgePos === 'left' ? 'bg-[#00b900] text-white' : 'text-slate-400'}`}><i data-lucide="align-left" className="w-4 h-4"></i></button><button onClick={() => handleUpdate('media', 'badgePos', 'right')} className={`p-1.5 rounded-md transition-all ${data.media.badgePos === 'right' ? 'bg-[#00b900] text-white' : 'text-slate-400'}`}><i data-lucide="align-right" className="w-4 h-4"></i></button></div><input type="color" value={data.media.badgeBg} onChange={(e) => handleUpdate('media', 'badgeBg', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded overflow-hidden" /></div></div>
-                                                <input type="text" maxLength={10} value={data.media.badgeText} onChange={(e) => handleUpdate('media', 'badgeText', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg bg-white" placeholder="標籤文字" />
-                                                <input type="text" value={data.media.badgeUri} onChange={(e) => handleUpdate('media', 'badgeUri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg bg-white font-mono" placeholder="標籤跳轉連結" />
-                                            </div>
                                         </div>
                                     ) : (
                                         <div className="space-y-4 border-l-4 border-[#00b900] pl-4">
@@ -371,7 +377,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <input type="text" value={data.avatar.url} onChange={(e) => handleUpdate('avatar', 'url', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none focus:border-[#00b900] bg-white font-bold" placeholder="縮圖連結 (支援APNG)..." />
+                                        <input type="text" value={data.avatar.url} onChange={(e) => handleUpdate('avatar', 'url', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none focus:border-[#00b900] bg-white font-bold" placeholder="縮圖連結..." />
                                     </div>
                                 )}
                             </div>
@@ -419,7 +425,7 @@
                                 </div>
                             </div>
 
-                            {/* 4. 按鈕設定 */}
+                            {/* 4. 長按鈕設定 */}
                             <div className="border-2 border-[#00b900] rounded-xl bg-white overflow-hidden shadow-sm">
                                 <div className="p-4 bg-[#00b900] border-b border-[#00b900] flex items-center justify-between font-bold text-white text-lg">
                                     <div className="flex items-center gap-2"><i data-lucide="layers" className="w-5 h-5"></i> 4. 按鈕區 ({data.footer.longBtns.length}/3)</div>
@@ -445,14 +451,16 @@
                                 </div>
                             </div>
 
-                            {/* 5. 底部快捷 */}
+                            {/* 5. 底部快捷按鈕 (Max 5) */}
                             <div className="border-2 border-[#00b900] rounded-xl bg-white overflow-hidden shadow-sm mb-12">
-                                <div className="p-4 bg-[#00b900] border-b border-[#00b900] flex items-center gap-2 font-bold text-white text-lg">
-                                    <i data-lucide="share-2" className="w-5 h-5"></i> 5. 底部快捷按鈕
+                                <div className="p-4 bg-[#00b900] border-b border-[#00b900] flex items-center justify-between font-bold text-white text-lg">
+                                    <div className="flex items-center gap-2"><i data-lucide="share-2" className="w-5 h-5"></i> 5. 底部快捷 ({data.footer.shortBtns.length}/5)</div>
+                                    <button onClick={addShortBtn} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition-all"><i data-lucide="plus" className="w-4 h-4"></i> 新增</button>
                                 </div>
                                 <div className="p-5 space-y-8">
                                     {data.footer.shortBtns.map((btn, idx) => (
-                                        <div key={idx} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
+                                        <div key={idx} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 relative group hover:border-[#00b900]/50 transition-all">
+                                            <button onClick={() => deleteShortBtn(idx)} className="absolute -top-3 -right-3 bg-red-500 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
                                             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                                                 <button onClick={() => updateShortBtn(idx, 'isSolid', !btn.isSolid)} className={`px-4 py-1 rounded-lg text-xs font-bold transition-all ${btn.isSolid ? 'bg-[#00b900] text-white shadow-sm' : 'bg-slate-200 text-slate-500'}`}>{btn.isSolid ? '實心' : '空心'}</button>
                                                 <div className="flex gap-4"><input type="color" value={btn.themeColor} onChange={(e) => updateShortBtn(idx, 'themeColor', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded" /><input type="color" value={btn.textColor} onChange={(e) => updateShortBtn(idx, 'textColor', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded" /></div>
