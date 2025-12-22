@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人單頁名片 - 專業優化版</title>
+    <!-- 核心庫載入 -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide 圖示載入 -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #00b900; border-radius: 10px; }
+        .lucide { width: 1.2em; height: 1.2em; vertical-align: middle; display: inline-block; }
+        input, select, textarea { font-size: 14px !important; }
+        
+        /* 模擬 LINE 聊天室背景 */
+        .chat-room-bg {
+            background-color: #7988a0;
+            background-[radial-gradient(#cbd5e1_1px,transparent_1px)]
+            [background-size:20px_20px]
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="flex items-center justify-center h-screen">
+            <div class="text-green-600 animate-pulse font-bold text-2xl">載入編輯器中...</div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 全局常數定義 ---
+        const SOCIAL_DATA = {
+            NONE: { url: "", label: "無圖示" },
+            FB: { url: "https://cdn-icons-png.flaticon.com/512/733/733547.png", label: "Facebook" },
+            IG: { url: "https://cdn-icons-png.flaticon.com/512/2111/2111463.png", label: "Instagram" },
+            TIKTOK: { url: "https://cdn-icons-png.flaticon.com/512/3046/3046121.png", label: "TikTok" },
+            YOUTUBE: { url: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png", label: "YouTube" },
+            LINE: { url: "https://cdn-icons-png.flaticon.com/512/124/124027.png", label: "LINE" },
+            LINE_AT: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "LINE@" }, 
+            PHONE: { url: "https://cdn-icons-png.flaticon.com/512/3616/3616215.png", label: "電話聯繫" },
+            WEB: { url: "https://cdn-icons-png.flaticon.com/512/1006/1006771.png", label: "官方網站" }
+        };
+
+        const FONT_SIZES = ['xxs', 'xs', 'sm', 'md', 'lg', 'xl', 'xxl', '3xl', '4xl', '5xl'];
+        const ASPECT_RATIOS = ['1:1', '4:3', '16:9', '9:16', '20:13'];
+        const BUBBLE_SIZES = ['mega', 'giga'];
+        const CORNER_RADIUS_OPTIONS = ['none', 'xs', 'sm', 'md', 'lg', 'xl', 'xxl', '40px', '100px'];
+
+        const initialFlex = {
+            size: "mega",
+            media: {
+                url: "https://lihi.cc/5OXMZ",
+                uri: "https://line.me",
+                aspectRatio: "16:9",
+                gravity: "center",
+                badgeText: "旗艦店",
+                badgeUri: "https://line.me",
+                badgeBg: "#ff0000",
+                badgePos: "left"
+            },
+            avatar: {
+                show: true,
+                url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200",
+                borderColor: "#ffffff",
+                gravity: "center",
+                cornerRadius: "100px"
+            },
+            content: {
+                name: "王小明",
+                nameSize: "xl",
+                nameAlign: "start",
+                nameColor: "#111111",
+                desc: "資深開發工程師\n專業 LINE Bot 解決方案",
+                descSize: "sm",
+                descAlign: "start",
+                descColor: "#666666"
+            },
+            footer: {
+                longBtns: [
+                    { label: "立即預約", uri: "https://line.me", themeColor: "#00b900", textColor: "#ffffff", isSolid: true },
+                    { label: "查看詳情", uri: "https://line.me", themeColor: "#00b900", textColor: "#00b900", isSolid: false }
+                ],
+                shortBtns: [
+                    { type: "PHONE", label: "電話", uri: "tel:0900000000", themeColor: "#dddddd", textColor: "#444444", isSolid: false },
+                    { type: "LINE_AT", label: "LINE@", uri: "https://line.me", themeColor: "#dddddd", textColor: "#444444", isSolid: false },
+                    { type: "WEB", label: "官網", uri: "https://google.com", themeColor: "#dddddd", textColor: "#444444", isSolid: false }
+                ]
+            }
+        };
+
+        const App = () => {
+            const [data, setData] = useState(initialFlex);
+            const [activeTab, setActiveTab] = useState('editor');
+            const [mediaType, setMediaType] = useState('image');
+            const [videoConfig, setVideoConfig] = useState({
+                url: "https://lihi.cc/YsmAp",
+                previewUrl: "https://lihi.cc/5OXMZ"
+            });
+
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [data, activeTab, mediaType]);
+
+            const getMediaHeight = () => {
+                const [w, h] = data.media.aspectRatio.split(':').map(Number);
+                const baseW = data.size === 'giga' ? 420 : 300;
+                return (h / w) * baseW;
+            };
+
+            const getPxSize = (size) => {
+                const map = { 'xxs': '11px', 'xs': '13px', 'sm': '15px', 'md': '17px', 'lg': '19px', 'xl': '22px', 'xxl': '26px', '3xl': '30px', '4xl': '34px', '5xl': '38px' };
+                return map[size] || '17px';
+            };
+
+            const handleUpdate = (section, field, value) => {
+                setData(prev => {
+                    if (section === 'root') return { ...prev, [field]: value };
+                    return {
+                        ...prev,
+                        [section]: { ...prev[section], [field]: value }
+                    };
+                });
+            };
+
+            const copyToClipboard = (text) => {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('✅ JSON 已複製到剪貼簿！');
+                } catch (err) {
+                    console.error('Copy Error');
+                }
+                document.body.removeChild(textArea);
+            };
+
+            const addLongBtn = () => {
+                if (data.footer.longBtns.length >= 3) return;
+                const newBtn = { label: "新按鈕", uri: "https://line.me", themeColor: "#00b900", textColor: "#ffffff", isSolid: true };
+                setData(prev => ({
+                    ...prev,
+                    footer: { ...prev.footer, longBtns: [...prev.footer.longBtns, newBtn] }
+                }));
+            };
+
+            const deleteLongBtn = (idx) => {
+                setData(prev => ({
+                    ...prev,
+                    footer: { ...prev.footer, longBtns: prev.footer.longBtns.filter((_, i) => i !== idx) }
+                }));
+            };
+
+            const updateLongBtn = (idx, field, value) => {
+                const newList = [...data.footer.longBtns];
+                newList[idx] = { ...newList[idx], [field]: value };
+                setData(prev => ({ ...prev, footer: { ...prev.footer, longBtns: newList } }));
+            };
+
+            const updateShortBtn = (idx, field, value) => {
+                const newList = [...data.footer.shortBtns];
+                if (field === 'icon_data') {
+                    newList[idx].type = value.type;
+                    newList[idx].label = value.label;
+                } else {
+                    newList[idx][field] = value;
+                }
+                setData(prev => ({ ...prev, footer: { ...prev.footer, shortBtns: newList } }));
+            };
+
+            const buildFinalJson = () => {
+                const bubble = {
+                    type: "bubble",
+                    size: data.size,
+                    body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [] }
+                };
+                const mediaH = getMediaHeight();
+
+                if (mediaType === 'video') {
+                    bubble.hero = {
+                        type: "video", url: videoConfig.url, previewUrl: videoConfig.previewUrl, aspectRatio: data.media.aspectRatio,
+                        altContent: { type: "image", size: "full", aspectRatio: data.media.aspectRatio, aspectMode: "cover", url: videoConfig.previewUrl, backgroundColor: "#000000" }
+                    };
+                } else {
+                    bubble.body.contents.push({
+                        type: "box", layout: "vertical",
+                        contents: [
+                            { 
+                                type: "image", url: data.media.url, size: "full", aspectRatio: data.media.aspectRatio, aspectMode: "cover", gravity: data.media.gravity,
+                                animated: true, action: data.media.uri ? { type: "uri", uri: data.media.uri } : undefined
+                            },
+                            {
+                                type: "box", layout: "vertical", position: "absolute", backgroundColor: data.media.badgeBg, cornerRadius: "15px", paddingAll: "4px", paddingStart: "10px", paddingEnd: "10px", offsetTop: "10px", [data.media.badgePos === 'left' ? 'offsetStart' : 'offsetEnd']: "10px",
+                                action: data.media.badgeUri ? { type: "uri", uri: data.media.badgeUri } : undefined,
+                                contents: [{ type: "text", text: data.media.badgeText, color: "#ffffff", align: "center", size: "xs", weight: "bold" }]
+                            }
+                        ]
+                    });
+                }
+
+                const infoBox = {
+                    type: "box", layout: "vertical", paddingAll: "15px",
+                    paddingTop: data.avatar.show ? (mediaType === 'video' ? "95px" : "45px") : "15px",
+                    contents: [
+                        { type: "text", text: data.content.name, weight: "bold", size: data.content.nameSize, align: data.content.nameAlign, color: data.content.nameColor },
+                        { type: "text", text: data.content.desc, wrap: true, color: data.content.descColor, size: data.content.descSize, margin: "md", align: data.content.descAlign }
+                    ]
+                };
+
+                if (data.avatar.show) {
+                    const avatarBox = {
+                        type: "box", layout: "vertical", position: "absolute",
+                        offsetTop: mediaType === 'video' ? "10px" : `${mediaH - 45}px`,
+                        offsetStart: "0px", offsetEnd: "0px", alignItems: "center",
+                        contents: [
+                            {
+                                type: "box", layout: "vertical", width: "80px", height: "80px", cornerRadius: data.avatar.cornerRadius, borderWidth: "3px", borderColor: data.avatar.borderColor,
+                                contents: [{ type: "image", url: data.avatar.url, size: "full", aspectRatio: "1:1", aspectMode: "cover", gravity: data.avatar.gravity, animated: true }]
+                            }
+                        ]
+                    };
+                    bubble.body.contents.push(avatarBox);
+                }
+                bubble.body.contents.splice(data.avatar.show ? bubble.body.contents.length - 1 : bubble.body.contents.length, 0, infoBox);
+
+                bubble.footer = {
+                    type: "box", layout: "vertical", spacing: "md", paddingAll: "10px",
+                    contents: data.footer.longBtns.map(btn => ({
+                        type: "box", layout: "vertical", contents: [{ type: "text", text: btn.label, align: "center", color: btn.textColor, size: "sm", weight: "bold" }],
+                        paddingAll: "10px", borderWidth: "1px", borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : undefined, cornerRadius: "md", action: { type: "uri", uri: btn.uri }
+                    }))
+                };
+
+                if (data.footer.shortBtns.length > 0) {
+                    bubble.footer.contents.push({
+                        type: "box", layout: "horizontal", spacing: "md",
+                        contents: data.footer.shortBtns.map(btn => ({
+                            type: "box", layout: "vertical", spacing: "xs", paddingAll: "8px", borderWidth: "1px", borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : undefined, cornerRadius: "sm", action: { type: "uri", uri: btn.uri },
+                            contents: [
+                                { type: "image", url: SOCIAL_DATA[btn.type]?.url || SOCIAL_DATA.WEB.url, size: "xxs", aspectRatio: "1:1" },
+                                { type: "text", text: btn.label, align: "center", color: btn.textColor, size: "xxs" }
+                            ]
+                        }))
+                    });
+                }
+                return bubble;
+            };
+
+            const handleCopy = () => {
+                const json = JSON.stringify(buildFinalJson(), null, 2);
+                copyToClipboard(json);
+            };
+
+            const Preview = () => {
+                const bubbleW = data.size === 'giga' ? '420px' : '300px';
+                const mediaH = getMediaHeight();
+                const avatarOff = mediaType === 'video' ? mediaH + 10 : mediaH - 45;
+                const txtPad = data.avatar.show ? (mediaType === 'video' ? 95 : 45) : 15;
+
+                return (
+                    <div className="flex justify-center p-4 min-h-full">
+                        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl border border-slate-200 h-fit relative transition-all duration-500" style={{ width: bubbleW }}>
+                            <div className="relative bg-black overflow-hidden" style={{ height: `${mediaH}px` }}>
+                                {mediaType === 'image' ? <img src={data.media.url} className="w-full h-full object-cover" style={{ objectPosition: data.media.gravity }} /> : <div className="w-full h-full flex items-center justify-center relative"><img src={videoConfig.previewUrl} className="absolute inset-0 w-full h-full object-cover opacity-60" /><i data-lucide="play-circle" className="w-16 h-16 text-white relative z-10 opacity-90 drop-shadow-xl"></i></div>}
+                                {mediaType === 'image' && data.media.badgeText && <div className="absolute font-bold shadow-md" style={{ top: '10px', [data.media.badgePos]: '10px', backgroundColor: data.media.badgeBg, color: '#fff', padding: '4px 10px', borderRadius: '15px', fontSize: '11px', zIndex: 10 }}>{data.media.badgeText}</div>}
+                            </div>
+                            <div style={{ padding: '15px', paddingTop: `${txtPad}px` }}>
+                                <div className="font-bold" style={{ textAlign: data.content.nameAlign, fontSize: getPxSize(data.content.nameSize), color: data.content.nameColor }}>{data.content.name}</div>
+                                <div className="mt-1 text-[14px] leading-snug whitespace-pre-wrap" style={{ color: data.content.descColor, textAlign: data.content.descAlign, fontSize: getPxSize(data.content.descSize) }}>{data.content.desc}</div>
+                            </div>
+                            {data.avatar.show && <div className="absolute w-full flex justify-center transition-all duration-500" style={{ top: `${avatarOff}px`, left: 0, zIndex: 30 }}><div className="overflow-hidden bg-white shadow-xl" style={{ width: '80px', height: '80px', border: `4px solid ${data.avatar.borderColor}`, borderRadius: data.avatar.cornerRadius.includes('px') ? data.avatar.cornerRadius : '12px' }}><img src={data.avatar.url} className="w-full h-full object-cover" style={{ objectPosition: data.avatar.gravity }} /></div></div>}
+                            <div className="flex flex-col gap-3 p-[10px] pt-0">
+                                {data.footer.longBtns.map((btn, i) => <div key={i} className="py-2.5 text-center rounded-md border font-bold text-[14px]" style={{ borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : 'transparent', color: btn.textColor }}>{btn.label}</div>)}
+                                <div className="flex gap-2">{data.footer.shortBtns.map((btn, i) => <div key={i} className="flex-1 py-2 flex flex-col items-center gap-1 rounded-sm border shadow-sm" style={{ borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : 'transparent' }}><img src={SOCIAL_DATA[btn.type]?.url} className="w-4 h-4 object-contain" /><span className="text-[10px] font-medium" style={{ color: btn.textColor }}>{btn.label}</span></div>)}</div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="flex h-screen bg-slate-100 text-slate-900 overflow-hidden">
+                    {/* 左側 Sidebar (w-1/2) */}
+                    <div className="w-1/2 bg-white border-r border-slate-300 flex flex-col shadow-xl z-10">
+                        <div className="p-6 bg-white border-b border-slate-300 flex items-center justify-between shrink-0 shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-[#00b900] p-2 rounded-lg text-white">
+                                    <i data-lucide="layout-grid" className="w-6 h-6"></i>
+                                </div>
+                                <h1 className="font-bold text-xl text-slate-800 uppercase tracking-tighter">個人單頁名片</h1>
+                            </div>
+                            <button 
+                                onClick={handleCopy} 
+                                className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-95 shadow-md"
+                            >
+                                <i data-lucide="copy" className="w-4 h-4"></i>
+                                複製 JSON
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+                            
+                            {/* 1. 媒體層設定 */}
+                            <div className="border-2 border-[#00b900] rounded-xl bg-white overflow-hidden shadow-sm">
+                                <div className="p-4 bg-[#00b900] border-b border-[#00b900] flex items-center gap-2 font-bold text-white text-lg">
+                                    <i data-lucide="monitor" className="w-5 h-5"></i> 1. 媒體層設定
+                                </div>
+                                <div className="p-5 space-y-5">
+                                    <div className="flex bg-slate-100 p-1.5 rounded-lg border border-slate-300">
+                                        <button onClick={() => setMediaType('image')} className={`flex-1 py-2 text-sm font-bold rounded-md transition ${mediaType === 'image' ? 'bg-white shadow-sm text-[#00b900]' : 'text-slate-600'}`}>圖片模式</button>
+                                        <button onClick={() => setMediaType('video')} className={`flex-1 py-2 text-sm font-bold rounded-md transition ${mediaType === 'video' ? 'bg-white shadow-sm text-[#00b900]' : 'text-slate-600'}`}>影片模式</button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-sm font-bold text-slate-700 uppercase mb-1.5 block">卡片規格</label>
+                                            <select value={data.size} onChange={(e) => handleUpdate('root', 'size', e.target.value)} className="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white focus:ring-1 focus:ring-[#00b900] outline-none"> {BUBBLE_SIZES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)} </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-bold text-slate-700 uppercase mb-1.5 block">顯示比例</label>
+                                            <select value={data.media.aspectRatio} onChange={(e) => handleUpdate('media', 'aspectRatio', e.target.value)} className="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white focus:ring-1 focus:ring-[#00b900] outline-none"> {ASPECT_RATIOS.map(r => <option key={r} value={r}>{r}</option>)} </select>
+                                        </div>
+                                    </div>
+                                    {mediaType === 'image' ? (
+                                        <div className="space-y-4">
+                                            <div><label className="text-sm font-bold text-slate-700 block mb-1.5">主圖網址</label><input type="text" value={data.media.url} onChange={(e) => handleUpdate('media', 'url', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none focus:border-[#00b900]" placeholder="https://圖片連結 (支援APNG)..." /></div>
+                                            <div><label className="text-sm font-bold text-slate-700 block mb-1.5">主圖跳轉連結 (URI)</label><input type="text" value={data.media.uri} onChange={(e) => handleUpdate('media', 'uri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono focus:border-[#00b900] outline-none" placeholder="https://..." /></div>
+                                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+                                                <div className="flex justify-between items-center"><label className="text-sm font-bold text-slate-700 flex items-center gap-2"><i data-lucide="tag" className="w-4 h-4 text-[#00b900]"></i> 標籤設定</label><div className="flex gap-2"><div className="flex bg-white rounded-lg p-0.5 border border-slate-300"><button onClick={() => handleUpdate('media', 'badgePos', 'left')} className={`p-1.5 rounded-md transition-all ${data.media.badgePos === 'left' ? 'bg-[#00b900] text-white' : 'text-slate-400'}`}><i data-lucide="align-left" className="w-4 h-4"></i></button><button onClick={() => handleUpdate('media', 'badgePos', 'right')} className={`p-1.5 rounded-md transition-all ${data.media.badgePos === 'right' ? 'bg-[#00b900] text-white' : 'text-slate-400'}`}><i data-lucide="align-right" className="w-4 h-4"></i></button></div><input type="color" value={data.media.badgeBg} onChange={(e) => handleUpdate('media', 'badgeBg', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded overflow-hidden" /></div></div>
+                                                <input type="text" maxLength={10} value={data.media.badgeText} onChange={(e) => handleUpdate('media', 'badgeText', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg bg-white" placeholder="標籤文字" />
+                                                <input type="text" value={data.media.badgeUri} onChange={(e) => handleUpdate('media', 'badgeUri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg bg-white font-mono" placeholder="標籤跳轉連結" />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4 border-l-4 border-[#00b900] pl-4">
+                                            <div className="space-y-1"><label className="text-sm font-bold text-slate-700">影片連結 (MP4)</label><input type="text" value={videoConfig.url} onChange={(e) => setVideoConfig({...videoConfig, url: e.target.value})} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono focus:border-[#00b900] outline-none" /></div>
+                                            <div className="space-y-1"><label className="text-sm font-bold text-slate-700">封面預覽圖</label><input type="text" value={videoConfig.previewUrl} onChange={(e) => setVideoConfig({...videoConfig, previewUrl: e.target.value})} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono focus:border-[#00b900] outline-none" /></div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* 2. 個人縮圖 */}
+                            <div className="border-2 border-[#00b900] rounded-xl bg-white overflow-hidden shadow-sm">
+                                <div className="p-4 bg-[#00b900] border-b border-[#00b900] flex items-center justify-between font-bold text-white text-lg">
+                                    <div className="flex items-center gap-2"><i data-lucide="user" className="w-5 h-5"></i> 2. 個人縮圖設定</div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" checked={data.avatar.show} onChange={() => handleUpdate('avatar', 'show', !data.avatar.show)} className="sr-only peer" />
+                                        <div className="w-11 h-6 bg-white/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-white/50"></div>
+                                    </label>
+                                </div>
+                                {data.avatar.show && (
+                                    <div className="p-5 space-y-5">
+                                        <div className="grid grid-cols-2 gap-4 items-center">
+                                            <div>
+                                                <label className="text-sm font-bold text-slate-700 uppercase mb-1.5 block">圓角 Radius</label>
+                                                <select value={data.avatar.cornerRadius} onChange={(e) => handleUpdate('avatar', 'cornerRadius', e.target.value)} className="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white outline-none">{CORNER_RADIUS_OPTIONS.map(r => <option key={r} value={r}>圓角:{r}</option>)}</select>
+                                            </div>
+                                            <div>
+                                                <label className="text-sm font-bold text-slate-700 uppercase mb-1.5 block">邊框顏色</label>
+                                                <div className="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-300 h-[46px]">
+                                                    <input type="color" value={data.avatar.borderColor} onChange={(e) => handleUpdate('avatar', 'borderColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border-none p-0 flex-shrink-0" />
+                                                    <input type="text" value={data.avatar.borderColor} onChange={(e) => handleUpdate('avatar', 'borderColor', e.target.value)} className="flex-1 bg-transparent text-sm font-mono text-slate-700 outline-none uppercase" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input type="text" value={data.avatar.url} onChange={(e) => handleUpdate('avatar', 'url', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none focus:border-[#00b900] bg-white font-bold" placeholder="縮圖連結 (支援APNG)..." />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 3. 文字內容 */}
+                            <div className="border-2 border-[#00b900] rounded-xl bg-white overflow-hidden shadow-sm">
+                                <div className="p-4 bg-[#00b900] border-b border-[#00b900] flex items-center gap-2 font-bold text-white text-lg">
+                                    <i data-lucide="type" className="w-5 h-5"></i> 3. 文字內容排版
+                                </div>
+                                <div className="p-5 space-y-6">
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-sm font-bold text-slate-700 uppercase">標題內容與對齊</label>
+                                            <div className="flex gap-2 items-center">
+                                                <div className="flex bg-slate-100 rounded-lg p-0.5 border border-slate-300 shadow-inner">
+                                                    {['start', 'center', 'end'].map(align => (
+                                                        <button key={align} onClick={() => handleUpdate('content', 'nameAlign', align)} className={`p-1.5 rounded-md transition-all ${data.content.nameAlign === align ? 'bg-white text-[#00b900] shadow-sm' : 'text-slate-400'}`}>
+                                                            <i data-lucide={align === 'start' ? 'align-left' : align === 'center' ? 'align-center' : 'align-right'} className="w-4 h-4"></i>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <select value={data.content.nameSize} onChange={(e) => handleUpdate('content', 'nameSize', e.target.value)} className="text-xs border border-slate-300 rounded bg-white px-2 py-1.5 font-bold outline-none"> {FONT_SIZES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)} </select>
+                                                <input type="color" value={data.content.nameColor} onChange={(e) => handleUpdate('content', 'nameColor', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded overflow-hidden" />
+                                            </div>
+                                        </div>
+                                        <input type="text" value={data.content.name} onChange={(e) => handleUpdate('content', 'name', e.target.value)} className="w-full p-4 text-xl font-bold border border-slate-300 rounded-xl outline-none text-slate-800 bg-slate-50 focus:border-[#00b900]" placeholder="標題/姓名" />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-sm font-bold text-slate-700 uppercase">說明內容與對齊</label>
+                                            <div className="flex gap-2 items-center">
+                                                <div className="flex bg-slate-100 rounded-lg p-0.5 border border-slate-300 shadow-inner">
+                                                    {['start', 'center', 'end'].map(align => (
+                                                        <button key={align} onClick={() => handleUpdate('content', 'descAlign', align)} className={`p-1.5 rounded-md transition-all ${data.content.descAlign === align ? 'bg-white text-[#00b900] shadow-sm' : 'text-slate-400'}`}>
+                                                            <i data-lucide={align === 'start' ? 'align-left' : align === 'center' ? 'align-center' : 'align-right'} className="w-4 h-4"></i>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <select value={data.content.descSize} onChange={(e) => handleUpdate('content', 'descSize', e.target.value)} className="text-xs border border-slate-300 rounded bg-white px-2 py-1.5 font-bold outline-none"> {FONT_SIZES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)} </select>
+                                                <input type="color" value={data.content.descColor} onChange={(e) => handleUpdate('content', 'descColor', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded overflow-hidden" />
+                                            </div>
+                                        </div>
+                                        <textarea value={data.content.desc} onChange={(e) => handleUpdate('content', 'desc', e.target.value)} className="w-full p-4 text-base font-medium border border-slate-300 rounded-xl h-32 resize-none outline-none leading-relaxed text-slate-800 bg-slate-50 focus:border-[#00b900]" placeholder="職稱或詳細說明..." />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 4. 按鈕設定 */}
+                            <div className="border-2 border-[#00b900] rounded-xl bg-white overflow-hidden shadow-sm">
+                                <div className="p-4 bg-[#00b900] border-b border-[#00b900] flex items-center justify-between font-bold text-white text-lg">
+                                    <div className="flex items-center gap-2"><i data-lucide="layers" className="w-5 h-5"></i> 4. 按鈕區 ({data.footer.longBtns.length}/3)</div>
+                                    <button onClick={addLongBtn} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition-all"><i data-lucide="plus" className="w-4 h-4"></i> 新增</button>
+                                </div>
+                                <div className="p-5 space-y-6">
+                                    {data.footer.longBtns.map((btn, idx) => (
+                                        <div key={idx} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 relative group shadow-sm transition-all hover:border-[#00b900]/50">
+                                            <button onClick={() => deleteLongBtn(idx)} className="absolute -top-3 -right-3 bg-red-500 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all transform hover:rotate-12"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                                                <button onClick={() => updateLongBtn(idx, 'isSolid', !btn.isSolid)} className={`px-4 py-1 rounded-lg text-xs font-bold transition-all ${btn.isSolid ? 'bg-[#00b900] text-white shadow-sm' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>{btn.isSolid ? '實心風格' : '空心風格'}</button>
+                                                <div className="flex gap-4">
+                                                    <div className="text-center"><label className="text-[10px] block font-bold text-slate-400 mb-0.5">主色</label><input type="color" value={btn.themeColor} onChange={(e) => updateLongBtn(idx, 'themeColor', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded shadow-sm" /></div>
+                                                    <div className="text-center"><label className="text-[10px] block font-bold text-slate-400 mb-0.5">文字</label><input type="color" value={btn.textColor} onChange={(e) => updateLongBtn(idx, 'textColor', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded shadow-sm" /></div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <input type="text" value={btn.label} onChange={(e) => updateLongBtn(idx, 'label', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none bg-white font-bold text-slate-800" placeholder="按鈕文字" />
+                                                <input type="text" value={btn.uri} onChange={(e) => updateLongBtn(idx, 'uri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono bg-white text-slate-500" placeholder="https://..." />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 5. 底部快捷 */}
+                            <div className="border-2 border-[#00b900] rounded-xl bg-white overflow-hidden shadow-sm mb-12">
+                                <div className="p-4 bg-[#00b900] border-b border-[#00b900] flex items-center gap-2 font-bold text-white text-lg">
+                                    <i data-lucide="share-2" className="w-5 h-5"></i> 5. 底部快捷按鈕
+                                </div>
+                                <div className="p-5 space-y-8">
+                                    {data.footer.shortBtns.map((btn, idx) => (
+                                        <div key={idx} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
+                                            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                                                <button onClick={() => updateShortBtn(idx, 'isSolid', !btn.isSolid)} className={`px-4 py-1 rounded-lg text-xs font-bold transition-all ${btn.isSolid ? 'bg-[#00b900] text-white shadow-sm' : 'bg-slate-200 text-slate-500'}`}>{btn.isSolid ? '實心' : '空心'}</button>
+                                                <div className="flex gap-4"><input type="color" value={btn.themeColor} onChange={(e) => updateShortBtn(idx, 'themeColor', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded" /><input type="color" value={btn.textColor} onChange={(e) => updateShortBtn(idx, 'textColor', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded" /></div>
+                                            </div>
+                                            <div className="flex gap-2 p-3 bg-white rounded-xl overflow-x-auto scrollbar-hide shadow-inner border border-slate-200">
+                                                {Object.keys(SOCIAL_DATA).map(key => (
+                                                    <button key={key} onClick={() => updateShortBtn(idx, 'icon_data', { type: key, label: SOCIAL_DATA[key].label })} className={`p-3 rounded-lg shrink-0 transition-all ${btn.type === key ? 'bg-green-100 ring-2 ring-[#00b900] scale-110' : 'hover:bg-slate-100'}`}>
+                                                        {key === 'NONE' ? <i data-lucide="minus" className="w-5 h-5 text-slate-400"></i> : <img src={SOCIAL_DATA[key].url} className="w-6 h-6 object-contain" />}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-3">
+                                                <input type="text" value={btn.label} onChange={(e) => updateShortBtn(idx, 'label', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none font-bold text-slate-800" placeholder="標籤名稱" />
+                                                <input type="text" value={btn.uri} onChange={(e) => updateShortBtn(idx, 'uri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono text-slate-500" placeholder="跳轉網址" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 右側 Preview (w-1/2) */}
+                    <div className="flex-1 flex flex-col overflow-hidden bg-slate-200">
+                        <div className="h-[70px] bg-white border-b-2 border-slate-300 flex items-center px-10 gap-10 shrink-0 shadow-md">
+                            <button onClick={() => setActiveTab('editor')} className={`text-base font-bold h-full relative transition-all tracking-widest flex items-center gap-2 ${activeTab === 'editor' ? 'text-[#00b900] border-b-[5px] border-[#00b900]' : 'text-slate-400 hover:text-slate-600'}`}><i data-lucide="eye" className="w-5 h-5"></i> 視覺預覽</button>
+                            <button onClick={() => setActiveTab('json')} className={`text-base font-bold h-full relative transition-all tracking-widest flex items-center gap-2 ${activeTab === 'json' ? 'text-[#00b900] border-b-[5px] border-[#00b900]' : 'text-slate-400 hover:text-slate-600'}`}><i data-lucide="code" className="w-5 h-5"></i> JSON 代碼</button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto chat-room-bg">
+                            {activeTab === 'editor' ? (
+                                <div className="py-2 flex flex-col items-center min-h-full">
+                                    <div className="my-6 px-8 py-2 bg-slate-800/80 backdrop-blur rounded-3xl text-sm font-bold text-white shadow-xl border-2 border-[#00b900]/50 uppercase tracking-widest flex items-center gap-3">
+                                        <i data-lucide="smartphone" className="text-green-400"></i> LINE Flex {mediaType.toUpperCase()} Mode
+                                    </div>
+                                    <Preview />
+                                </div>
+                            ) : (
+                                <div className="p-12 max-w-6xl mx-auto w-full pt-4">
+                                    <div className="bg-slate-900 p-10 rounded-[3rem] shadow-2xl border-2 border-white/10 relative overflow-hidden">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-red-500"></div><div className="w-3 h-3 rounded-full bg-yellow-500"></div><div className="w-3 h-3 rounded-full bg-green-500"></div></div>
+                                            <button onClick={() => copyToClipboard(JSON.stringify(buildFinalJson(), null, 2))} className="bg-[#00b900] text-white px-6 py-2 rounded-xl text-xs font-bold shadow-lg hover:bg-green-500 transition-all uppercase tracking-widest">複製全部內容</button>
+                                        </div>
+                                        <pre className="text-green-400 font-mono text-sm overflow-x-auto leading-[1.8] custom-scrollbar selection:bg-green-800 selection:text-white">{JSON.stringify(buildFinalJson(), null, 2)}</pre>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
