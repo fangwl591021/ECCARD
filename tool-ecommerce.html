@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人電商版 LINE Flex Message Editor (v2.1.6)</title>
+    <title>個人電商版 LINE Flex Message Editor (v2.1.8)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -12,87 +12,86 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; color: #000000; font-weight: 700; }
         .chat-room-bg { background-color: #7988a0; width: 100%; height: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .flex-bubble-container { width: 100%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .flex-bubble-container { width: 100%; max-width: 350px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #000000; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+        .aspect-1-1 { aspect-ratio: 1 / 1; }
         .aspect-16-9 { aspect-ratio: 16 / 9; }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
+<body class="h-screen flex flex-col overflow-hidden text-slate-900">
+
+    <!-- Header -->
+    <header class="h-16 bg-white border-b border-slate-300 flex items-center justify-between px-6 z-20 flex-shrink-0 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="bg-[#06C755] p-2 rounded-lg text-white"><i data-lucide="layout-grid" class="w-6 h-6"></i></div>
+            <h1 class="font-bold text-xl text-slate-800">電商版 Flex 設計器 (完整置入版)</h1>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="undo()" id="btn-undo" class="px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition disabled:opacity-50 flex items-center gap-1"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> 復原</button>
+            <button onclick="syncToParent()" class="px-4 py-2 text-sm font-black text-white bg-[#06C755] rounded-lg hover:bg-[#05b34c] transition shadow-md flex items-center gap-2"><i data-lucide="refresh-cw" class="w-4 h-4"></i> 同步回主系統</button>
+        </div>
+    </header>
 
     <div class="flex-1 flex overflow-hidden">
         <!-- 左側編輯區 -->
-        <aside class="w-full md:w-[500px] bg-white border-r-2 border-slate-300 overflow-y-auto p-6 space-y-6 custom-scrollbar z-10 flex-shrink-0">
-            
-            <div class="flex items-center justify-between">
-                <h2 class="font-black text-xl text-slate-900 uppercase">電商版完整編輯器</h2>
-                <button onclick="undo()" id="btn-undo" class="px-3 py-1 text-xs font-black border-2 border-slate-300 rounded-lg hover:bg-slate-100 disabled:opacity-30 flex items-center gap-1">
-                    <i data-lucide="rotate-ccw" class="w-3 h-3"></i> 復原
-                </button>
-            </div>
-
-            <!-- 1. Hero 視覺 -->
-            <div class="border-2 border-black rounded-xl bg-white overflow-hidden shadow-sm">
-                <div class="p-3 bg-slate-100 border-b-2 border-black flex items-center gap-2 font-black"><i data-lucide="video"></i> 頂部影片設定</div>
-                <div class="p-4 space-y-3">
-                    <input type="text" id="input-hero-url" oninput="updateConfig('heroUrl', this.value)" class="w-full text-sm p-2 border-2 border-slate-200 rounded font-bold outline-none" placeholder="封面圖連結">
-                    <input type="text" id="input-video-url" oninput="updateConfig('videoUrl', this.value)" class="w-full text-sm p-2 border-2 border-slate-200 rounded font-bold outline-none" placeholder="影片 MP4 連結">
-                </div>
-            </div>
-
-            <!-- 2. 背景設定 -->
-            <div class="border-2 border-black rounded-xl bg-white overflow-hidden shadow-sm">
-                <div class="p-3 bg-slate-100 border-b-2 border-black flex items-center gap-2 font-black"><i data-lucide="palette"></i> Body 背景圖片</div>
-                <div class="p-4">
-                    <input type="text" id="input-body-bg" oninput="updateConfig('bodyBg', this.value)" class="w-full text-sm p-2 border-2 border-slate-200 rounded font-bold outline-none" placeholder="Body 背景圖連結">
-                </div>
-            </div>
-
-            <!-- 3. 商品清單 -->
-            <div class="border-2 border-black rounded-xl bg-white overflow-hidden shadow-sm">
-                <div class="p-3 bg-slate-100 border-b-2 border-black font-black flex items-center justify-between">
-                    <span><i data-lucide="shopping-cart"></i> 商品管理</span>
-                    <span id="item-count-badge" class="bg-black text-white px-2 rounded text-xs">0</span>
-                </div>
-                <div id="items-container" class="p-4 space-y-3"></div>
-                <button onclick="addItem()" class="w-full py-3 bg-slate-50 border-t-2 border-black font-black hover:bg-slate-100 transition">+ 新增商品</button>
-            </div>
-
-            <!-- 4. 動作按鈕 -->
-            <div class="border-2 border-black rounded-xl bg-white overflow-hidden shadow-sm mb-10">
-                <div class="p-3 bg-slate-100 border-b-2 border-black font-black flex items-center gap-2"><i data-lucide="external-link"></i> 底部按鈕連結</div>
-                <div class="p-4 space-y-4">
-                    <div class="p-3 bg-slate-50 border rounded-lg space-y-2">
-                        <div class="text-[10px] font-black">按鈕 1</div>
-                        <input type="text" id="input-f1-label" oninput="updateConfig('f1L', this.value)" class="w-full text-sm p-1 border rounded" placeholder="名稱">
-                        <input type="text" id="input-f1-uri" oninput="updateConfig('f1U', this.value)" class="w-full text-[10px] p-1 border rounded font-mono" placeholder="連結 URL">
+        <aside class="w-full md:w-[550px] bg-white border-r border-slate-300 overflow-y-auto p-6 space-y-8 custom-scrollbar z-10 flex-shrink-0">
+            <!-- 1. Hero 設定 -->
+            <div class="border-2 border-[#06C755] rounded-xl bg-white overflow-hidden shadow-sm font-black">
+                <div class="p-4 bg-[#06C755] border-b border-[#06C755] flex items-center gap-2 font-bold text-white text-lg"><i data-lucide="image" class="w-5 h-5 text-white"></i> 頂部 Hero 視覺</div>
+                <div class="p-5 space-y-5">
+                    <div id="hero-settings-container" class="space-y-4">
+                        <div><label class="text-sm font-bold text-slate-700 uppercase block">封面預覽圖 URL</label><input type="text" id="input-hero-url" oninput="updateConfig('heroUrl', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg outline-none font-bold"></div>
+                        <div><label class="text-sm font-bold text-slate-700 block">影片連結 (.mp4)</label><input type="text" id="input-video-url" oninput="updateConfig('videoUrl', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg outline-none font-bold"></div>
+                        <input type="text" id="input-hero-link" oninput="updateConfig('heroLink', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg outline-none font-bold" placeholder="Hero 點擊跳轉網址">
                     </div>
-                    <div class="p-3 bg-slate-50 border rounded-lg space-y-2">
-                        <div class="text-[10px] font-black">按鈕 2</div>
-                        <input type="text" id="input-f2-label" oninput="updateConfig('f2L', this.value)" class="w-full text-sm p-1 border rounded" placeholder="名稱">
-                        <input type="text" id="input-f2-uri" oninput="updateConfig('f2U', this.value)" class="w-full text-[10px] p-1 border rounded font-mono" placeholder="連結 URL">
+                </div>
+            </div>
+
+            <!-- 2. Body 設定 -->
+            <div class="border-2 border-[#06C755] rounded-xl bg-white overflow-hidden shadow-sm font-black">
+                <div class="p-4 bg-[#06C755] border-b border-[#06C755] flex items-center justify-between font-bold text-white text-lg">
+                    <div class="flex items-center gap-2"><i data-lucide="palette" class="w-5 h-5 text-white"></i> Body 背景與內容</div>
+                    <span class="text-xs bg-white/20 px-3 py-1 rounded-full text-white font-mono" id="item-count-badge">0 items</span>
+                </div>
+                <div class="p-5 space-y-5">
+                    <div><label class="text-sm font-bold text-slate-700 block">背景圖片網址</label><input type="text" id="input-body-bg" oninput="updateConfig('bodyBg', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg outline-none font-bold"></div>
+                    <div id="items-container" class="space-y-4"></div>
+                    <button onclick="addItem()" class="w-full py-3 border-2 border-dashed border-slate-400 rounded-xl text-slate-600 font-bold hover:bg-emerald-50 transition">+ 新增商品</button>
+                </div>
+            </div>
+
+            <!-- 3. Footer 設定 -->
+            <div class="border-2 border-[#06C755] rounded-xl bg-white overflow-hidden shadow-sm mb-12 font-black">
+                <div class="p-4 bg-[#06C755] border-b border-[#06C755] flex items-center gap-2 font-bold text-white text-lg"><i data-lucide="mouse-pointer-click" class="w-5 h-5 text-white"></i> 底部動作按鈕</div>
+                <div class="p-5 space-y-5">
+                    <div class="p-4 bg-slate-50 border border-slate-300 rounded-xl space-y-2">
+                        <input type="text" id="input-f1-label" oninput="updateConfig('f1L', this.value)" class="w-full text-sm p-2 border rounded font-bold" placeholder="按鈕 1 名稱">
+                        <input type="text" id="input-f1-uri" oninput="updateConfig('f1U', this.value)" class="w-full text-[10px] p-2 border rounded font-mono" placeholder="按鈕 1 URL">
+                    </div>
+                    <div class="p-4 bg-slate-50 border border-slate-300 rounded-xl space-y-2">
+                        <input type="text" id="input-f2-label" oninput="updateConfig('f2L', this.value)" class="w-full text-sm p-2 border rounded font-bold" placeholder="按鈕 2 名稱">
+                        <input type="text" id="input-f2-uri" oninput="updateConfig('f2U', this.value)" class="w-full text-[10px] p-2 border rounded font-mono" placeholder="按鈕 2 URL">
                     </div>
                 </div>
             </div>
         </aside>
 
         <!-- 右側預覽區 -->
-        <main class="flex-1 bg-slate-200 chat-room-bg custom-scrollbar relative">
+        <main class="flex-1 bg-slate-100 chat-room-bg custom-scrollbar relative">
             <div class="flex items-start gap-2 mb-8 w-full justify-center">
+                <div class="w-8 h-8 rounded-full bg-slate-400 shrink-0 mt-1 shadow-sm"></div>
                 <div class="bg-white rounded-xl overflow-hidden flex-bubble-container flex flex-col">
-                    <!-- Hero 預覽 -->
                     <div id="view-hero-container" class="relative w-full aspect-16-9 bg-black overflow-hidden shrink-0">
                         <img id="view-video-poster" src="" class="absolute inset-0 w-full h-full object-cover opacity-60">
                         <div class="absolute inset-0 flex items-center justify-center"><i data-lucide="play" class="w-12 h-12 text-white fill-white"></i></div>
                     </div>
-                    <!-- Body 預覽 -->
                     <div class="relative w-full p-4" id="view-body-container">
                         <img id="view-body-bg" src="" class="absolute inset-0 w-full h-full object-cover z-0">
                         <div id="view-grid" class="relative z-10 grid grid-cols-3 gap-2"></div>
                     </div>
-                    <!-- Footer 預覽 -->
                     <div class="p-3 border-t border-slate-100 flex gap-2" id="view-footer">
-                        <div id="view-btn-1" class="flex-1 py-2 rounded text-[10px] font-black text-white text-center bg-black"></div>
+                        <div id="view-btn-1" class="flex-1 py-2 rounded text-[10px] font-bold text-white text-center bg-black"></div>
                         <div id="view-btn-2" class="flex-1 py-2 rounded text-[10px] font-black text-white text-center bg-black"></div>
                     </div>
                 </div>
@@ -104,15 +103,25 @@
     <script>
         lucide.createIcons();
 
+        // --- 預設完整範例資料 ---
         let state = {
-            hero: { url: "", videoUrl: "" },
-            body: { bg: "", items: [] },
-            footer: { btn1: { label: "", uri: "" }, btn2: { label: "", uri: "" } }
+            hero: { type: 'video', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "https://lihi.cc/YsmAp", link: "https://line.me" },
+            body: { columns: 3, bubbleSize: "mega", bgColor: "#F8F8F8", bg: "https://lihi.cc/l5qqU", tagBgColor: "#0D0D0D", tagTextColor: "#FFFFFF",
+                items: [
+                    { title: "商品 A", img: "https://lihi.cc/mwMvo", url: "https://line.me" },
+                    { title: "商品 B", img: "https://lihi.cc/2Nu8G", url: "https://line.me" },
+                    { title: "商品 C", img: "https://lihi.cc/yRfpn", url: "https://line.me" },
+                    { title: "商品 D", img: "https://lihi.cc/yRfpn", url: "https://line.me" },
+                    { title: "商品 E", img: "https://lihi.cc/2Nu8G", url: "https://line.me" },
+                    { title: "商品 F", img: "https://lihi.cc/mwMvo", url: "https://line.me" }
+                ]
+            },
+            footer: { bg: "#ffffff", btn1: { label: "品牌故事", color: "#000000", uri: "https://liff.line.me/2008704329-cTkwlRHm" }, btn2: { label: "好友分享", color: "#000000", uri: "line://nv/recommendOA/@754tjssx" } }
         };
 
         let history = [];
 
-        // --- 與母系統通訊 ---
+        // --- 通訊機制 ---
         window.addEventListener('message', (event) => {
             if (event.data && event.data.type === 'LOAD_FLEX_DATA') {
                 try {
@@ -133,26 +142,25 @@
             window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify(flexJson) }, '*');
         }
 
-        // --- 逆向解析：核心功能 ---
+        // --- 核心：強大的逆向解析還原邏輯 ---
         function reverseMapFlexToState(flex) {
             // 1. Hero
             state.hero.url = flex.hero?.previewUrl || "";
             state.hero.videoUrl = flex.hero?.url || "";
+            state.hero.link = flex.hero?.action?.uri || "";
 
-            // 2. Body Background & Items
-            const bodyBox = flex.body?.contents?.[0]; // 外部容器
-            // 尋找背景圖
+            // 2. Body
+            const bodyBox = flex.body?.contents?.[0]; 
             state.body.bg = bodyBox?.contents?.[0]?.url || "";
             
-            // 尋找商品列表 (通常在第二個垂直 Box)
-            const contentBox = bodyBox?.contents?.[1];
+            const allItems = [];
+            const contentBox = bodyBox?.contents?.[1]; // 商品容器
             const rows = contentBox?.contents || [];
-            let allItems = [];
             rows.forEach(row => {
                 if (row.contents) {
                     row.contents.forEach(item => {
                         allItems.push({
-                            title: item.contents?.[1]?.contents?.[0]?.text || "未命名",
+                            title: item.contents?.[1]?.contents?.[0]?.text || "商品",
                             img: item.contents?.[0]?.url || "",
                             url: item.action?.uri || ""
                         });
@@ -161,7 +169,7 @@
             });
             state.body.items = allItems;
 
-            // 3. Footer Buttons
+            // 3. Footer
             const btns = flex.footer?.contents || [];
             if (btns[0]) {
                 state.footer.btn1.label = btns[0].action?.label || "";
@@ -191,11 +199,18 @@
             saveState();
             if(path === 'heroUrl') state.hero.url = value;
             if(path === 'videoUrl') state.hero.videoUrl = value;
+            if(path === 'heroLink') state.hero.link = value;
             if(path === 'bodyBg') state.body.bg = value;
             if(path === 'f1L') state.footer.btn1.label = value;
             if(path === 'f1U') state.footer.btn1.uri = value;
             if(path === 'f2L') state.footer.btn2.label = value;
             if(path === 'f2U') state.footer.btn2.uri = value;
+            render(); syncToParent();
+        }
+
+        function updateItem(index, field, value) {
+            saveState();
+            state.body.items[index][field] = value;
             render(); syncToParent();
         }
 
@@ -208,6 +223,7 @@
         function syncUI() {
             document.getElementById('input-hero-url').value = state.hero.url;
             document.getElementById('input-video-url').value = state.hero.videoUrl;
+            document.getElementById('input-hero-link').value = state.hero.link;
             document.getElementById('input-body-bg').value = state.body.bg;
             document.getElementById('input-f1-label').value = state.footer.btn1.label;
             document.getElementById('input-f1-uri').value = state.footer.btn1.uri;
@@ -219,15 +235,12 @@
             container.innerHTML = '';
             state.body.items.forEach((item, i) => {
                 const div = document.createElement('div');
-                div.className = "p-3 bg-white border-2 border-slate-200 rounded-lg space-y-2 relative shadow-sm";
+                div.className = "p-3 bg-white border-2 border-slate-200 rounded-lg space-y-2 relative shadow-sm font-black";
                 div.innerHTML = `
-                    <button onclick="state.body.items.splice(${i},1);syncUI();render();syncToParent()" class="absolute top-2 right-2 text-slate-300 hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    <div class="flex items-center gap-3">
-                        <img src="${item.img}" class="w-10 h-10 rounded object-cover border">
-                        <input type="text" value="${item.title}" oninput="state.body.items[${i}].title=this.value;render();syncToParent()" class="flex-1 text-sm border-b font-black outline-none" placeholder="品名">
-                    </div>
+                    <button onclick="state.body.items.splice(${i},1);syncUI();render();syncToParent()" class="absolute top-2 right-2 text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <div class="flex items-center gap-3"><img src="${item.img}" class="w-10 h-10 rounded object-cover border"><input type="text" value="${item.title}" oninput="state.body.items[${i}].title=this.value;render();syncToParent()" class="flex-1 text-sm border-b outline-none font-bold" placeholder="品名"></div>
                     <input type="text" value="${item.img}" oninput="state.body.items[${i}].img=this.value;render();syncToParent()" class="w-full text-[9px] border rounded p-1 font-mono" placeholder="圖片連結">
-                    <input type="text" value="${item.url}" oninput="state.body.items[${i}].url=this.value;render();syncToParent()" class="w-full text-[9px] border rounded p-1 font-mono" placeholder="點擊跳轉連結">
+                    <input type="text" value="${item.url}" oninput="state.body.items[${i}].url=this.value;render();syncToParent()" class="w-full text-[9px] border rounded p-1 font-mono" placeholder="點擊跳轉網址">
                 `;
                 container.appendChild(div);
             });
@@ -238,14 +251,12 @@
             document.getElementById('view-video-poster').src = state.hero.url;
             document.getElementById('view-body-bg').src = state.body.bg;
             const grid = document.getElementById('view-grid');
+            grid.className = `relative z-10 grid gap-2 grid-cols-3`;
             grid.innerHTML = '';
             state.body.items.forEach(item => {
                 const el = document.createElement('div');
                 el.className = "bg-white rounded p-1 shadow-sm flex flex-col";
-                el.innerHTML = `
-                    <div class="relative w-full aspect-square bg-slate-100 rounded-sm overflow-hidden mb-1"><img src="${item.img}" class="w-full h-full object-cover"></div>
-                    <div style="background-color: #0D0D0D; color: #FFFFFF;" class="text-[8px] font-black text-center py-0.5 rounded-sm truncate">${item.title}</div>
-                `;
+                el.innerHTML = `<div class="aspect-square bg-slate-100 rounded-sm overflow-hidden mb-1"><img src="${item.img}" class="w-full h-full object-cover"></div><div style="background-color: #0D0D0D; color: #FFFFFF;" class="text-[8px] font-black text-center py-0.5 rounded-sm truncate">${item.title}</div>`;
                 grid.appendChild(el);
             });
             document.getElementById('view-btn-1').innerText = state.footer.btn1.label || "按鈕 1";
