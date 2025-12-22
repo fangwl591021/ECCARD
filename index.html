@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 終極移植版 (v2.1.9)</title>
+    <title>FLEX Hub Pro - 穩定修復版 (v2.2.1)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -32,6 +32,10 @@
             min-width: 250px; text-align: center;
         }
         @keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 20px; opacity: 1; } }
+
+        /* 刪除確認對話框 */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10001; animation: fadeIn 0.2s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -40,63 +44,40 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- 1. 配置與常量 ---
-        const APP_VERSION = "v2.1.9";
+        const APP_VERSION = "v2.2.1";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxvR4ZYD3mzV7XuvekybEK4iKG5KWwN9-EebrFxkIsH5zVsgRtkn4rp0N-_Sdll4y8/exec"; 
 
-        // --- 2. 核心工具函式 (定義在頂部) ---
+        // --- 核心工具 ---
         function cleanJsonText(str) {
             if (!str) return "";
             let s = String(str).trim();
-            // 處理 Excel 匯出可能產生的雙引號問題
-            if (s.startsWith('"') && s.endsWith('"')) { 
-                s = s.substring(1, s.length - 1).replace(/""/g, '"'); 
-            }
+            if (s.startsWith('"') && s.endsWith('"')) { s = s.substring(1, s.length - 1).replace(/""/g, '"'); }
             return s;
         }
 
-        // --- 3. 完整版型模板 ---
+        // --- 電商完整模板 ---
         const ECOMMERCE_FULL_TEMPLATE = JSON.stringify({
             "type": "bubble", "size": "mega",
-            "hero": { 
-                "type": "video", 
-                "url": "https://lihi.cc/YsmAp", 
-                "previewUrl": "https://lihi.cc/5OXMZ", 
-                "aspectRatio": "16:9", 
-                "altContent": { "type": "image", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover", "url": "https://lihi.cc/5OXMZ" } 
-            },
+            "hero": { "type": "video", "url": "https://lihi.cc/YsmAp", "previewUrl": "https://lihi.cc/5OXMZ", "aspectRatio": "16:9", "altContent": { "type": "image", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover", "url": "https://lihi.cc/5OXMZ" } },
             "body": {
                 "type": "box", "layout": "vertical", "backgroundColor": "#F8F8F8", "paddingAll": "none",
                 "contents": [{ "type": "box", "layout": "vertical", "contents": [
                     { "type": "image", "url": "https://lihi.cc/l5qqU", "position": "absolute", "size": "full", "aspectMode": "cover" },
                     { "type": "box", "layout": "vertical", "paddingAll": "md", "contents": [
                         { "type": "box", "layout": "horizontal", "contents": [
-                            { "type": "box", "layout": "vertical", "width": "32%", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/mwMvo", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 A", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
-                            { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/2Nu8G", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 B", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
-                            { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/yRfpn", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 C", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] }
-                        ]},
-                        { "type": "box", "layout": "horizontal", "margin": "md", "contents": [
-                            { "type": "box", "layout": "vertical", "width": "32%", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/yRfpn", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 D", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
-                            { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/2Nu8G", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 E", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
-                            { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/mwMvo", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 F", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] }
+                            { "type": "box", "layout": "vertical", "width": "32%", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/mwMvo", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 A", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] }
                         ]}
                     ] }
                 ] }]
             },
             "footer": { "type": "box", "layout": "horizontal", "spacing": "md", "backgroundColor": "#ffffff", "paddingTop": "md", "contents": [
-                { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "品牌故事", "uri": "https://liff.line.me/2008704329-cTkwlRHm" } },
-                { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "好友分享", "uri": "line://nv/recommendOA/@754tjssx" } }
+                { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "官方網站", "uri": "https://line.me" } }
             ]}
         }, null, 2);
 
-        const PROJECTS = {
-            ECOMMERCE: { id: 'ECOMMERCE', name: "電商商品版", url: "./tool-ecommerce.html", template: ECOMMERCE_FULL_TEMPLATE }
-        };
-
-        // --- 4. 子組件定義 ---
-
+        // --- 子組件：Icon ---
         const Icon = ({ name, className = "w-4 h-4" }) => {
             const icons = {
                 left: <polyline points="15 18 9 12 15 6" />,
@@ -105,33 +86,50 @@
                 send: <React.Fragment><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></React.Fragment>,
                 trash: <React.Fragment><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></React.Fragment>,
                 code: <React.Fragment><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></React.Fragment>,
-                x: <React.Fragment><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></React.Fragment>
+                x: <React.Fragment><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></React.Fragment>,
+                alert: <React.Fragment><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></React.Fragment>
             };
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || null}</svg>;
         };
 
+        // --- 子組件：DeleteModal (解決 Confirm 被封鎖問題) ---
+        const DeleteModal = ({ onConfirm, onCancel, name }) => (
+            <div className="modal-overlay">
+                <div className="bg-white rounded-3xl p-8 max-w-xs w-full shadow-2xl border-4 border-black font-black text-black">
+                    <div className="flex justify-center mb-4 text-red-600 animate-bounce"><Icon name="alert" className="w-12 h-12" /></div>
+                    <h3 className="text-xl text-center mb-2">確定要刪除嗎？</h3>
+                    <p className="text-sm text-center text-slate-500 mb-6 italic">「{name}」將會永久從雲端移除，無法復原。</p>
+                    <div className="flex gap-3">
+                        <button onClick={onCancel} className="flex-1 py-3 border-2 border-slate-300 rounded-xl hover:bg-slate-50">取消</button>
+                        <button onClick={onConfirm} className="flex-1 py-3 bg-red-600 text-white rounded-xl shadow-lg active:scale-95">確定刪除</button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- 組件：DirectoryView ---
         const DirectoryView = ({ files, projectName, onAdd, onEdit, onDelete }) => (
-            <div className="p-8 h-full overflow-y-auto custom-scrollbar animate-in fade-in duration-300 font-bold text-black">
+            <div className="p-8 h-full overflow-y-auto custom-scrollbar font-bold text-black animate-in fade-in duration-300">
                 <div className="flex justify-between items-end border-b border-slate-300 pb-6 mb-6">
                     <div>
                         <h2 className="text-2xl font-black uppercase tracking-tighter">{projectName}</h2>
-                        <p className="text-black text-sm mt-1 opacity-60">FLEX HUB OA (v2.1.9)</p>
+                        <p className="text-black text-sm mt-1 opacity-60">FLEX HUB OA (v2.2.1)</p>
                     </div>
-                    <button onClick={onAdd} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 shadow-md active:scale-95 transition-all"><Icon name="plus" /> 建立新設計</button>
+                    <button onClick={onAdd} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 shadow-md active:scale-95"><Icon name="plus" /> 建立新設計</button>
                 </div>
                 <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm font-black">
                     <table className="w-full text-left text-base">
-                        <thead className="bg-slate-100 border-b border-slate-300 uppercase text-sm">
-                            <tr><th className="p-5">設計名稱</th><th className="p-5 text-center">狀態</th><th className="p-5 text-right">管理</th></tr>
+                        <thead className="bg-slate-100 border-b border-slate-300 uppercase text-sm font-black">
+                            <tr><th className="p-5">專案名稱</th><th className="p-5 text-center">存檔狀態</th><th className="p-5 text-right">操作管理</th></tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
-                            {files.length === 0 ? <tr><td colSpan="3" className="p-10 text-center italic opacity-30">無數據存檔...</td></tr> : files.map(f => (
-                                <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors">
+                            {files.length === 0 ? <tr><td colSpan="3" className="p-10 text-center italic opacity-30">目前無存檔數據...</td></tr> : files.map(f => (
+                                <tr key={String(f.id)} className="hover:bg-slate-50 font-black">
                                     <td className="p-5 font-black text-xl">{f.name}</td>
-                                    <td className="p-5 text-center"><span className={`px-3 py-1 rounded-full text-xs font-black ${f.content ? 'bg-green-100 text-green-700' : 'bg-slate-200'}`}>{f.content ? '✓ 已存' : '○ 空白'}</span></td>
-                                    <td className="p-5 text-right space-x-6">
+                                    <td className="p-5 text-center"><span className={`px-4 py-1 rounded-full text-xs font-black ${f.content ? 'bg-green-100 text-green-700' : 'bg-slate-200'}`}>{f.content ? '✓ 已同步' : '○ 空白'}</span></td>
+                                    <td className="p-5 text-right space-x-8">
                                         <button onClick={()=>onEdit(f)} className="text-blue-700 font-black hover:underline text-xl">編輯</button>
-                                        <button onClick={()=>onDelete(f.id)} className="text-red-600 hover:text-red-800"><Icon name="trash" className="w-6 h-6" /></button>
+                                        <button onClick={()=>onDelete(f)} className="text-red-500 hover:text-red-700"><Icon name="trash" className="w-8 h-8" /></button>
                                     </td>
                                 </tr>
                             ))}
@@ -141,11 +139,10 @@
             </div>
         );
 
+        // --- 組件：EditorView ---
         const EditorView = ({ file, onSave, onCancel, projectUrl, defaultTemplate }) => {
             const [localName, setLocalName] = useState(file.name || "未命名設計");
             const [localJson, setLocalJson] = useState(cleanJsonText(file.content || defaultTemplate));
-            const [showJson, setShowJson] = useState(false);
-            const [toast, setToast] = useState(null);
             const iframeRef = useRef(null);
 
             useEffect(() => {
@@ -159,54 +156,40 @@
                 return () => window.removeEventListener('message', handleMessage);
             }, [localJson, defaultTemplate]);
 
-            const handleSend = async () => {
-                try {
-                    // 傳送前先替換變數
-                    const finalCode = cleanJsonText(localJson).replace(/\{\{LIFF_URL\}\}/g, LIFF_URL);
-                    const flexMessage = JSON.parse(finalCode);
-                    if (liff.isApiAvailable('shareTargetPicker')) {
-                        const result = await liff.shareTargetPicker([{ type: "flex", altText: `設計：${localName}`, contents: flexMessage }]);
-                        if (result) { setToast("✅ 發送成功！"); setTimeout(()=>setToast(null), 3000); }
-                    }
-                } catch (e) { alert("JSON 格式錯誤，無法發送"); }
-            };
-
             return (
                 <div className="h-full flex flex-col bg-white overflow-hidden relative font-black text-black">
-                    {toast && <div className="toast">{toast}</div>}
-                    <div className="h-16 border-b border-slate-300 px-6 flex items-center justify-between bg-white z-20 shadow-sm">
-                        <div className="flex items-center gap-4 flex-1">
+                    <div className="h-16 border-b border-slate-300 px-6 flex items-center justify-between bg-white z-20 shadow-sm font-black">
+                        <div className="flex items-center gap-4 flex-1 font-black">
                             <button onClick={onCancel} className="text-black hover:text-green-600"><Icon name="left" className="w-8 h-8" /></button>
                             <input type="text" value={localName} onChange={e=>setLocalName(e.target.value)} className="bg-transparent border-none p-0 outline-none focus:text-[#06C755] text-lg w-full max-w-sm font-black" />
                         </div>
-                        <div className="flex items-center gap-3">
-                            <button onClick={handleSend} className="bg-[#06C755] text-white px-5 py-2.5 rounded-lg text-sm flex items-center gap-2 active:scale-95 shadow-md font-black"><Icon name="send" /> <span>發送設計</span></button>
-                            <button onClick={()=>setShowJson(!showJson)} className={`p-2.5 rounded-lg border transition-all ${showJson ? 'bg-blue-600 text-white' : 'text-black'}`}><Icon name="code" /></button>
-                            <button onClick={()=>onSave(file.id, localName, localJson)} className="bg-black text-white px-5 py-2.5 rounded-lg font-black text-sm active:scale-95 shadow-md font-black"><Icon name="save" /> 儲存至雲端</button>
-                        </div>
+                        <button onClick={()=>onSave(file.id, localName, localJson)} className="bg-black text-white px-8 py-2.5 rounded-xl font-black text-sm active:scale-95 shadow-md flex items-center gap-2"><Icon name="save" /> 儲存至雲端</button>
                     </div>
-                    <div className="flex-1 flex relative overflow-hidden">
-                        <div className={`absolute right-0 top-0 bottom-0 w-96 bg-slate-900 border-l border-slate-800 z-30 shadow-2xl p-6 flex flex-col gap-4 drawer-transition ${showJson ? 'translate-x-0' : 'translate-x-full'}`}>
-                            <div className="flex justify-between items-center text-white text-sm"><span className="flex items-center gap-2 text-green-400 uppercase tracking-widest"><Icon name="code" />JSON 同步</span><button onClick={()=>setShowJson(false)} className="text-white"><Icon name="x" /></button></div>
-                            <textarea value={localJson} onChange={e=>setLocalJson(e.target.value)} className="flex-1 w-full bg-slate-950 border border-slate-700 rounded-xl p-4 font-mono text-[11px] text-green-500 outline-none custom-scrollbar leading-relaxed font-bold font-black" />
-                        </div>
+                    <div className="flex-1 relative">
                         <iframe ref={iframeRef} src={projectUrl} className="iframe-container" allow="clipboard-read; clipboard-write"></iframe>
                     </div>
                 </div>
             );
         };
 
+        // --- 主程式：App ---
         const App = () => {
             const [viewState, setViewState] = useState('LOADING'); 
             const [user, setUser] = useState(null);
+            const [profile, setProfile] = useState(null);
             const [activeLevel2, setActiveLevel2] = useState('ECOMMERCE');
             const [activeFile, setActiveFile] = useState(null);
             const [userFiles, setUserFiles] = useState([]);
             const [isGlobalLoading, setIsGlobalLoading] = useState(false);
+            const [deleteTarget, setDeleteTarget] = useState(null);
 
-            const refreshFiles = async (uid) => {
+            const PROJECTS = {
+                ECOMMERCE: { id: 'ECOMMERCE', name: "電商商品版", url: "./tool-ecommerce.html", template: ECOMMERCE_FULL_TEMPLATE }
+            };
+
+            const refreshFiles = async (uid, role) => {
                 try {
-                    const res = await fetch(`${GAS_URL}?userId=${uid}&action=getFiles`);
+                    const res = await fetch(`${GAS_URL}?userId=${uid}&action=getFiles&role=${role==='系統管理員'?'ADMIN':'USER'}`);
                     const data = await res.json();
                     setUserFiles(data || []);
                 } catch(e) {}
@@ -214,17 +197,20 @@
 
             useEffect(() => {
                 const init = async () => {
-                    const isPreview = window.location.href.includes('usercontent.goog');
                     try {
+                        const isPreview = window.location.href.includes('usercontent.goog');
                         if (isPreview) {
-                            const mockUser = { uid: 'DEBUG', displayName: '測試管理員' };
-                            setUser(mockUser); await refreshFiles(mockUser.uid); setViewState('MAIN'); return;
+                            const mockUser = { uid: 'DEBUG', displayName: '測試員' };
+                            setUser(mockUser); setProfile({ status: 'APPROVED', name: '管理員', role: '系統管理員' });
+                            await refreshFiles(mockUser.uid, '系統管理員'); setViewState('MAIN'); return;
                         }
                         await liff.init({ liffId: LIFF_ID });
                         if (!liff.isLoggedIn()) { setViewState('LOGIN'); return; }
                         const lp = await liff.getProfile();
                         setUser({ uid: lp.userId, displayName: lp.displayName });
-                        await refreshFiles(lp.userId); setViewState('MAIN');
+                        const res = await fetch(`${GAS_URL}?userId=${lp.userId}&action=checkStatus`);
+                        const gasData = await res.json();
+                        setProfile(gasData); await refreshFiles(lp.userId, gasData.role); setViewState('MAIN');
                     } catch (e) { setViewState('LOGIN'); }
                 };
                 init();
@@ -234,42 +220,52 @@
                 setIsGlobalLoading(true);
                 try {
                     const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: String(user.uid), id: String(id), name, content }) });
-                    if ((await res.json()).success) { await refreshFiles(user.uid); setActiveFile(null); }
-                } catch (e) { alert("儲存失敗，請檢查權限設定"); }
+                    if ((await res.json()).success) { await refreshFiles(user.uid, profile.role); setActiveFile(null); }
+                } catch (e) { alert("儲存失敗"); }
                 setIsGlobalLoading(false);
             };
 
-            const handleDelete = async (id) => {
-                if(!confirm("確定要永久刪除此設計？")) return;
+            const confirmDelete = async () => {
+                if (!deleteTarget) return;
                 setIsGlobalLoading(true);
-                try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteFile', userId: String(user.uid), id: String(id) }) }); await refreshFiles(user.uid); } catch (e) {}
+                const targetId = deleteTarget.id;
+                setDeleteTarget(null);
+                try {
+                    const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteFile', userId: String(user.uid), id: String(targetId) }) });
+                    const result = await res.json();
+                    if (result.success) {
+                        await refreshFiles(user.uid, profile.role);
+                    }
+                } catch (e) { alert("刪除時發生連線錯誤"); }
                 setIsGlobalLoading(false);
             };
 
-            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white italic animate-pulse font-black"><div className="loader mb-4"></div>HUB LOADING...</div>;
-            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">登入系統</button></div>;
+            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white italic animate-pulse font-black font-black"><div className="loader mb-4 font-black font-black"></div>SYNCING HUB...</div>;
+            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black font-black font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all font-black">登入中心系統</button></div>;
 
             return (
-                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black">
-                    {isGlobalLoading && <div className="overlay-loading font-black text-xl uppercase italic"><div className="loader mb-4"></div>數據處理中...</div>}
+                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black font-black font-black">
+                    {isGlobalLoading && <div className="overlay-loading font-black text-xl uppercase italic font-black font-black font-black"><div className="loader mb-4 font-black"></div>數據處理中...</div>}
+                    {deleteTarget && <DeleteModal name={deleteTarget.name} onConfirm={confirmDelete} onCancel={()=>setDeleteTarget(null)} />}
+                    
                     <aside className="w-64 line-sidebar flex flex-col shrink-0 border-r border-slate-300 font-black">
-                        <div className="h-16 flex flex-col justify-center px-6 border-b border-slate-300 bg-white shadow-sm z-10">
-                            <span className="font-black text-[#06C755] text-xl uppercase italic tracking-tighter">Flex Hub OA</span>
+                        <div className="h-16 flex flex-col justify-center px-6 border-b border-slate-300 bg-white shadow-sm z-10 font-black font-black">
+                            <span className="font-black text-[#06C755] text-xl uppercase italic tracking-tighter font-black">Flex Hub OA</span>
                         </div>
-                        <nav className="flex-1 overflow-y-auto pt-4">
+                        <nav className="flex-1 overflow-y-auto pt-4 font-black">
                             {Object.keys(PROJECTS).map(key => (
-                                <button key={key} onClick={()=>{setActiveLevel2(key); setActiveFile(null);}} className={`w-full text-left px-10 py-5 text-sm transition-all border-r-4 font-black ${activeLevel2 === key && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent'}`}>{PROJECTS[key].name}</button>
+                                <button key={key} onClick={()=>{setActiveLevel2(key); setActiveFile(null);}} className={`w-full text-left px-10 py-6 text-base transition-all border-r-4 font-black ${activeLevel2 === key && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent'}`}>{PROJECTS[key].name}</button>
                             ))}
                         </nav>
-                        <div className="p-5 border-t border-slate-300 bg-white flex items-center gap-3 font-black uppercase text-xs">
-                            <div className="truncate font-bold text-black">{user?.displayName}</div>
+                        <div className="p-5 border-t border-slate-300 bg-white font-black uppercase text-xs font-black">
+                            <div className="truncate font-black text-black font-black">{profile?.name || user?.displayName}</div>
                         </div>
                     </aside>
-                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner font-bold">
+                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner font-bold font-black font-black">
                         {activeFile ? (
                             <EditorView key={String(activeFile.id)} file={activeFile} onSave={handleSave} onCancel={() => setActiveFile(null)} projectUrl={PROJECTS[activeLevel2].url} defaultTemplate={PROJECTS[activeLevel2].template} />
                         ) : (
-                            <DirectoryView projectName={PROJECTS[activeLevel2].name} files={userFiles} onAdd={()=>setActiveFile({id: String(Date.now()), name:"新專案設計", content: PROJECTS[activeLevel2].template})} onEdit={f=>setActiveFile(f)} onDelete={handleDelete} />
+                            <DirectoryView projectName={PROJECTS[activeLevel2].name} files={userFiles} onAdd={()=>setActiveFile({id: String(Date.now()), name:"新電商設計", content: PROJECTS[activeLevel2].template})} onEdit={f=>setActiveFile(f)} onDelete={f=>setDeleteTarget(f)} />
                         )}
                     </main>
                 </div>
