@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人單頁名片 - 專業優化版 (100% 完整移植 v2.3.1)</title>
+    <title>個人單頁名片 - 專業優化版 (100% 完整移植 v2.3.3)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -38,7 +38,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- 您原始定義的全局常數 ---
+        // --- 全局常數定義 ---
         const SOCIAL_DATA = {
             NONE: { url: "", label: "無圖示" },
             FB: { url: "https://cdn-icons-png.flaticon.com/512/733/733547.png", label: "Facebook" },
@@ -108,7 +108,7 @@
             });
             const isInitialMount = useRef(true);
 
-            // --- 只有此處是新增的通訊邏輯，其餘皆為原版 ---
+            // --- 通訊邏輯 ---
             useEffect(() => {
                 const handleMessage = (event) => {
                     if (event.data && event.data.type === 'LOAD_FLEX_DATA') {
@@ -132,7 +132,7 @@
                 window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify(flexJson) }, '*');
             }, [data, mediaType, videoConfig]);
 
-            // 逆向解析器：確保點擊編輯時，資料能 1:1 還原到您的 UI 控制項
+            // 逆向解析：完全依照您的 JSON 結構還原
             const reverseMapFlexToState = (flex) => {
                 const newState = JSON.parse(JSON.stringify(data));
                 newState.size = flex.size || "mega";
@@ -203,7 +203,7 @@
                 setData(newState);
             };
 
-            // --- 您的原始邏輯函式 ---
+            // --- 原始邏輯函式 ---
             const getMediaHeight = () => {
                 const [w, h] = data.media.aspectRatio.split(':').map(Number);
                 const baseW = data.size === 'giga' ? 420 : 300;
@@ -271,13 +271,11 @@
                 const mediaH = getMediaHeight();
 
                 if (mediaType === 'video') {
-                    // 原版邏輯：影片放 Hero
                     bubble.hero = {
                         type: "video", url: videoConfig.url, previewUrl: videoConfig.previewUrl, aspectRatio: data.media.aspectRatio,
                         altContent: { type: "image", size: "full", aspectRatio: data.media.aspectRatio, aspectMode: "cover", url: videoConfig.previewUrl, backgroundColor: "#000000" }
                     };
                 } else {
-                    // 原版邏輯：圖片放 Body 支援標籤定位
                     bubble.body.contents.push({
                         type: "box", layout: "vertical",
                         contents: [
@@ -322,11 +320,10 @@
                 return bubble;
             };
 
-            // --- 您的原始預覽組件 (統一命稱為 PreviewComp 以修復 ReferenceError) ---
             const PreviewComp = () => {
                 const bubbleW = data.size === 'giga' ? '420px' : '300px';
                 const mediaH = getMediaHeight();
-                // 原版邏輯：影片模式頭像不覆蓋
+                // 完全照抄您的原始邏輯：影片模式 offsetTop 為 mediaH + 10，不遮擋
                 const avatarOff = mediaType === 'video' ? mediaH + 10 : mediaH - 45;
                 const txtPad = data.avatar.show ? (mediaType === 'video' ? 95 : 45) : 15;
 
@@ -352,9 +349,9 @@
             };
 
             return (
-                <div className="flex h-screen bg-slate-100 text-slate-900 overflow-hidden font-black">
-                    {/* 左側 Sidebar (w-1/2) - 您原始的佈局 */}
-                    <div className="w-1/2 bg-white border-r border-slate-300 flex flex-col shadow-xl z-10 font-bold">
+                <div className="flex h-screen bg-slate-100 text-slate-900 overflow-hidden">
+                    {/* 左側 Sidebar */}
+                    <div className="w-1/2 bg-white border-r border-slate-300 flex flex-col shadow-xl z-10">
                         <div className="p-6 bg-white border-b border-slate-300 flex items-center justify-between shrink-0 shadow-sm">
                             <div className="flex items-center gap-3">
                                 <div className="bg-[#00b900] p-2 rounded-lg text-white"><i data-lucide="layout-grid" className="w-6 h-6"></i></div>
@@ -363,7 +360,7 @@
                             <button onClick={handleCopy} className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-95 shadow-md"><i data-lucide="copy" className="w-4 h-4"></i> 複製 JSON</button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-                            {/* 1. 媒體層 */}
+                            {/* 1. 媒體層設定 */}
                             <div className="border-2 border-[#00b900] rounded-xl bg-white overflow-hidden shadow-sm">
                                 <div className="p-4 bg-[#00b900] border-b border-[#00b900] flex items-center gap-2 font-bold text-white text-lg"><i data-lucide="monitor" className="w-5 h-5"></i> 1. 媒體層設定</div>
                                 <div className="p-5 space-y-5">
@@ -372,22 +369,23 @@
                                         <button onClick={() => setMediaType('video')} className={`flex-1 py-2 text-sm font-bold rounded-md transition ${mediaType === 'video' ? 'bg-white shadow-sm text-[#00b900]' : 'text-slate-600'}`}>影片模式</button>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div><label className="text-sm font-bold text-slate-700 uppercase mb-1.5 block">規格</label><select value={data.size} onChange={(e) => handleUpdate('root', 'size', e.target.value)} className="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white outline-none"> {BUBBLE_SIZES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)} </select></div>
-                                        <div><label className="text-sm font-bold text-slate-700 uppercase mb-1.5 block">比例</label><select value={data.media.aspectRatio} onChange={(e) => handleUpdate('media', 'aspectRatio', e.target.value)} className="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white outline-none"> {ASPECT_RATIOS.map(r => <option key={r} value={r}>{r}</option>)} </select></div>
+                                        <div><label className="text-sm font-bold text-slate-700 uppercase mb-1.5 block">卡片規格</label><select value={data.size} onChange={(e) => handleUpdate('root', 'size', e.target.value)} className="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white focus:ring-1 focus:ring-[#00b900] outline-none"> {BUBBLE_SIZES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)} </select></div>
+                                        <div><label className="text-sm font-bold text-slate-700 uppercase mb-1.5 block">顯示比例</label><select value={data.media.aspectRatio} onChange={(e) => handleUpdate('media', 'aspectRatio', e.target.value)} className="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white focus:ring-1 focus:ring-[#00b900] outline-none"> {ASPECT_RATIOS.map(r => <option key={r} value={r}>{r}</option>)} </select></div>
                                     </div>
                                     {mediaType === 'image' ? (
                                         <div className="space-y-4">
-                                            <input type="text" value={data.media.url} onChange={(e) => handleUpdate('media', 'url', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg" placeholder="主圖網址..." />
+                                            <div><label className="text-sm font-bold text-slate-700 block mb-1.5">主圖網址</label><input type="text" value={data.media.url} onChange={(e) => handleUpdate('media', 'url', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none focus:border-[#00b900]" placeholder="https://圖片連結 (支援APNG)..." /></div>
+                                            <div><label className="text-sm font-bold text-slate-700 block mb-1.5">主圖跳轉連結 (URI)</label><input type="text" value={data.media.uri} onChange={(e) => handleUpdate('media', 'uri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono focus:border-[#00b900] outline-none" placeholder="https://..." /></div>
                                             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
                                                 <div className="flex justify-between items-center"><label className="text-sm font-bold text-slate-700 flex items-center gap-2"><i data-lucide="tag" className="w-4 h-4 text-[#00b900]"></i> 標籤設定</label><div className="flex gap-2"><div className="flex bg-white rounded-lg p-0.5 border border-slate-300"><button onClick={() => handleUpdate('media', 'badgePos', 'left')} className={`p-1.5 rounded-md transition-all ${data.media.badgePos === 'left' ? 'bg-[#00b900] text-white' : 'text-slate-400'}`}><i data-lucide="align-left" className="w-4 h-4"></i></button><button onClick={() => handleUpdate('media', 'badgePos', 'right')} className={`p-1.5 rounded-md transition-all ${data.media.badgePos === 'right' ? 'bg-[#00b900] text-white' : 'text-slate-400'}`}><i data-lucide="align-right" className="w-4 h-4"></i></button></div><input type="color" value={data.media.badgeBg} onChange={(e) => handleUpdate('media', 'badgeBg', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded overflow-hidden" /></div></div>
                                                 <input type="text" maxLength={10} value={data.media.badgeText} onChange={(e) => handleUpdate('media', 'badgeText', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg bg-white" placeholder="標籤文字" />
-                                                <input type="text" value={data.media.badgeUri} onChange={(e) => handleUpdate('media', 'badgeUri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg bg-white font-mono" placeholder="標籤連結" />
+                                                <input type="text" value={data.media.badgeUri} onChange={(e) => handleUpdate('media', 'badgeUri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg bg-white font-mono" placeholder="標籤跳轉連結" />
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="space-y-4 border-l-4 border-[#00b900] pl-4">
-                                            <input type="text" value={videoConfig.url} onChange={(e) => setVideoConfig({...videoConfig, url: e.target.value})} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono focus:border-[#00b900] outline-none" placeholder="影片 MP4 連結" />
-                                            <input type="text" value={videoConfig.previewUrl} onChange={(e) => setVideoConfig({...videoConfig, previewUrl: e.target.value})} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono focus:border-[#00b900] outline-none" placeholder="封面預覽圖" />
+                                            <div className="space-y-1"><label className="text-sm font-bold text-slate-700">影片連結 (MP4)</label><input type="text" value={videoConfig.url} onChange={(e) => setVideoConfig({...videoConfig, url: e.target.value})} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono focus:border-[#00b900] outline-none" /></div>
+                                            <div className="space-y-1"><label className="text-sm font-bold text-slate-700">封面預覽圖</label><input type="text" value={videoConfig.previewUrl} onChange={(e) => setVideoConfig({...videoConfig, previewUrl: e.target.value})} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono focus:border-[#00b900] outline-none" /></div>
                                         </div>
                                     )}
                                 </div>
@@ -401,7 +399,7 @@
                                             <div><label className="text-sm font-bold text-slate-700 uppercase mb-1.5 block">圓角 Radius</label><select value={data.avatar.cornerRadius} onChange={(e) => handleUpdate('avatar', 'cornerRadius', e.target.value)} className="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white outline-none">{CORNER_RADIUS_OPTIONS.map(r => <option key={r} value={r}>圓角:{r}</option>)}</select></div>
                                             <div><label className="text-sm font-bold text-slate-700 uppercase mb-1.5 block">邊框顏色</label><div className="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-300 h-[46px]"><input type="color" value={data.avatar.borderColor} onChange={(e) => handleUpdate('avatar', 'borderColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border-none p-0 flex-shrink-0" /><input type="text" value={data.avatar.borderColor} onChange={(e) => handleUpdate('avatar', 'borderColor', e.target.value)} className="flex-1 bg-transparent text-sm font-mono text-slate-700 outline-none uppercase" /></div></div>
                                         </div>
-                                        <input type="text" value={data.avatar.url} onChange={(e) => handleUpdate('avatar', 'url', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none focus:border-[#00b900] bg-white font-bold" placeholder="縮圖連結..." />
+                                        <input type="text" value={data.avatar.url} onChange={(e) => handleUpdate('avatar', 'url', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none focus:border-[#00b900] bg-white font-bold" placeholder="縮圖連結 (支援APNG)..." />
                                     </div>
                                 )}
                             </div>
@@ -419,23 +417,23 @@
                                     </div>
                                 </div>
                             </div>
-                            {/* 4. 長型按鈕 */}
+                            {/* 4. 按鈕設定 */}
                             <div className="border-2 border-[#00b900] rounded-xl bg-white overflow-hidden shadow-sm">
-                                <div className="p-4 bg-[#00b900] border-b border-[#00b900] flex items-center justify-between font-bold text-white text-lg"><div>4. 快捷按鈕區 ({data.footer.longBtns.length}/3)</div><button onClick={addLongBtn} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition-all"><i data-lucide="plus" className="w-4 h-4"></i> 新增</button></div>
+                                <div className="p-4 bg-[#00b900] border-b border-[#00b900] flex items-center justify-between font-bold text-white text-lg"><div className="flex items-center gap-2"><i data-lucide="layers" className="w-5 h-5"></i> 4. 按鈕區 ({data.footer.longBtns.length}/3)</div><button onClick={addLongBtn} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition-all"><i data-lucide="plus" className="w-4 h-4"></i> 新增</button></div>
                                 <div className="p-5 space-y-6">
                                     {data.footer.longBtns.map((btn, idx) => (
                                         <div key={idx} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 relative group shadow-sm transition-all hover:border-[#00b900]/50">
                                             <button onClick={() => deleteLongBtn(idx)} className="absolute -top-3 -right-3 bg-red-500 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all transform hover:rotate-12"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
                                             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                                                <button onClick={() => updateLongBtn(idx, 'isSolid', !btn.isSolid)} className={`px-4 py-1 rounded-lg text-xs font-bold transition-all ${btn.isSolid ? 'bg-[#00b900] text-white shadow-sm' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>{btn.isSolid ? '實心' : '空心'}</button>
+                                                <button onClick={() => updateLongBtn(idx, 'isSolid', !btn.isSolid)} className={`px-4 py-1 rounded-lg text-xs font-bold transition-all ${btn.isSolid ? 'bg-[#00b900] text-white shadow-sm' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>{btn.isSolid ? '實心風格' : '空心風格'}</button>
                                                 <div className="flex gap-4"><div className="text-center"><label className="text-[10px] block font-bold text-slate-400 mb-0.5">主色</label><input type="color" value={btn.themeColor} onChange={(e) => updateLongBtn(idx, 'themeColor', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded shadow-sm" /></div><div className="text-center"><label className="text-[10px] block font-bold text-slate-400 mb-0.5">文字</label><input type="color" value={btn.textColor} onChange={(e) => updateLongBtn(idx, 'textColor', e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent cursor-pointer rounded shadow-sm" /></div></div>
                                             </div>
-                                            <div className="space-y-3"><input type="text" value={btn.label} onChange={(e) => updateLongBtn(idx, 'label', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none bg-white font-bold text-slate-800" /><input type="text" value={btn.uri} onChange={(e) => updateLongBtn(idx, 'uri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono bg-white text-slate-500" /></div>
+                                            <div className="space-y-3"><input type="text" value={btn.label} onChange={(e) => updateLongBtn(idx, 'label', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none bg-white font-bold text-slate-800" placeholder="按鈕文字" /><input type="text" value={btn.uri} onChange={(e) => updateLongBtn(idx, 'uri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono bg-white text-slate-500" placeholder="https://..." /></div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                            {/* 5. 社群按鈕 */}
+                            {/* 5. 底部快捷 */}
                             <div className="border-2 border-[#00b900] rounded-xl bg-white overflow-hidden shadow-sm mb-12">
                                 <div className="p-4 bg-[#00b900] border-b border-[#00b900] font-bold text-white text-lg"><i data-lucide="share-2" className="w-5 h-5"></i> 5. 底部快捷按鈕</div>
                                 <div className="p-5 space-y-8">
@@ -452,27 +450,27 @@
                                                     </button>
                                                 ))}
                                             </div>
-                                            <div className="grid grid-cols-1 gap-3"><input type="text" value={btn.label} onChange={(e) => updateShortBtn(idx, 'label', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none font-bold text-slate-800" /><input type="text" value={btn.uri} onChange={(e) => updateShortBtn(idx, 'uri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono text-slate-500" /></div>
+                                            <div className="grid grid-cols-1 gap-3"><input type="text" value={btn.label} onChange={(e) => updateShortBtn(idx, 'label', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg outline-none font-bold text-slate-800" placeholder="標籤名稱" /><input type="text" value={btn.uri} onChange={(e) => updateShortBtn(idx, 'uri', e.target.value)} className="w-full p-3 text-sm border border-slate-300 rounded-lg font-mono text-slate-500" placeholder="跳轉網址" /></div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
                     </div>
-                    {/* 右側 Preview (w-1/2) */}
-                    <div className="flex-1 flex flex-col overflow-hidden bg-slate-200 font-bold">
+                    {/* 右側 Preview */}
+                    <div className="flex-1 flex flex-col overflow-hidden bg-slate-200 shadow-inner font-bold">
                         <div className="h-[70px] bg-white border-b-2 border-slate-300 flex items-center px-10 gap-10 shrink-0 shadow-md">
                             <button onClick={() => setActiveTab('editor')} className={`text-base font-bold h-full relative transition-all tracking-widest flex items-center gap-2 ${activeTab === 'editor' ? 'text-[#00b900] border-b-[5px] border-[#00b900]' : 'text-slate-400 hover:text-slate-600'}`}><i data-lucide="eye" className="w-5 h-5"></i> 視覺預覽</button>
                             <button onClick={() => setActiveTab('json')} className={`text-base font-bold h-full relative transition-all tracking-widest flex items-center gap-2 ${activeTab === 'json' ? 'text-[#00b900] border-b-[5px] border-[#00b900]' : 'text-slate-400 hover:text-slate-600'}`}><i data-lucide="code" className="w-5 h-5"></i> JSON 代碼</button>
                         </div>
-                        <div className="flex-1 overflow-y-auto chat-room-bg">
+                        <div className="flex-1 overflow-y-auto chat-room-bg custom-scrollbar font-bold">
                             {activeTab === 'editor' ? (
-                                <div className="py-2 flex flex-col items-center min-h-full">
+                                <div className="py-2 flex flex-col items-center min-h-full font-bold">
                                     <div className="my-6 px-8 py-2 bg-slate-800/80 backdrop-blur rounded-3xl text-sm font-bold text-white shadow-xl border-2 border-[#00b900]/50 uppercase tracking-widest flex items-center gap-3"><i data-lucide="smartphone" className="text-green-400"></i> LINE Flex {mediaType.toUpperCase()} Mode</div>
                                     <PreviewComp />
                                 </div>
                             ) : (
-                                <div className="p-12 max-w-6xl mx-auto w-full pt-4">
+                                <div className="p-12 max-w-6xl mx-auto w-full pt-4 font-bold">
                                     <div className="bg-slate-900 p-10 rounded-[3rem] shadow-2xl border-2 border-white/10 relative overflow-hidden">
                                         <div className="flex justify-between items-center mb-6"><div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-red-500"></div><div className="w-3 h-3 rounded-full bg-yellow-500"></div><div className="w-3 h-3 rounded-full bg-green-500"></div></div><button onClick={handleCopy} className="bg-[#00b900] text-white px-6 py-2 rounded-xl text-xs font-bold shadow-lg hover:bg-green-500 transition-all uppercase tracking-widest">複製全部內容</button></div>
                                         <pre className="text-green-400 font-mono text-sm overflow-x-auto leading-[1.8] custom-scrollbar selection:bg-green-800 selection:text-white">{JSON.stringify(buildFinalJson(), null, 2)}</pre>
