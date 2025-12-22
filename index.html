@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 聯網通訊版 (v2.0.0)</title>
+    <title>FLEX Hub Pro - 聯網通訊版 (v2.0.2)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -40,14 +40,14 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        const APP_VERSION = "v2.0.0";
+        const APP_VERSION = "v2.0.2";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
 
         // GAS 部署網址
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
-        // 專案定義：路徑改為同 Repo 下的 HTML 檔案
+        // 專案定義：使用相對路徑以相容不同的儲存庫名稱 (如 ECCARD)
         const PROJECTS = {
             ECOMMERCE: { id: 'ECOMMERCE', name: "電商商品版", url: "./tool-ecommerce.html", parent: 'MSG' },
             PERSONAL: { id: 'PERSONAL', name: "個人名片版", url: "./tool-personal.html", parent: 'MSG' },
@@ -118,7 +118,7 @@
                 <div className="flex justify-between items-end border-b border-slate-300 pb-6 mb-6">
                     <div>
                         <h2 className="text-2xl font-black text-black flex items-center gap-2 font-black uppercase tracking-tighter">{projectName} {isAdmin && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-black uppercase tracking-widest">ADMIN</span>}</h2>
-                        <p className="text-black text-sm mt-1 font-black italic opacity-60 font-black">雲端試算表中心 (v2.0.0)</p>
+                        <p className="text-black text-sm mt-1 font-black italic opacity-60 font-black">雲端試算表中心 ({APP_VERSION})</p>
                     </div>
                     <button onClick={onAdd} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 active:scale-95 transition-all shadow-md hover:bg-[#05b34c] font-black"><Icon name="plus" /> 建立新設計</button>
                 </div>
@@ -159,7 +159,6 @@
             // --- 核心：監聽來自 Iframe 的通訊訊息 ---
             useEffect(() => {
                 const handleIframeMessage = (event) => {
-                    // 只接受來自我們自己工具的訊息
                     if (event.data && event.data.type === 'SYNC_FLEX_DATA') {
                         const receivedJson = event.data.json;
                         setLocalJson(cleanJsonText(receivedJson));
@@ -274,25 +273,43 @@
                             setViewState('MAIN');
                             return;
                         }
+                        
+                        // 初始化 LIFF
                         await liff.init({ liffId: LIFF_ID });
                         setIsLiffInit(true);
-                        if (!liff.isLoggedIn()) { setViewState('LOGIN'); return; }
+
+                        if (!liff.isLoggedIn()) { 
+                            setViewState('LOGIN'); 
+                            return; 
+                        }
+                        
                         const lp = await liff.getProfile();
                         setUser({ uid: lp.userId, displayName: lp.displayName });
+                        
                         const response = await fetch(`${GAS_URL}?userId=${lp.userId}&action=checkStatus`);
                         const gasData = await response.json();
-                        if (gasData.status === 'NOT_FOUND') { setViewState('REGISTER'); }
-                        else {
+                        
+                        if (gasData.status === 'NOT_FOUND') { 
+                            setViewState('REGISTER'); 
+                        } else {
                             setProfile(gasData);
                             await refreshFiles(lp.userId, gasData.role);
                             setViewState('MAIN');
                         }
-                    } catch (e) { setViewState('LOGIN'); }
+                    } catch (e) { 
+                        setViewState('LOGIN'); 
+                    }
                 };
                 init();
             }, []);
 
-            const handleLogin = () => { if (isLiffInit) { liff.login(); } else { alert("初始化中..."); } };
+            const handleLogin = () => { 
+                if (isLiffInit) { 
+                    liff.login(); 
+                } else { 
+                    alert("初始化中，請稍候..."); 
+                } 
+            };
 
             const handleSave = async (id, name, content) => {
                 setIsGlobalLoading(true);
@@ -327,7 +344,7 @@
             };
 
             if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white text-black font-black uppercase italic animate-pulse"><div className="loader mb-4"></div>Connecting Center...</div>;
-            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black text-black"><button onClick={handleLogin} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">登入管理平台中心</button></div>;
+            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black text-black"><button onClick={handleLogin} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all font-bold">登入管理平台中心</button></div>;
             if (viewState === 'PENDING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white p-10 text-center font-black text-black font-bold border-8 border-black shadow-2xl"><Icon name="clock" className="w-16 h-16 mb-6 text-blue-500 animate-pulse" /><h1 className="text-2xl font-black">帳戶審核中</h1><p className="mt-2 font-bold text-black font-black">UID: {user?.uid}</p></div>;
 
             const currentProject = PROJECTS[activeLevel2];
@@ -338,11 +355,11 @@
                     <aside className="w-64 line-sidebar flex flex-col shrink-0 border-r border-slate-300 font-bold font-black">
                         <div className="h-16 flex flex-col justify-center px-6 border-b border-slate-300 bg-white shadow-sm z-10 font-bold font-black">
                             <span className="font-black text-[#06C755] text-xl uppercase italic tracking-tighter leading-none mb-1">Flex Hub Center</span>
-                            <span className="text-[8px] text-black font-black tracking-widest opacity-40 leading-none uppercase">{APP_VERSION}</span>
+                            <span className="text-[8px] text-black font-black tracking-widest opacity-40 leading-none uppercase font-bold">{APP_VERSION}</span>
                         </div>
                         <nav className="flex-1 overflow-y-auto custom-scrollbar pt-4 text-black font-black">
                             <div className="mb-2 text-black font-black">
-                                <button onClick={()=>setExpandedCategories(p=>({...p, MSG: !p.MSG}))} className="w-full flex items-center justify-between px-6 py-4 text-[11px] font-black text-black uppercase tracking-widest hover:bg-white transition-colors">
+                                <button onClick={()=>setExpandedCategories(p=>({...p, MSG: !p.MSG}))} className="w-full flex items-center justify-between px-6 py-4 text-[11px] font-black text-black uppercase tracking-widest hover:bg-white transition-colors font-bold">
                                     <span>專案項目管理</span><Icon name={expandedCategories.MSG ? "chevronDown" : "chevronRight"} className="w-4 h-4 text-black font-black" />
                                 </button>
                                 {expandedCategories.MSG && (
@@ -354,7 +371,7 @@
                                 )}
                             </div>
                             <div className="mt-2 border-t border-slate-200 pt-2 text-black font-black">
-                                <button onClick={()=>setExpandedCategories(p=>({...p, TOOL: !p.TOOL}))} className="w-full flex items-center justify-between px-6 py-4 text-[11px] font-black text-black uppercase tracking-widest hover:bg-white transition-colors font-black">
+                                <button onClick={()=>setExpandedCategories(p=>({...p, TOOL: !p.TOOL}))} className="w-full flex items-center justify-between px-6 py-4 text-[11px] font-black text-black uppercase tracking-widest hover:bg-white transition-colors font-bold">
                                     <span>自動化工具模組</span><Icon name={expandedCategories.TOOL ? "chevronDown" : "chevronRight"} className="w-4 h-4 text-black font-black" />
                                 </button>
                                 {expandedCategories.TOOL && (
@@ -368,7 +385,7 @@
                                 <div className="text-xs truncate flex items-center gap-1 font-bold text-black uppercase tracking-tight font-bold font-black">
                                     {profile?.name} {profile?.role === '系統管理員' && <span className="text-[8px] bg-blue-100 text-blue-700 px-1 rounded border border-blue-200 uppercase font-black">Admin</span>}
                                 </div>
-                                <div className="text-[10px] text-black font-black tracking-tight mt-1 uppercase opacity-60 font-black">EXP: {profile?.endDate ? new Date(profile.endDate).toLocaleDateString() : '--'}</div>
+                                <div className="text-[10px] text-black font-black tracking-tight mt-1 uppercase opacity-60 font-black font-bold">EXP: {profile?.endDate ? new Date(profile.endDate).toLocaleDateString() : '--'}</div>
                             </div>
                         </div>
                     </aside>
