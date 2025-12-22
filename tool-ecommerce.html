@@ -1,405 +1,312 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 聯網通訊版 (v2.0.8)</title>
-    <!-- 核心庫載入 -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>個人電商版 LINE Flex Message Editor (v2.0.7)</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- LINE LIFF SDK -->
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f5f7; margin: 0; overflow: hidden; color: #000000; font-weight: 700; }
-        .sidebar-item-active { background-color: #ffffff !important; color: #06C755 !important; font-weight: 900; border-right: 4px solid #06C755; }
-        .line-sidebar { background-color: #F4F5F7; border-right: 1px solid #E5E7EB; }
-        .iframe-container { width: 100%; height: 100%; border: none; background: #fff; }
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #06C755; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #000000; border-radius: 10px; }
-        .drawer-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .overlay-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(2px); }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; color: #000000; font-weight: 700; }
         
-        .toast {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: #000; color: white; padding: 14px 28px; border-radius: 15px;
-            z-index: 10000; font-weight: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            animation: slideDown 0.3s ease-out; border: 2px solid #06C755;
-            min-width: 250px; text-align: center;
+        .chat-room-bg {
+            background-color: #7988a0;
+            width: 100%; height: 100%;
+            overflow-y: auto;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px;
         }
-        @keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 20px; opacity: 1; } }
+
+        .flex-bubble-container {
+            width: 100%;
+            max-width: 350px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #000000; border-radius: 10px; }
+        
+        .bg-line-green { background-color: #06C755; }
+        .text-line-green { color: #06C755; }
+
+        .aspect-1-1 { aspect-ratio: 1 / 1; }
+        .aspect-16-9 { aspect-ratio: 16 / 9; }
+        .aspect-4-3 { aspect-ratio: 4 / 3; }
+        .aspect-1_91-1 { aspect-ratio: 1.91 / 1; }
+        .aspect-3-4 { aspect-ratio: 3 / 4; }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="h-screen flex flex-col overflow-hidden">
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
-
-        const APP_VERSION = "v2.0.8";
-        const LIFF_ID = "2008541971-XPIDtaaj";
-        const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
-
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
-
-        // --- 完整版型模板 ---
-        const ECOMMERCE_FULL_TEMPLATE = JSON.stringify({
-            "type": "bubble", "size": "mega",
-            "hero": { "type": "video", "url": "https://lihi.cc/YsmAp", "previewUrl": "https://lihi.cc/5OXMZ", "aspectRatio": "16:9" },
-            "body": {
-                "type": "box", "layout": "vertical", "backgroundColor": "#F8F8F8", "paddingAll": "none",
-                "contents": [
-                    { "type": "box", "layout": "vertical", "contents": [
-                        { "type": "image", "url": "https://lihi.cc/l5qqU", "position": "absolute", "size": "full", "aspectMode": "cover" },
-                        { "type": "box", "layout": "vertical", "paddingAll": "md", "contents": [
-                            { "type": "box", "layout": "horizontal", "contents": [
-                                { "type": "box", "layout": "vertical", "width": "32%", "contents": [
-                                    { "type": "image", "url": "https://lihi.cc/mwMvo", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" },
-                                    { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "品項 A", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold" }] }
-                                ]},
-                                { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "contents": [
-                                    { "type": "image", "url": "https://lihi.cc/2Nu8G", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" },
-                                    { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "品項 B", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold" }] }
-                                ]},
-                                { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "contents": [
-                                    { "type": "image", "url": "https://lihi.cc/yRfpn", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" },
-                                    { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "品項 C", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold" }] }
-                                ]}
-                            ]}
-                        ]}
-                    ]}
-                ]
-            },
-            "footer": {
-                "type": "box", "layout": "horizontal", "spacing": "md", "contents": [
-                    { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "官方網站", "uri": "https://line.me" } },
-                    { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "聯繫客服", "uri": "https://line.me" } }
-                ]
-            }
-        }, null, 2);
-
-        const PERSONAL_FULL_TEMPLATE = JSON.stringify({
-            "type": "bubble", "size": "mega",
-            "body": {
-                "type": "box", "layout": "vertical", "paddingAll": "0px",
-                "contents": [
-                    { "type": "box", "layout": "vertical", "contents": [
-                        { "type": "image", "url": "https://lihi.cc/5OXMZ", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover" },
-                        { "type": "box", "layout": "vertical", "position": "absolute", "backgroundColor": "#ff0000", "cornerRadius": "15px", "paddingAll": "4px", "offsetTop": "10px", "offsetStart": "10px", "contents": [{ "type": "text", "text": "旗艦店", "color": "#ffffff", "size": "xs", "weight": "bold" }] }
-                    ]},
-                    { "type": "box", "layout": "vertical", "paddingAll": "15px", "paddingTop": "45px", "contents": [
-                        { "type": "text", "text": "王小明", "weight": "bold", "size": "xl" },
-                        { "type": "text", "text": "資深開發工程師\n專業 LINE Bot 解決方案", "wrap": true, "size": "sm", "margin": "md", "color": "#666666" }
-                    ]},
-                    { "type": "box", "layout": "vertical", "position": "absolute", "offsetTop": "120px", "offsetStart": "0px", "offsetEnd": "0px", "alignItems": "center", "contents": [
-                        { "type": "box", "layout": "vertical", "width": "80px", "height": "80px", "cornerRadius": "100px", "borderWidth": "3px", "borderColor": "#ffffff", "contents": [{ "type": "image", "url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200", "size": "full", "aspectRatio": "1:1", "aspectMode": "cover" }] }
-                    ]}
-                ]
-            },
-            "footer": {
-                "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "10px",
-                "contents": [
-                    { "type": "box", "layout": "vertical", "contents": [{ "type": "text", "text": "立即預約", "align": "center", "color": "#ffffff", "weight": "bold" }], "paddingAll": "10px", "backgroundColor": "#00b900", "cornerRadius": "md", "action": { "type": "uri", "uri": "{{LIFF_URL}}" } }
-                ]
-            }
-        }, null, 2);
-
-        const PROJECTS = {
-            ECOMMERCE: { id: 'ECOMMERCE', name: "電商商品版", url: "./tool-ecommerce.html", parent: 'MSG', template: ECOMMERCE_FULL_TEMPLATE },
-            PERSONAL: { id: 'PERSONAL', name: "個人名片版", url: "./tool-personal.html", parent: 'MSG', template: PERSONAL_FULL_TEMPLATE },
-            VOOM: { id: 'VOOM', name: "VOOM 解析器", parent: 'TOOL', template: "{}" }
-        };
-
-        // --- 工具函式 ---
-        const cleanJsonText = (str) => {
-            let s = String(str || "").trim();
-            if (s.startsWith('"') && s.endsWith('"')) {
-                s = s.substring(1, s.length - 1).replace(/""/g, '"');
-            }
-            s = s.replace(/\{\{LIFF_URL\}\}/g, LIFF_URL);
-            s = s.replace(/\{\{LIFF_ID\}\}/g, LIFF_ID);
-            return s;
-        };
-
-        // --- 子組件：Icon ---
-        const Icon = ({ name, className = "w-4 h-4" }) => {
-            const icons = {
-                left: <polyline points="15 18 9 12 15 6" />,
-                plus: <React.Fragment><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></React.Fragment>,
-                save: <React.Fragment><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></React.Fragment>,
-                code: <React.Fragment><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></React.Fragment>,
-                trash: <React.Fragment><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></React.Fragment>,
-                check: <polyline points="20 6 9 17 4 12" />,
-                chevronDown: <polyline points="6 9 12 15 18 9" />,
-                chevronRight: <polyline points="9 18 15 12 9 6" />,
-                shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
-                user: <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />,
-                x: <React.Fragment><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></React.Fragment>,
-                send: <React.Fragment><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></React.Fragment>,
-                link: <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />,
-                github: <React.Fragment><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" /></React.Fragment>,
-                clock: <React.Fragment><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></React.Fragment>
-            };
-            const pathData = icons[name] || null;
-            return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{pathData}</svg>;
-        };
-
-        // --- 子組件：CopyButton ---
-        const CopyButton = ({ text, label, theme = "slate", icon="copy" }) => {
-            const [copied, setCopied] = useState(false);
-            const handleCopy = () => {
-                const finalCode = cleanJsonText(text);
-                const textArea = document.createElement("textarea");
-                textArea.value = finalCode;
-                textArea.style.position = "fixed"; textArea.style.left = "-9999px";
-                document.body.appendChild(textArea);
-                textArea.focus(); textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-            };
-            const styles = {
-                slate: copied ? 'bg-green-100 text-green-600 border-green-300' : 'bg-slate-100 text-black border-slate-300 hover:bg-slate-200 font-bold',
-                github: copied ? 'bg-green-600 text-white border-green-700' : 'bg-[#24292f] text-white border-black hover:bg-[#1b1f23]',
-                blue: copied ? 'bg-green-100 text-green-600 border-green-300' : 'bg-blue-600 text-white border-blue-800 hover:bg-blue-700 font-black'
-            };
-            return (
-                <button onClick={handleCopy} className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs transition-all shadow-sm border font-black ${styles[theme]}`}>
-                    <Icon name={copied ? "check" : icon} className="w-4 h-4" />
-                    <span>{copied ? "已成功複製！" : label}</span>
+    <div class="flex-1 flex overflow-hidden">
+        <!-- 左側編輯區 -->
+        <aside class="w-full md:w-[500px] bg-white border-r-2 border-slate-300 overflow-y-auto p-6 space-y-8 custom-scrollbar z-10 flex-shrink-0">
+            
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="font-black text-xl text-slate-900">電商版設計器</h2>
+                <button onclick="undo()" id="btn-undo" class="px-3 py-1 text-xs font-black text-slate-800 border-2 border-slate-300 rounded-lg hover:bg-slate-100 disabled:opacity-30 flex items-center gap-1">
+                    <i data-lucide="rotate-ccw" class="w-3 h-3"></i> 復原
                 </button>
-            );
-        };
+            </div>
 
-        // --- 子組件：DirectoryView ---
-        const DirectoryView = ({ files, projectName, onAdd, onEdit, onDelete, isAdmin }) => (
-            <div className="p-8 h-full overflow-y-auto custom-scrollbar animate-in fade-in duration-300 text-black font-bold">
-                <div className="flex justify-between items-end border-b border-slate-300 pb-6 mb-6">
-                    <div>
-                        <h2 className="text-2xl font-black text-black flex items-center gap-2 font-black uppercase tracking-tighter">{projectName} {isAdmin && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-black uppercase tracking-widest font-black">ADMIN</span>}</h2>
-                        <p className="text-black text-sm mt-1 font-black italic opacity-60">雲端試算表中心 ({APP_VERSION})</p>
-                    </div>
-                    <button onClick={onAdd} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 active:scale-95 transition-all shadow-md hover:bg-[#05b34c] font-black"><Icon name="plus" /> 建立新設計</button>
+            <!-- Hero 設定 -->
+            <div class="border-2 border-black rounded-xl bg-white overflow-hidden shadow-sm">
+                <div class="p-3 bg-slate-100 border-b-2 border-black flex items-center gap-2 font-black text-black">
+                    <i data-lucide="video" class="w-5 h-5"></i> 頂部 Hero 視覺 (影片)
                 </div>
-                <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
-                    <table className="w-full text-left text-base font-bold text-black font-black">
-                        <thead className="bg-slate-100 border-b border-slate-300 text-black font-black uppercase text-sm font-black">
-                            <tr><th className="p-5 text-black font-black uppercase tracking-widest text-lg">設計專案名稱</th>{isAdmin && <th className="p-5 text-center text-black font-black uppercase">擁有者</th>}<th className="p-5 text-center text-black font-black uppercase font-black">內容</th><th className="p-5 text-right text-black font-black uppercase font-black">管理</th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200 font-black">
-                            {files.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-black italic font-black opacity-30 font-black">目前試算表無存檔記錄...</td></tr> : files.map(f => (
-                                <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors">
-                                    <td className="p-5 font-black text-xl text-black">{f.name}</td>
-                                    {isAdmin && <td className="p-5 text-xs font-mono text-black text-center opacity-60 italic font-black">{f.userId}</td>}
-                                    <td className="p-5 text-center"><span className={`px-3 py-1 rounded-full text-xs font-black ${f.content ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-slate-200 text-black'}`}>{f.content ? '✓ 已存代碼' : '○ 空白'}</span></td>
-                                    <td className="p-5 text-right space-x-6 text-black">
-                                        <button onClick={()=>onEdit(f)} className="text-blue-700 font-black hover:underline text-xl font-black font-black">編輯</button>
-                                        <button onClick={()=>onDelete(f.id)} className="text-red-600 hover:text-red-800 transition-colors font-black"><Icon name="trash" className="w-8 h-8" /></button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div class="p-4 space-y-4">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-500 uppercase block mb-1">封面預覽圖 URL</label>
+                        <input type="text" id="input-hero-url" oninput="updateConfig('heroUrl', this.value)" class="w-full text-sm p-2 border-2 border-slate-300 rounded-lg outline-none font-bold">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-500 uppercase block mb-1">影片網址 (.mp4)</label>
+                        <input type="text" id="input-video-url" oninput="updateConfig('videoUrl', this.value)" class="w-full text-sm p-2 border-2 border-slate-300 rounded-lg outline-none font-bold">
+                    </div>
                 </div>
             </div>
-        );
 
-        // --- 子組件：EditorView ---
-        const EditorView = ({ file, onSave, onCancel, projectUrl, defaultTemplate }) => {
-            const [localName, setLocalName] = useState("");
-            const [localJson, setLocalJson] = useState("");
-            const [showJson, setShowJson] = useState(false);
-            const [toast, setToast] = useState(null);
-            const iframeRef = useRef(null);
+            <!-- Body 設定 -->
+            <div class="border-2 border-black rounded-xl bg-white overflow-hidden shadow-sm">
+                <div class="p-3 bg-slate-100 border-b-2 border-black flex items-center justify-between font-black text-black">
+                    <div class="flex items-center gap-2"><i data-lucide="shopping-bag" class="w-5 h-5"></i> 商品內容管理</div>
+                    <span class="text-xs bg-black text-white px-2 py-0.5 rounded" id="item-count-badge">0</span>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div id="items-container" class="space-y-3">
+                        <!-- 商品動態列表 -->
+                    </div>
+                    <button onclick="addItem()" class="w-full py-3 border-2 border-dashed border-slate-400 rounded-xl text-slate-900 font-black hover:bg-slate-50 transition flex items-center justify-center gap-2">
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i> 新增商品項目
+                    </button>
+                </div>
+            </div>
 
-            const showMsg = (msg) => {
-                setToast(msg);
-                setTimeout(() => setToast(null), 3500);
-            };
+            <!-- Footer 設定 -->
+            <div class="border-2 border-black rounded-xl bg-white overflow-hidden shadow-sm mb-10">
+                <div class="p-3 bg-slate-100 border-b-2 border-black font-black flex items-center gap-2">
+                    <i data-lucide="mouse-pointer" class="w-5 h-5"></i> 底部動作按鈕
+                </div>
+                <div class="p-4 space-y-4">
+                    <div class="p-3 bg-slate-50 border-2 border-slate-200 rounded-lg">
+                        <div class="font-black text-xs mb-2">按鈕 1</div>
+                        <input type="text" id="input-f1-label" oninput="updateConfig('f1L', this.value)" class="w-full text-sm p-2 mb-2 border border-slate-300 rounded outline-none font-bold">
+                        <input type="text" id="input-f1-uri" oninput="updateConfig('f1U', this.value)" class="w-full text-xs p-2 border border-slate-300 rounded outline-none font-mono">
+                    </div>
+                    <div class="p-3 bg-slate-50 border-2 border-slate-200 rounded-lg">
+                        <div class="font-black text-xs mb-2">按鈕 2</div>
+                        <input type="text" id="input-f2-label" oninput="updateConfig('f2L', this.value)" class="w-full text-sm p-2 mb-2 border border-slate-300 rounded outline-none font-bold">
+                        <input type="text" id="input-f2-uri" oninput="updateConfig('f2U', this.value)" class="w-full text-xs p-2 border border-slate-300 rounded outline-none font-mono">
+                    </div>
+                </div>
+            </div>
 
-            useEffect(() => {
-                const handleIframeMessage = (event) => {
-                    if (event.data && event.data.type === 'SYNC_FLEX_DATA') {
-                        setLocalJson(cleanJsonText(event.data.json));
-                    }
-                    if (event.data && event.data.type === 'CHILD_READY') {
-                        const targetJson = localJson || defaultTemplate;
-                        if (iframeRef.current) {
-                            iframeRef.current.contentWindow.postMessage({
-                                type: 'LOAD_FLEX_DATA',
-                                json: targetJson
-                            }, '*');
-                        }
-                    }
-                };
-                window.addEventListener('message', handleIframeMessage);
-                return () => window.removeEventListener('message', handleIframeMessage);
-            }, [localJson, defaultTemplate]);
+        </aside>
 
-            useEffect(() => {
-                if (file) {
-                    setLocalName(file.name || "未命名設計");
-                    setLocalJson(cleanJsonText(file.content || defaultTemplate));
-                    if (!file.content) setShowJson(true);
+        <!-- 右側預覽區 -->
+        <main class="flex-1 bg-slate-200 relative overflow-hidden flex flex-col chat-room-bg custom-scrollbar">
+            <div class="flex items-start gap-2 mb-8 w-full justify-center">
+                <div class="bg-white rounded-xl overflow-hidden flex-bubble-container flex flex-col">
+                    <div id="view-hero-container" class="relative w-full aspect-16-9 bg-black overflow-hidden shrink-0">
+                        <img id="view-video-poster" src="" class="absolute inset-0 w-full h-full object-cover opacity-60">
+                        <div class="absolute inset-0 flex items-center justify-center"><i data-lucide="play" class="w-12 h-12 text-white fill-white"></i></div>
+                    </div>
+                    <div class="relative w-full p-4" id="view-body-container">
+                        <img id="view-body-bg" src="https://lihi.cc/l5qqU" class="absolute inset-0 w-full h-full object-cover z-0">
+                        <div id="view-grid" class="relative z-10 grid grid-cols-3 gap-2"></div>
+                    </div>
+                    <div class="p-3 border-t border-slate-100 flex gap-2" id="view-footer">
+                        <div id="view-btn-1" class="flex-1 py-2 rounded text-[10px] font-black text-white text-center bg-black"></div>
+                        <div id="view-btn-2" class="flex-1 py-2 rounded text-[10px] font-black text-white text-center bg-black"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="h-20 w-full shrink-0"></div>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        let state = {
+            hero: { url: "", videoUrl: "" },
+            body: { items: [] },
+            footer: { btn1: { label: "", uri: "" }, btn2: { label: "", uri: "" } }
+        };
+
+        let history = [];
+
+        // --- 核心：與母系統通訊機制 ---
+        window.addEventListener('message', (event) => {
+            // 當母系統要求載入資料時
+            if (event.data && event.data.type === 'LOAD_FLEX_DATA') {
+                try {
+                    const flexJson = JSON.parse(event.data.json);
+                    reverseMapFlexToState(flexJson);
+                    syncUI();
+                    render();
+                } catch(e) { console.error("JSON 解析還原失敗", e); }
+            }
+        });
+
+        // 告訴母系統我已經載入完成，可以傳資料給我了
+        window.onload = () => {
+            window.parent.postMessage({ type: 'CHILD_READY' }, '*');
+        };
+
+        function syncToParent() {
+            const flexJson = generateFlexJSON();
+            window.parent.postMessage({
+                type: 'SYNC_FLEX_DATA',
+                json: JSON.stringify(flexJson)
+            }, '*');
+        }
+
+        // --- 逆向解析：將複雜的 LINE Flex JSON 還原回 state ---
+        function reverseMapFlexToState(flex) {
+            // 1. Hero 影片層還原
+            state.hero.url = flex.hero?.previewUrl || "";
+            state.hero.videoUrl = flex.hero?.url || "";
+
+            // 2. Body 商品層還原 (遍歷 nested boxes)
+            const rows = flex.body?.contents?.[0]?.contents?.[1]?.contents || [];
+            let allItems = [];
+            rows.forEach(row => {
+                if (row.contents) {
+                    row.contents.forEach(itemBox => {
+                        const img = itemBox.contents?.[0]?.url || "";
+                        const title = itemBox.contents?.[1]?.contents?.[0]?.text || "未命名商品";
+                        const url = itemBox.action?.uri || "";
+                        allItems.push({ title, img, url });
+                    });
                 }
-            }, [file.id]);
+            });
+            state.body.items = allItems;
 
-            const handleSendDesigner = async () => {
-                try {
-                    const finalCode = cleanJsonText(localJson);
-                    const flexMessage = JSON.parse(finalCode);
-                    if (liff.isApiAvailable('shareTargetPicker')) {
-                        const result = await liff.shareTargetPicker([{ type: "flex", altText: `FLEX設計：${localName}`, contents: flexMessage }]);
-                        if (result) showMsg("✅ 已成功發送！");
-                    }
-                } catch (e) { showMsg("⚠️ JSON 格式錯誤"); }
-            };
+            // 3. Footer 按鈕層還原
+            const btns = flex.footer?.contents || [];
+            state.footer.btn1.label = btns[0]?.action?.label || "官方網站";
+            state.footer.btn1.uri = btns[0]?.action?.uri || "";
+            state.footer.btn2.label = btns[1]?.action?.label || "聯繫客服";
+            state.footer.btn2.uri = btns[1]?.action?.uri || "";
+        }
 
-            return (
-                <div className="h-full flex flex-col bg-white overflow-hidden relative animate-in fade-in duration-300 font-bold text-black font-black">
-                    {toast && <div className="toast">{toast}</div>}
-                    <div className="h-16 border-b border-slate-300 px-6 flex items-center justify-between shrink-0 bg-white z-20 shadow-sm font-black">
-                        <div className="flex items-center gap-4 flex-1">
-                            <button onClick={onCancel} className="text-black hover:text-green-600 transition-colors font-black"><Icon name="left" className="w-8 h-8" /></button>
-                            <input type="text" value={localName} onChange={e=>setLocalName(e.target.value)} className="bg-transparent border-none p-0 text-black font-black outline-none focus:text-[#06C755] text-lg w-full max-w-sm" />
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <button onClick={handleSendDesigner} className="bg-[#06C755] text-white px-5 py-2.5 rounded-lg text-sm flex items-center gap-2 active:scale-95 shadow-md border border-[#05b34c] font-black">
-                                <Icon name="send" /> <span>發送設計 (通訊錄)</span>
-                            </button>
-                            <CopyButton text={LIFF_URL} label="複製工具連結" theme="blue" icon="link" />
-                            <CopyButton text={localJson} label="複製 JSON 代碼" theme="github" icon="github" />
-                            <button onClick={()=>setShowJson(!showJson)} className={`p-2.5 rounded-lg border transition-all ${showJson ? 'bg-blue-600 text-white shadow-inner border-blue-700' : 'text-black border-slate-400 hover:bg-slate-50 font-black'}`} title="打開代碼同步區"><Icon name="code" /></button>
-                            <button onClick={()=>onSave(file.id, localName, localJson)} className="bg-black text-white px-5 py-2.5 rounded-lg font-black text-sm flex items-center gap-2 active:scale-95 shadow-md border border-black font-black">
-                                <Icon name="save" /> 儲存至雲端
-                            </button>
-                        </div>
+        function saveState() {
+            if (history.length > 20) history.shift();
+            history.push(JSON.parse(JSON.stringify(state)));
+            document.getElementById('btn-undo').disabled = false;
+        }
+
+        function undo() {
+            if (history.length > 0) {
+                state = history.pop();
+                if (history.length === 0) document.getElementById('btn-undo').disabled = true;
+                syncUI(); render(); syncToParent();
+            }
+        }
+
+        function updateConfig(path, value) {
+            saveState();
+            if(path === 'heroUrl') state.hero.url = value;
+            if(path === 'videoUrl') state.hero.videoUrl = value;
+            if(path === 'f1L') state.footer.btn1.label = value;
+            if(path === 'f1U') state.footer.btn1.uri = value;
+            if(path === 'f2L') state.footer.btn2.label = value;
+            if(path === 'f2U') state.footer.btn2.uri = value;
+            render(); syncToParent();
+        }
+
+        function updateItem(index, field, value) {
+            saveState();
+            state.body.items[index][field] = value;
+            render(); syncToParent();
+        }
+
+        function addItem() {
+            saveState();
+            state.body.items.push({ title: "新商品", img: "https://lihi.cc/mwMvo", url: "https://line.me" });
+            syncUI(); render(); syncToParent();
+        }
+
+        function deleteItem(index) {
+            saveState();
+            state.body.items.splice(index, 1);
+            syncUI(); render(); syncToParent();
+        }
+
+        function syncUI() {
+            document.getElementById('input-hero-url').value = state.hero.url;
+            document.getElementById('input-video-url').value = state.hero.videoUrl;
+            document.getElementById('input-f1-label').value = state.footer.btn1.label;
+            document.getElementById('input-f1-uri').value = state.footer.btn1.uri;
+            document.getElementById('input-f2-label').value = state.footer.btn2.label;
+            document.getElementById('input-f2-uri').value = state.footer.btn2.uri;
+            document.getElementById('item-count-badge').innerText = state.body.items.length;
+
+            const container = document.getElementById('items-container');
+            container.innerHTML = '';
+            state.body.items.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-white border-2 border-slate-200 rounded-lg space-y-2 relative";
+                div.innerHTML = `
+                    <button onclick="deleteItem(${i})" class="absolute top-2 right-2 text-slate-400 hover:text-red-600"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
+                    <div class="flex items-center gap-3">
+                        <img src="${item.img}" class="w-10 h-10 rounded object-cover border border-slate-300">
+                        <input type="text" value="${item.title}" oninput="updateItem(${i}, 'title', this.value)" class="flex-1 text-sm p-1 border-b font-black outline-none" placeholder="品名">
                     </div>
-                    <div className="flex-1 flex relative overflow-hidden text-black font-black">
-                        <div className={`absolute right-0 top-0 bottom-0 w-96 bg-slate-900 border-l border-slate-800 z-30 shadow-2xl p-6 flex flex-col gap-4 drawer-transition ${showJson ? 'translate-x-0' : 'translate-x-full'}`}>
-                            <div className="flex justify-between items-center text-white font-black text-sm uppercase font-black">
-                                <span className="flex items-center gap-2 text-green-400 font-black uppercase font-black tracking-widest"><Icon name="code" />JSON 同步緩衝區</span>
-                                <button onClick={()=>setShowJson(false)} className="text-white hover:text-red-400 transition-colors font-black font-black"><Icon name="x" /></button>
-                            </div>
-                            <p className="text-xs text-slate-300 font-medium leading-relaxed font-black opacity-80 italic">設計完成後點「同步」，此處會自動更新。</p>
-                            <textarea value={localJson} onChange={e=>setLocalJson(e.target.value)} className="flex-1 w-full bg-slate-950 border border-slate-700 rounded-xl p-4 font-mono text-[11px] text-green-500 outline-none custom-scrollbar leading-relaxed font-black font-bold" placeholder='在此貼入 JSON 代碼...' />
-                        </div>
-                        <iframe ref={iframeRef} src={projectUrl} className="iframe-container" allow="clipboard-read; clipboard-write"></iframe>
-                    </div>
-                </div>
-            );
-        };
+                    <input type="text" value="${item.img}" oninput="updateItem(${i}, 'img', this.value)" class="w-full text-[10px] p-1 border rounded font-mono" placeholder="圖片URL">
+                `;
+                container.appendChild(div);
+            });
+            lucide.createIcons();
+        }
 
-        // --- 主程式：App ---
-        const App = () => {
-            const [viewState, setViewState] = useState('LOADING'); 
-            const [isGlobalLoading, setIsGlobalLoading] = useState(false);
-            const [user, setUser] = useState(null);
-            const [profile, setProfile] = useState(null);
-            const [activeLevel2, setActiveLevel2] = useState('ECOMMERCE');
-            const [activeFile, setActiveFile] = useState(null);
-            const [userFiles, setUserFiles] = useState([]);
-            const [isLiffInit, setIsLiffInit] = useState(false);
+        function render() {
+            document.getElementById('view-video-poster').src = state.hero.url;
+            const grid = document.getElementById('view-grid');
+            grid.innerHTML = '';
+            state.body.items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = "bg-white rounded p-1 shadow-sm flex flex-col";
+                el.innerHTML = `
+                    <div class="relative w-full aspect-square bg-slate-100 rounded-sm overflow-hidden mb-1"><img src="${item.img}" class="w-full h-full object-cover"></div>
+                    <div class="text-[8px] bg-black text-white font-black text-center py-0.5 rounded-sm truncate">${item.title}</div>
+                `;
+                grid.appendChild(el);
+            });
+            document.getElementById('view-btn-1').innerText = state.footer.btn1.label;
+            document.getElementById('view-btn-2').innerText = state.footer.btn2.label;
+        }
 
-            const refreshFiles = async (uid, role) => {
-                try {
-                    const res = await fetch(`${GAS_URL}?userId=${uid}&action=getFiles&role=${role==='系統管理員'?'ADMIN':'USER'}`);
-                    const data = await res.json();
-                    setUserFiles(data || []);
-                } catch(e) {}
+        function generateFlexJSON() {
+            const chunk = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) => arr.slice(i * size, i * size + size));
+            return {
+                "type": "bubble", "size": "mega",
+                "hero": { "type": "video", "url": state.hero.videoUrl, "previewUrl": state.hero.url, "aspectRatio": "16:9", "altContent": { "type": "image", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover", "url": state.hero.url } },
+                "body": {
+                    "type": "box", "layout": "vertical", "backgroundColor": "#F8F8F8", "paddingAll": "none",
+                    "contents": [{ "type": "box", "layout": "vertical", "contents": [
+                        { "type": "image", "url": "https://lihi.cc/l5qqU", "position": "absolute", "size": "full", "aspectMode": "cover" },
+                        { "type": "box", "layout": "vertical", "paddingAll": "md", "contents": chunk(state.body.items, 3).map(row => ({
+                            "type": "box", "layout": "horizontal", "contents": row.map(item => ({
+                                "type": "box", "layout": "vertical", "width": "32%", "action": { "type": "uri", "uri": item.url },
+                                "contents": [
+                                    { "type": "image", "url": item.img, "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" },
+                                    { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": item.title, "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }
+                                ]
+                            }))
+                        }))}
+                    ]}]
+                },
+                "footer": { "type": "box", "layout": "horizontal", "spacing": "md", "backgroundColor": "#ffffff", "paddingTop": "md", "contents": [
+                    { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": state.footer.btn1.label, "uri": state.footer.btn1.uri } },
+                    { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": state.footer.btn2.label, "uri": state.footer.btn2.uri } }
+                ]}
             };
-
-            useEffect(() => {
-                const init = async () => {
-                    const isPreviewEnv = window.location.href.includes('usercontent.goog') || window.location.protocol === 'blob:';
-                    try {
-                        if (isPreviewEnv) {
-                            const mockUser = { uid: 'DEBUG', displayName: '測試員' };
-                            setUser(mockUser); setProfile({ status: 'APPROVED', role: '系統管理員', name: '測試員', endDate: '2026-12-31' });
-                            await refreshFiles(mockUser.uid, '系統管理員'); setViewState('MAIN'); return;
-                        }
-                        await liff.init({ liffId: LIFF_ID });
-                        setIsLiffInit(true);
-                        if (!liff.isLoggedIn()) { setViewState('LOGIN'); return; }
-                        const lp = await liff.getProfile();
-                        setUser({ uid: lp.userId, displayName: lp.displayName });
-                        const response = await fetch(`${GAS_URL}?userId=${lp.userId}&action=checkStatus`);
-                        const gasData = await response.json();
-                        if (gasData.status === 'NOT_FOUND') setViewState('REGISTER');
-                        else { setProfile(gasData); await refreshFiles(lp.userId, gasData.role); setViewState('MAIN'); }
-                    } catch (e) { setViewState('LOGIN'); }
-                };
-                init();
-            }, []);
-
-            const handleLogin = () => { if (isLiffInit) liff.login(); };
-
-            const handleSave = async (id, name, content) => {
-                setIsGlobalLoading(true);
-                try {
-                    const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: String(user.uid), id: String(id), name, content }) });
-                    const result = await res.json();
-                    if(result.success) {
-                        await refreshFiles(user.uid, profile.role);
-                        setActiveFile(null);
-                    }
-                } catch (e) { alert("儲存失敗"); }
-                finally { setIsGlobalLoading(false); }
-            };
-
-            const handleDelete = async (id) => {
-                if(!confirm("確定要永久刪除？")) return;
-                setIsGlobalLoading(true);
-                try {
-                    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteFile', userId: String(user.uid), id: String(id) }) });
-                    setUserFiles(prev => prev.filter(f => String(f.id) !== String(id)));
-                } catch (e) {}
-                finally { setIsGlobalLoading(false); }
-            };
-
-            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white text-black font-black uppercase italic animate-pulse"><div className="loader mb-4"></div>Connecting Center...</div>;
-            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black text-black"><button onClick={handleLogin} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">登入管理平台中心</button></div>;
-
-            const currentProject = PROJECTS[activeLevel2];
-
-            return (
-                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black font-black">
-                    {isGlobalLoading && <div className="overlay-loading font-black uppercase italic text-black font-black text-xl"><div className="loader mb-4"></div>同步數據中...</div>}
-                    <aside className="w-64 line-sidebar flex flex-col shrink-0 border-r border-slate-300 font-bold font-black">
-                        <div className="h-16 flex flex-col justify-center px-6 border-b border-slate-300 bg-white shadow-sm z-10 font-bold font-black">
-                            <span className="font-black text-[#06C755] text-xl uppercase italic tracking-tighter leading-none mb-1">Flex Hub Center</span>
-                            <span className="text-[8px] text-black font-black tracking-widest opacity-40 uppercase font-bold">{APP_VERSION}</span>
-                        </div>
-                        <nav className="flex-1 overflow-y-auto custom-scrollbar pt-4 text-black font-black">
-                            {Object.keys(PROJECTS).filter(k=>PROJECTS[k].parent==='MSG').map(key => (
-                                <button key={key} onClick={()=>{setActiveLevel2(key); setActiveFile(null);}} className={`w-full text-left px-10 py-4 text-sm transition-all border-r-4 ${activeLevel2 === key && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent text-black font-bold font-black'}`}>{PROJECTS[key].name}</button>
-                            ))}
-                        </nav>
-                        <div className="p-5 border-t border-slate-300 bg-white flex items-center gap-3 font-black uppercase font-black font-black">
-                            <div className="overflow-hidden min-w-0 font-black">
-                                <div className="text-xs truncate font-bold text-black uppercase tracking-tight font-bold font-black">{profile?.name}</div>
-                                <div className="text-[10px] text-black font-black tracking-tight mt-1 uppercase opacity-60 font-black font-bold font-black">EXP: {profile?.endDate ? new Date(profile.endDate).toLocaleDateString() : '--'}</div>
-                            </div>
-                        </div>
-                    </aside>
-                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner font-bold font-black">
-                        {activeFile ? (
-                            <EditorView key={String(activeFile.id)} file={activeFile} onSave={handleSave} onCancel={() => setActiveFile(null)} projectUrl={currentProject.url} defaultTemplate={currentProject.template} />
-                        ) : (
-                            <DirectoryView projectName={currentProject.name} files={userFiles} onAdd={()=>setActiveFile({id: String(Date.now()), name:"新設計專案", content: currentProject.template})} onEdit={f=>setActiveFile(f)} onDelete={handleDelete} isAdmin={profile?.role === '系統管理員'} />
-                        )}
-                    </main>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        }
     </script>
 </body>
 </html>
