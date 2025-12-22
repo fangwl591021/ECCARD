@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 完整功能恢復版 (v2.2.3)</title>
+    <title>FLEX Hub Pro - 數據傳輸修復版 (v2.2.4)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -44,16 +44,19 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const APP_VERSION = "v2.2.3";
+        const APP_VERSION = "v2.2.4";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
-        // --- 核心工具 ---
-        function cleanJsonText(str) {
+        // --- 核心工具：清洗與處理 JSON ---
+        function processFinalJson(str) {
             if (!str) return "";
             let s = String(str).trim();
-            if (s.startsWith('"') && s.endsWith('"')) { s = s.substring(1, s.length - 1).replace(/""/g, '"'); }
+            // 處理雙引號問題
+            if (s.startsWith('"') && s.endsWith('"')) { 
+                s = s.substring(1, s.length - 1).replace(/""/g, '"'); 
+            }
             return s;
         }
 
@@ -70,13 +73,18 @@
                             { "type": "box", "layout": "vertical", "width": "32%", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/mwMvo", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 A", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
                             { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/2Nu8G", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 B", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
                             { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/yRfpn", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 C", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] }
+                        ]},
+                        { "type": "box", "layout": "horizontal", "margin": "md", "contents": [
+                            { "type": "box", "layout": "vertical", "width": "32%", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/yRfpn", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 D", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
+                            { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/2Nu8G", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 E", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
+                            { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/mwMvo", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 F", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] }
                         ]}
                     ] }
                 ] }]
             },
             "footer": { "type": "box", "layout": "horizontal", "spacing": "md", "backgroundColor": "#ffffff", "paddingTop": "md", "contents": [
-                { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "官方網站", "uri": "https://line.me" } },
-                { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "聯繫客服", "uri": "https://line.me" } }
+                { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "品牌故事", "uri": "https://liff.line.me/2008704329-cTkwlRHm" } },
+                { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "好友分享", "uri": "line://nv/recommendOA/@754tjssx" } }
             ]}
         }, null, 2);
 
@@ -92,7 +100,7 @@
                     ]},
                     { "type": "box", "layout": "vertical", "paddingAll": "15px", "paddingTop": "45px", "contents": [
                         { "type": "text", "text": "王小明", "weight": "bold", "size": "xl", "color": "#111111" },
-                        { "type": "text", "text": "資深開發工程師\n專業 LINE Bot 解決方案", "wrap": true, "size": "sm", "margin": "md", "color": "#666666" }
+                        { "type": "text", "text": "職稱或自我介紹說明...", "wrap": true, "size": "sm", "margin": "md", "color": "#666666" }
                     ]},
                     { "type": "box", "layout": "vertical", "position": "absolute", "offsetTop": "120px", "offsetStart": "0px", "offsetEnd": "0px", "alignItems": "center", "contents": [
                         { "type": "box", "layout": "vertical", "width": "80px", "height": "80px", "cornerRadius": "100px", "borderWidth": "3px", "borderColor": "#ffffff", "contents": [{ "type": "image", "url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200", "size": "full", "aspectRatio": "1:1", "aspectMode": "cover" }] }
@@ -132,11 +140,11 @@
             <div className="modal-overlay">
                 <div className="bg-white rounded-3xl p-8 max-w-xs w-full shadow-2xl border-4 border-black font-black text-black">
                     <div className="flex justify-center mb-4 text-red-600 animate-bounce"><Icon name="alert" className="w-12 h-12" /></div>
-                    <h3 className="text-xl text-center mb-2">確定要刪除嗎？</h3>
-                    <p className="text-sm text-center text-slate-500 mb-6 italic">「{name}」將會永久從雲端移除。</p>
+                    <h3 className="text-xl text-center mb-2 font-black">確定要刪除嗎？</h3>
+                    <p className="text-sm text-center text-slate-500 mb-6 italic font-bold">「{name}」將會永久從雲端移除。</p>
                     <div className="flex gap-3">
-                        <button onClick={onCancel} className="flex-1 py-3 border-2 border-slate-300 rounded-xl hover:bg-slate-50">取消</button>
-                        <button onClick={onConfirm} className="flex-1 py-3 bg-red-600 text-white rounded-xl shadow-lg active:scale-95">確定刪除</button>
+                        <button onClick={onCancel} className="flex-1 py-3 border-2 border-slate-300 rounded-xl hover:bg-slate-50 font-black">取消</button>
+                        <button onClick={onConfirm} className="flex-1 py-3 bg-red-600 text-white rounded-xl shadow-lg active:scale-95 font-black">確定刪除</button>
                     </div>
                 </div>
             </div>
@@ -148,14 +156,14 @@
                 <div className="flex justify-between items-end border-b border-slate-300 pb-6 mb-6">
                     <div>
                         <h2 className="text-2xl font-black uppercase tracking-tighter">{projectName}</h2>
-                        <p className="text-black text-sm mt-1 opacity-60 font-black italic">FLEX HUB OA (v2.2.3)</p>
+                        <p className="text-black text-sm mt-1 opacity-60 font-black italic">雲端同步系統 ({APP_VERSION})</p>
                     </div>
                     <button onClick={onAdd} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 shadow-md active:scale-95 transition-all"><Icon name="plus" /> 建立新設計</button>
                 </div>
                 <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm font-black">
                     <table className="w-full text-left text-base">
                         <thead className="bg-slate-100 border-b border-slate-300 uppercase text-sm font-black tracking-widest">
-                            <tr><th className="p-5">專案名稱</th><th className="p-5 text-center">存檔狀態</th><th className="p-5 text-right">操作管理</th></tr>
+                            <tr><th className="p-5">設計專案名稱</th><th className="p-5 text-center">存檔狀態</th><th className="p-5 text-right">操作管理</th></tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
                             {files.length === 0 ? <tr><td colSpan="3" className="p-10 text-center italic opacity-30">目前無存檔數據...</td></tr> : files.map(f => (
@@ -174,70 +182,98 @@
             </div>
         );
 
-        // --- 組件：EditorView ---
+        // --- 組件：EditorView (核心修復版) ---
         const EditorView = ({ file, onSave, onCancel, projectUrl, defaultTemplate }) => {
             const [localName, setLocalName] = useState(file.name || "");
-            const [localJson, setLocalJson] = useState(cleanJsonText(file.content || defaultTemplate));
+            const [localJson, setLocalJson] = useState(processFinalJson(file.content || defaultTemplate));
             const iframeRef = useRef(null);
+            const latestJsonRef = useRef(processFinalJson(file.content || defaultTemplate));
             const [toast, setToast] = useState(null);
 
             const showMsg = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
+            // 確保 Ref 隨時保持最新，用於發送與儲存
+            useEffect(() => {
+                latestJsonRef.current = localJson;
+            }, [localJson]);
+
             useEffect(() => {
                 const handleMessage = (event) => {
-                    if (event.data && event.data.type === 'SYNC_FLEX_DATA') setLocalJson(cleanJsonText(event.data.json));
+                    if (event.data && event.data.type === 'SYNC_FLEX_DATA') {
+                        const received = processFinalJson(event.data.json);
+                        if (received) {
+                            setLocalJson(received);
+                        }
+                    }
                     if (event.data && event.data.type === 'CHILD_READY') {
-                        if (iframeRef.current) iframeRef.current.contentWindow.postMessage({ type: 'LOAD_FLEX_DATA', json: localJson || defaultTemplate }, '*');
+                        if (iframeRef.current) {
+                            iframeRef.current.contentWindow.postMessage({ 
+                                type: 'LOAD_FLEX_DATA', 
+                                json: latestJsonRef.current 
+                            }, '*');
+                        }
                     }
                 };
                 window.addEventListener('message', handleMessage);
                 return () => window.removeEventListener('message', handleMessage);
-            }, [localJson, defaultTemplate]);
+            }, []);
 
             const handleSend = async () => {
                 try {
-                    const finalCode = cleanJsonText(localJson).replace(/\{\{LIFF_URL\}\}/g, LIFF_URL);
+                    // 全局替換標籤
+                    const finalCode = latestJsonRef.current
+                        .replace(/\{\{LIFF_URL\}\}/g, LIFF_URL)
+                        .replace(/\{\{LIFF_ID\}\}/g, LIFF_ID);
+                    
                     const flexMessage = JSON.parse(finalCode);
+                    
                     if (liff.isApiAvailable('shareTargetPicker')) {
-                        const result = await liff.shareTargetPicker([{ type: "flex", altText: `設計：${localName}`, contents: flexMessage }]);
-                        if (result) showMsg("✅ 發送成功！");
+                        const result = await liff.shareTargetPicker([{ 
+                            type: "flex", 
+                            altText: `設計專案：${localName || "Flex設計"}`, 
+                            contents: flexMessage 
+                        }]);
+                        if (result) showMsg("✅ 已成功發送至 LINE！");
                     }
-                } catch (e) { alert("JSON 格式錯誤，無法發送"); }
+                } catch (e) { 
+                    console.error(e);
+                    alert("JSON 內容不完整或格式錯誤，請檢查編輯器內容。"); 
+                }
             };
 
             return (
                 <div className="h-full flex flex-col bg-white overflow-hidden relative font-black text-black">
                     {toast && <div className="toast">{toast}</div>}
-                    <div className="h-20 border-b border-slate-300 px-6 flex items-center justify-between bg-white z-20 shadow-md shrink-0">
+                    <div className="h-24 border-b border-slate-300 px-6 flex items-center justify-between bg-white z-20 shadow-md shrink-0">
                         <div className="flex items-center gap-6 flex-1 h-full">
                             <button onClick={onCancel} className="text-black hover:text-green-600 transition-colors shrink-0">
-                                <Icon name="left" className="w-8 h-8" />
+                                <Icon name="left" className="w-10 h-10" />
                             </button>
                             
-                            <div className="flex items-center gap-4 bg-slate-50 border-2 border-black rounded-xl px-5 py-2 flex-1 max-w-2xl group transition-all focus-within:border-[#06C755] focus-within:bg-white focus-within:ring-4 focus-within:ring-green-50 shadow-inner">
-                                <div className="flex flex-col shrink-0 border-r border-slate-200 pr-4 mr-2">
-                                    <span className="text-[10px] text-slate-400 uppercase tracking-tighter leading-none mb-1">PROJ NAME</span>
-                                    <span className="text-xs text-black font-black uppercase tracking-widest leading-none">設計專案</span>
+                            <div className="flex items-center gap-4 bg-slate-50 border-2 border-black rounded-2xl px-6 py-3 flex-1 max-w-2xl shadow-inner focus-within:bg-white focus-within:border-[#06C755] transition-all">
+                                <div className="flex flex-col shrink-0 border-r border-slate-200 pr-5">
+                                    <span className="text-[10px] text-slate-400 uppercase tracking-tighter leading-none mb-1">FILENAME</span>
+                                    <span className="text-sm text-black font-black uppercase tracking-widest leading-none">檔案名稱</span>
                                 </div>
                                 <input 
                                     type="text" 
                                     value={localName} 
                                     onChange={e=>setLocalName(e.target.value)} 
-                                    placeholder="請輸入檔案名稱 (例如：12月促銷案)..."
-                                    className="bg-transparent border-none p-0 outline-none text-2xl w-full font-black text-black placeholder:text-slate-300 placeholder:italic focus:ring-0" 
+                                    placeholder="請在此輸入專案名稱 (必填)..."
+                                    className="bg-transparent border-none p-0 outline-none text-2xl w-full font-black text-black placeholder:text-slate-300 focus:ring-0" 
                                 />
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <button onClick={handleSend} className="bg-[#06C755] text-white px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 active:scale-95 shadow-md font-black uppercase tracking-wider">
-                                <Icon name="send" /> <span>發送 (通訊錄)</span>
+                        <div className="flex items-center gap-4 ml-4">
+                            <button onClick={handleSend} className="bg-[#06C755] text-white px-8 py-4 rounded-2xl text-lg flex items-center gap-2 active:scale-95 shadow-xl font-black uppercase tracking-wider hover:bg-[#05b34c] transition-all">
+                                <Icon name="send" className="w-6 h-6" /> <span>發送設計</span>
                             </button>
                             <button 
-                                onClick={()=>onSave(file.id, localName || "未命名設計", localJson)} 
-                                className="bg-black text-white px-8 py-3 rounded-xl font-black text-base active:scale-95 shadow-xl flex items-center gap-2 hover:bg-slate-800 transition-all"
+                                onClick={()=>onSave(file.id, localName || "未命名設計", latestJsonRef.current)} 
+                                className="bg-black text-white px-8 py-4 rounded-2xl font-black text-lg active:scale-95 shadow-xl flex items-center gap-2 hover:bg-slate-800 transition-all border-2 border-transparent"
                             >
-                                <Icon name="save" className="w-5 h-5" /> 
+                                <Icon name="save" className="w-6 h-6" /> 
                                 <span>儲存至雲端</span>
                             </button>
                         </div>
@@ -273,7 +309,7 @@
                     try {
                         const isPreview = window.location.href.includes('usercontent.goog');
                         if (isPreview) {
-                            const mockUser = { uid: 'DEBUG', displayName: '測試員' };
+                            const mockUser = { uid: 'DEBUG_USER', displayName: '測試員' };
                             setUser(mockUser); setProfile({ status: 'APPROVED', name: '管理員', role: '系統管理員' });
                             await refreshFiles(mockUser.uid, '系統管理員'); setViewState('MAIN'); return;
                         }
@@ -290,12 +326,12 @@
             }, []);
 
             const handleSave = async (id, name, content) => {
-                if(!name) { alert("請輸入設計專案名稱"); return; }
+                if(!name || name.trim() === "") { alert("請先輸入檔案名稱再儲存。"); return; }
                 setIsGlobalLoading(true);
                 try {
-                    const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: String(user.uid), id: String(id), name, content }) });
+                    const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: String(user.uid), id: String(id), name: name.trim(), content }) });
                     if ((await res.json()).success) { await refreshFiles(user.uid, profile.role); setActiveFile(null); }
-                } catch (e) { alert("儲存失敗"); }
+                } catch (e) { alert("連線 GAS 伺服器失敗。"); }
                 setIsGlobalLoading(false);
             };
 
@@ -314,18 +350,18 @@
                 setIsGlobalLoading(false);
             };
 
-            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white italic animate-pulse font-black"><div className="loader mb-4"></div>HUB LOADING...</div>;
-            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">登入中心系統</button></div>;
+            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white italic animate-pulse font-black"><div className="loader mb-4"></div>數據載入中...</div>;
+            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">登入系統</button></div>;
 
             const currentProject = PROJECTS[activeLevel2];
 
             return (
                 <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black">
-                    {isGlobalLoading && <div className="overlay-loading font-black text-xl uppercase italic"><div className="loader mb-4"></div>SYNCING...</div>}
+                    {isGlobalLoading && <div className="overlay-loading font-black text-xl uppercase italic"><div className="loader mb-4"></div>數據同步中...</div>}
                     {deleteTarget && <DeleteModal name={deleteTarget.name} onConfirm={confirmDelete} onCancel={()=>setDeleteTarget(null)} />}
                     
-                    <aside className="w-64 line-sidebar flex flex-col shrink-0 border-r border-slate-300 font-black">
-                        <div className="h-20 flex flex-col justify-center px-6 border-b border-slate-300 bg-white shadow-sm z-10 shrink-0 font-black">
+                    <aside className="w-64 line-sidebar flex flex-col shrink-0 border-r border-slate-300">
+                        <div className="h-24 flex flex-col justify-center px-6 border-b border-slate-300 bg-white shadow-sm z-10 shrink-0 font-black">
                             <span className="font-black text-[#06C755] text-xl uppercase italic tracking-tighter">Flex Hub OA</span>
                             <span className="text-[8px] opacity-40 uppercase tracking-widest font-black">{APP_VERSION}</span>
                         </div>
@@ -340,9 +376,9 @@
                     </aside>
                     <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner font-bold font-black">
                         {activeFile ? (
-                            <EditorView key={String(activeFile.id)} file={activeFile} onSave={handleSave} onCancel={() => setActiveFile(null)} projectUrl={PROJECTS[activeLevel2].url} defaultTemplate={PROJECTS[activeLevel2].template} />
+                            <EditorView key={String(activeFile.id)} file={activeFile} onSave={handleSave} onCancel={() => setActiveFile(null)} projectUrl={currentProject.url} defaultTemplate={currentProject.template} />
                         ) : (
-                            <DirectoryView projectName={PROJECTS[activeLevel2].name} files={userFiles} onAdd={()=>setActiveFile({id: String(Date.now()), name:"", content: PROJECTS[activeLevel2].template})} onEdit={f=>setActiveFile(f)} onDelete={f=>setDeleteTarget(f)} />
+                            <DirectoryView projectName={currentProject.name} files={userFiles} onAdd={()=>setActiveFile({id: String(Date.now()), name:"", content: PROJECTS[activeLevel2].template})} onEdit={f=>setActiveFile(f)} onDelete={f=>setDeleteTarget(f)} />
                         )}
                     </main>
                 </div>
