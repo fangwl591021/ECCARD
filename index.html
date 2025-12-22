@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 範例完整版 (v2.1.8)</title>
-    <!-- 核心庫載入 -->
+    <title>FLEX Hub Pro - 終極移植版 (v2.1.9)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- LINE LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
@@ -33,12 +31,18 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const APP_VERSION = "v2.1.8";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
-        // --- 核心：包含 6 個商品與完整 lihi 網址的範例模板 ---
+        function cleanJsonText(str) {
+            if (!str) return "";
+            let s = String(str).trim();
+            if (s.startsWith('"') && s.endsWith('"')) { s = s.substring(1, s.length - 1).replace(/""/g, '"'); }
+            return s;
+        }
+
+        // --- 核心：這才是真正的完整範例模板 (包含全部 6 個商品、lihi、影片、背景) ---
         const ECOMMERCE_FULL_TEMPLATE = JSON.stringify({
             "type": "bubble", "size": "mega",
             "hero": { "type": "video", "url": "https://lihi.cc/YsmAp", "previewUrl": "https://lihi.cc/5OXMZ", "aspectRatio": "16:9", "altContent": { "type": "image", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover", "url": "https://lihi.cc/5OXMZ" } },
@@ -70,14 +74,6 @@
             ECOMMERCE: { id: 'ECOMMERCE', name: "電商商品版", url: "./tool-ecommerce.html", template: ECOMMERCE_FULL_TEMPLATE }
         };
 
-        function cleanJsonText(str) {
-            if (!str) return "";
-            let s = String(str).trim();
-            if (s.startsWith('"') && s.endsWith('"')) { s = s.substring(1, s.length - 1).replace(/""/g, '"'); }
-            return s;
-        }
-
-        // --- 組件：Icon ---
         const Icon = ({ name, className = "w-4 h-4" }) => {
             const icons = {
                 left: <polyline points="15 18 9 12 15 6" />,
@@ -91,13 +87,12 @@
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || null}</svg>;
         };
 
-        // --- 組件：DirectoryView ---
         const DirectoryView = ({ files, projectName, onAdd, onEdit, onDelete }) => (
             <div className="p-8 h-full overflow-y-auto custom-scrollbar animate-in fade-in duration-300 font-bold text-black">
                 <div className="flex justify-between items-end border-b border-slate-300 pb-6 mb-6">
                     <div>
                         <h2 className="text-2xl font-black uppercase tracking-tighter">{projectName}</h2>
-                        <p className="text-black text-sm mt-1 opacity-60">FLEX HUB CENTER (v2.1.8)</p>
+                        <p className="text-black text-sm mt-1 opacity-60">FLEX HUB OA (v2.1.9)</p>
                     </div>
                     <button onClick={onAdd} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 shadow-md active:scale-95 transition-all"><Icon name="plus" /> 建立新設計</button>
                 </div>
@@ -107,8 +102,8 @@
                             <tr><th className="p-5">設計名稱</th><th className="p-5 text-center">狀態</th><th className="p-5 text-right">管理</th></tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
-                            {files.length === 0 ? <tr><td colSpan="3" className="p-10 text-center italic opacity-30">無存檔記錄...</td></tr> : files.map(f => (
-                                <tr key={String(f.id)} className="hover:bg-slate-50">
+                            {files.length === 0 ? <tr><td colSpan="3" className="p-10 text-center italic opacity-30">無數據存檔...</td></tr> : files.map(f => (
+                                <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors font-black">
                                     <td className="p-5 font-black text-xl">{f.name}</td>
                                     <td className="p-5 text-center"><span className={`px-3 py-1 rounded-full text-xs font-black ${f.content ? 'bg-green-100 text-green-700' : 'bg-slate-200'}`}>{f.content ? '✓ 已存' : '○ 空白'}</span></td>
                                     <td className="p-5 text-right space-x-6">
@@ -123,7 +118,6 @@
             </div>
         );
 
-        // --- 組件：EditorView ---
         const EditorView = ({ file, onSave, onCancel, projectUrl, defaultTemplate }) => {
             const [localName, setLocalName] = useState(file.name || "未命名設計");
             const [localJson, setLocalJson] = useState(cleanJsonText(file.content || defaultTemplate));
@@ -144,7 +138,8 @@
 
             const handleSend = async () => {
                 try {
-                    const flexMessage = JSON.parse(cleanJsonText(localJson));
+                    const finalCode = cleanJsonText(localJson).replace(/\{\{LIFF_URL\}\}/g, LIFF_URL);
+                    const flexMessage = JSON.parse(finalCode);
                     if (liff.isApiAvailable('shareTargetPicker')) {
                         const result = await liff.shareTargetPicker([{ type: "flex", altText: `設計：${localName}`, contents: flexMessage }]);
                         if (result) { setToast("✅ 發送成功！"); setTimeout(()=>setToast(null), 3000); }
@@ -155,7 +150,7 @@
             return (
                 <div className="h-full flex flex-col bg-white overflow-hidden relative font-black text-black">
                     {toast && <div className="toast">{toast}</div>}
-                    <div className="h-16 border-b border-slate-300 px-6 flex items-center justify-between bg-white z-20 shadow-sm">
+                    <div className="h-16 border-b border-slate-300 px-6 flex items-center justify-between bg-white z-20 shadow-sm font-black">
                         <div className="flex items-center gap-4 flex-1">
                             <button onClick={onCancel} className="text-black hover:text-green-600"><Icon name="left" className="w-8 h-8" /></button>
                             <input type="text" value={localName} onChange={e=>setLocalName(e.target.value)} className="bg-transparent border-none p-0 outline-none focus:text-[#06C755] text-lg w-full max-w-sm font-black" />
@@ -180,7 +175,6 @@
         const App = () => {
             const [viewState, setViewState] = useState('LOADING'); 
             const [user, setUser] = useState(null);
-            const [profile, setProfile] = useState(null);
             const [activeLevel2, setActiveLevel2] = useState('ECOMMERCE');
             const [activeFile, setActiveFile] = useState(null);
             const [userFiles, setUserFiles] = useState([]);
@@ -200,16 +194,13 @@
                     try {
                         if (isPreview) {
                             const mockUser = { uid: 'DEBUG', displayName: '測試員' };
-                            setUser(mockUser); setProfile({ status: 'APPROVED', name: '測試員' });
-                            await refreshFiles(mockUser.uid); setViewState('MAIN'); return;
+                            setUser(mockUser); await refreshFiles(mockUser.uid); setViewState('MAIN'); return;
                         }
                         await liff.init({ liffId: LIFF_ID });
                         if (!liff.isLoggedIn()) { setViewState('LOGIN'); return; }
                         const lp = await liff.getProfile();
                         setUser({ uid: lp.userId, displayName: lp.displayName });
-                        const res = await fetch(`${GAS_URL}?userId=${lp.userId}&action=checkStatus`);
-                        const gasData = await res.json();
-                        setProfile(gasData); await refreshFiles(lp.userId); setViewState('MAIN');
+                        await refreshFiles(lp.userId); setViewState('MAIN');
                     } catch (e) { setViewState('LOGIN'); }
                 };
                 init();
@@ -225,38 +216,32 @@
             };
 
             const handleDelete = async (id) => {
-                if(!confirm("確定要永久刪除？")) return;
+                if(!confirm("永久刪除設計？")) return;
                 setIsGlobalLoading(true);
-                try {
-                    const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteFile', userId: String(user.uid), id: String(id) }) });
-                    if ((await res.json()).success) await refreshFiles(user.uid);
-                } catch (e) {}
+                try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteFile', userId: String(user.uid), id: String(id) }) }); await refreshFiles(user.uid); } catch (e) {}
                 setIsGlobalLoading(false);
             };
 
-            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white italic animate-pulse font-black"><div className="loader mb-4"></div>HUB LOADING...</div>;
-            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">登入中心系統</button></div>;
+            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white font-black italic animate-pulse font-black"><div className="loader mb-4 font-black"></div>SYNCING CENTER...</div>;
+            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">登入系統</button></div>;
 
             return (
-                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black">
-                    {isGlobalLoading && <div className="overlay-loading font-black text-xl uppercase italic"><div className="loader mb-4"></div>SYNCING...</div>}
-                    <aside className="w-64 line-sidebar flex flex-col shrink-0 border-r border-slate-300">
+                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black font-black">
+                    {isGlobalLoading && <div className="overlay-loading font-black text-xl uppercase italic"><div className="loader mb-4"></div>數據處理中...</div>}
+                    <aside className="w-64 line-sidebar flex flex-col shrink-0 border-r border-slate-300 font-black">
                         <div className="h-16 flex flex-col justify-center px-6 border-b border-slate-300 bg-white shadow-sm z-10">
-                            <span className="font-black text-[#06C755] text-xl uppercase italic tracking-tighter leading-none mb-1">Flex Hub Center</span>
-                            <span className="text-[8px] text-black font-black tracking-widest opacity-40 leading-none uppercase font-bold">{APP_VERSION}</span>
+                            <span className="font-black text-[#06C755] text-xl uppercase italic tracking-tighter">Flex Hub Center</span>
                         </div>
                         <nav className="flex-1 overflow-y-auto pt-4">
                             {Object.keys(PROJECTS).map(key => (
                                 <button key={key} onClick={()=>{setActiveLevel2(key); setActiveFile(null);}} className={`w-full text-left px-10 py-5 text-sm transition-all border-r-4 font-black ${activeLevel2 === key && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent'}`}>{PROJECTS[key].name}</button>
                             ))}
                         </nav>
-                        <div className="p-5 border-t border-slate-300 bg-white flex items-center gap-3 font-black uppercase text-xs">
-                            <div className="overflow-hidden min-w-0">
-                                <div className="truncate font-bold text-black">{profile?.name || user?.displayName}</div>
-                            </div>
+                        <div className="p-5 border-t border-slate-300 bg-white flex items-center gap-3 font-black font-black uppercase text-xs">
+                            <div className="truncate font-bold text-black font-black">{user?.displayName}</div>
                         </div>
                     </aside>
-                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner font-bold">
+                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner font-bold font-black">
                         {activeFile ? (
                             <EditorView key={String(activeFile.id)} file={activeFile} onSave={handleSave} onCancel={() => setActiveFile(null)} projectUrl={PROJECTS[activeLevel2].url} defaultTemplate={PROJECTS[activeLevel2].template} />
                         ) : (
