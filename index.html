@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 專業儀表板 (v2.3.7)</title>
+    <title>FLEX Hub Pro - 專業儀表板 (v2.3.8)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -52,7 +52,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const APP_VERSION = "v2.3.7";
+        const APP_VERSION = "v2.3.8";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
@@ -73,20 +73,11 @@
             return s;
         }
 
-        // --- 預設模板 ---
+        // --- 預設模板集 ---
         const ECOMMERCE_FULL_TEMPLATE = JSON.stringify({
             "type": "bubble", "size": "mega",
-            "hero": { "type": "video", "url": "https://lihi.cc/YsmAp", "previewUrl": "https://lihi.cc/5OXMZ", "aspectRatio": "16:9", "altContent": { "type": "image", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover", "url": "https://lihi.cc/5OXMZ" } },
             "body": {
-                "type": "box", "layout": "vertical", "backgroundColor": "#F8F8F8", "paddingAll": "none",
-                "contents": [{ "type": "box", "layout": "vertical", "contents": [
-                    { "type": "image", "url": "https://lihi.cc/l5qqU", "position": "absolute", "size": "full", "aspectMode": "cover" },
-                    { "type": "box", "layout": "vertical", "paddingAll": "md", "contents": [
-                        { "type": "box", "layout": "horizontal", "contents": [
-                            { "type": "box", "layout": "vertical", "width": "32%", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/mwMvo", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 A", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] }
-                        ]}
-                    ] }
-                ] }]
+                "type": "box", "layout": "vertical", "contents": [{ "type": "text", "text": "電商模板" }]
             }
         });
 
@@ -95,15 +86,10 @@
             "body": {
                 "type": "box", "layout": "vertical", "paddingAll": "0px",
                 "contents": [
-                    { "type": "box", "layout": "vertical", "contents": [
-                        { "type": "image", "url": "https://lihi.cc/5OXMZ", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover" }
-                    ]},
-                    { "type": "box", "layout": "vertical", "paddingAll": "15px", "paddingTop": "45px", "contents": [
-                        { "text": "王小明", "type": "text", "weight": "bold", "size": "xl", "color": "#111111" }
-                    ]}
+                    { "type": "image", "url": "https://lihi.cc/5OXMZ", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover" },
+                    { "type": "box", "layout": "vertical", "paddingAll": "15px", "contents": [{ "text": "王小明", "type": "text", "weight": "bold", "size": "xl", "color": "#000000" }] }
                 ]
-            },
-            "footer": { "type": "box", "layout": "vertical", "contents": [{ "type": "text", "text": "立即預約", "align": "center", "color": "#ffffff", "weight": "bold" }], "paddingAll": "10px", "backgroundColor": "#00b900", "cornerRadius": "md", "action": { "type": "uri", "uri": "https://line.me" } }
+            }
         });
 
         const SEQUENTIAL_PRO_TEMPLATE = JSON.stringify({
@@ -112,10 +98,10 @@
                 "type": "box", "layout": "vertical", "paddingAll": "0px",
                 "contents": [
                     { "type": "image", "url": "https://aiwe.cc/wp-content/uploads/2025/12/f4545de10a478013942e50dd8c13282b-2.png", "size": "full", "aspectRatio": "1:2", "aspectMode": "cover" },
-                    { "type": "box", "layout": "vertical", "position": "absolute", "offsetTop": "155px", "offsetStart": "0px", "offsetEnd": "0px", "contents": [{ "type": "text", "text": "新設計", "weight": "bold", "size": "xxl", "color": "#000000", "align": "center" }] }
+                    { "type": "box", "layout": "vertical", "position": "absolute", "offsetTop": "155px", "offsetStart": "0px", "offsetEnd": "0px", "contents": [{ "type": "text", "text": "專業業務名片", "weight": "bold", "size": "xxl", "color": "#000000", "align": "center" }] }
                 ]
             },
-            "footer": { "type": "box", "layout": "vertical", "paddingAll": "15px", "backgroundColor": "#111111", "contents": [{ "type": "box", "layout": "vertical", "backgroundColor": "#D4AF37", "paddingAll": "12px", "cornerRadius": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "text", "text": "聯繫我", "color": "#000000", "align": "center", "weight": "bold", "size": "sm" }] }] }
+            "footer": { "type": "box", "layout": "vertical", "paddingAll": "15px", "backgroundColor": "#111111", "contents": [{ "type": "box", "layout": "vertical", "backgroundColor": "#D4AF37", "paddingAll": "12px", "cornerRadius": "md", "contents": [{ "type": "text", "text": "聯繫我", "color": "#000000", "align": "center", "weight": "bold", "size": "sm" }] }] }
         });
 
         const NAV_GROUPS = [
@@ -137,7 +123,7 @@
             }
         ];
 
-        // --- 子組件：Icon (使用全名 React.Fragment 以確保 Babel 編譯穩定) ---
+        // --- 子組件：Icon ---
         const Icon = ({ name, className = "w-4 h-4" }) => {
             const icons = {
                 left: <polyline points="15 18 9 12 15 6" />,
@@ -160,11 +146,11 @@
             <div className="modal-overlay">
                 <div className="bg-white rounded-3xl p-8 max-w-xs w-full shadow-2xl border-4 border-black font-black text-black text-center">
                     <div className="flex justify-center mb-4 text-red-600 animate-bounce"><Icon name="alert" className="w-12 h-12" /></div>
-                    <h3 className="text-xl mb-2 font-black text-black">確定要刪除嗎？</h3>
+                    <h3 className="text-xl mb-2 font-black">確定要刪除嗎？</h3>
                     <p className="text-sm text-slate-500 mb-6 font-bold italic">「{name}」將會永久移除。</p>
                     <div className="flex gap-3">
-                        <button onClick={onCancel} className="flex-1 py-3 border-2 border-slate-300 rounded-xl font-black transition-all hover:bg-slate-50">取消</button>
-                        <button onClick={onConfirm} className="flex-1 py-3 bg-red-600 text-white rounded-xl shadow-lg active:scale-95 font-black transition-all hover:bg-red-700">確定</button>
+                        <button onClick={onCancel} className="flex-1 py-3 border-2 border-slate-300 rounded-xl font-black hover:bg-slate-50 transition-all">取消</button>
+                        <button onClick={onConfirm} className="flex-1 py-3 bg-red-600 text-white rounded-xl shadow-lg active:scale-95 font-black hover:bg-red-700 transition-all">確定</button>
                     </div>
                 </div>
             </div>
@@ -177,7 +163,7 @@
                         <h2 className="text-2xl font-black uppercase tracking-tighter">{projectName}</h2>
                         <p className="text-black text-sm mt-1 opacity-60 font-black italic tracking-widest">{APP_VERSION}</p>
                     </div>
-                    <button onClick={onAdd} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 shadow-md active:scale-95 transition-all"><Icon name="plus" /> 建立新設計</button>
+                    <button onClick={onAdd} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 shadow-md active:scale-95 transition-all hover:bg-[#05b34c]"><Icon name="plus" /> 建立新設計</button>
                 </div>
                 <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
                     <table className="w-full text-left">
@@ -188,13 +174,13 @@
                                 <th className="p-5 text-sm text-right">操作管理</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-200 text-black">
+                        <tbody className="divide-y divide-slate-200">
                             {files.length === 0 ? <tr><td colSpan="3" className="p-10 text-center italic opacity-30">目前無存檔數據...</td></tr> : files.map(f => (
                                 <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors font-black">
                                     <td className="p-5 text-base">{f.name}</td>
                                     <td className="p-5 text-center"><span className={`px-4 py-1 rounded-full text-xs font-black ${f.content ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>{f.content ? '✓ 已同步' : '○ 空白'}</span></td>
                                     <td className="p-5 text-right space-x-6">
-                                        <button onClick={()=>onEdit(f)} className="text-blue-700 font-black hover:underline text-base transition-colors">編輯</button>
+                                        <button onClick={()=>onEdit(f)} className="text-blue-700 font-black hover:underline text-base">編輯</button>
                                         <button onClick={()=>onDelete(f)} className="text-red-500 hover:text-red-700 transition-colors inline-block align-middle"><Icon name="trash" className="w-6 h-6" /></button>
                                     </td>
                                 </tr>
@@ -236,32 +222,37 @@
                 try {
                     const currentCode = latestJsonRef.current;
                     if (!currentCode || currentCode === "{}") {
-                        alert("目前內容為空，無法發送。");
+                        alert("目前無有效的設計內容。請先在編輯器中操作後再試。");
                         return;
                     }
 
+                    // 1. 變數替換
                     const finalCode = currentCode
                         .replace(/\{\{LIFF_URL\}\}/g, LIFF_URL)
                         .replace(/\{\{LIFF_ID\}\}/g, LIFF_ID);
                     
+                    // 2. 解析檢查
                     let flexMessage;
                     try {
                         flexMessage = JSON.parse(finalCode);
-                    } catch (err) {
-                        alert("設計內容非正確 JSON 格式。");
+                    } catch (parseErr) {
+                        alert("設計內容包含錯誤的 JSON 語法，請檢查引號或逗號是否正確。");
                         return;
                     }
 
+                    // 3. 環境檢查
                     if (!liff.isLoggedIn()) {
+                        alert("請先登入 LINE 以執行發送操作。");
                         liff.login();
                         return;
                     }
 
                     if (!liff.isApiAvailable('shareTargetPicker')) {
-                        alert("您的帳號未開啟 shareTargetPicker 權限。");
+                        alert("您的帳號不支援發送功能，或是 LIFF 的 shareTargetPicker 權限未開啟。");
                         return;
                     }
 
+                    // 4. 發送
                     const result = await liff.shareTargetPicker([{ 
                         type: "flex", 
                         altText: `設計：${localName || "Flex"}`, 
@@ -272,8 +263,8 @@
                         showMsg("✅ 已成功發送至 LINE！");
                     }
                 } catch (e) { 
-                    console.error("LIFF Send Error:", e);
-                    alert(`發送失敗：${e.message || "未知原因"}`);
+                    console.error("發送錯誤：", e);
+                    alert(`發送失敗：${e.message || "原因不明"}\n請確認您是在 LINE APP 內開啟，或是 GitHub Pages 網址與 LIFF 設定相符。`);
                 }
             };
 
@@ -290,7 +281,7 @@
                         </div>
                         <div className="flex items-center gap-4">
                             <button onClick={handleSend} className="bg-[#06C755] text-white px-8 py-4 rounded-2xl text-lg flex items-center gap-2 active:scale-95 shadow-xl font-black uppercase tracking-wider hover:bg-[#05b34c] transition-all"><Icon name="send" className="w-6 h-6" /> <span>發送設計</span></button>
-                            <button onClick={()=>onSave(file.id, localName || "未命名設計", latestJsonRef.current)} className="bg-black text-white px-8 py-4 rounded-2xl font-black text-lg active:scale-95 shadow-xl flex items-center gap-2 hover:bg-slate-800 transition-all border-2 border-transparent"><Icon name="save" className="w-6 h-6" /> <span>儲存</span></button>
+                            <button onClick={()=>onSave(file.id, localName || "未命名設計", latestJsonRef.current)} className="bg-black text-white px-8 py-4 rounded-2xl font-black text-lg active:scale-95 shadow-xl flex items-center gap-2 hover:bg-slate-800 transition-all border-2 border-transparent"><Icon name="save" className="w-6 h-6" /> <span>儲存雲端</span></button>
                         </div>
                     </div>
                     <div className="flex-1 relative bg-slate-100"><iframe ref={iframeRef} src={projectUrl} className="iframe-container" allow="clipboard-read; clipboard-write"></iframe></div>
@@ -351,7 +342,7 @@
                 try {
                     const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: String(user.uid), id: String(id), name, content }) });
                     if ((await res.json()).success) { await refreshFiles(user.uid, profile.role); setActiveFile(null); }
-                } catch (e) { alert("連線失敗。"); }
+                } catch (e) { alert("儲存連線失敗。"); }
                 setIsGlobalLoading(false);
             };
 
@@ -365,19 +356,12 @@
             };
 
             if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white italic font-black animate-pulse text-black"><div className="loader mb-4"></div>數據載入中...</div>;
-            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">登入系統</button></div>;
+            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all hover:bg-[#05b34c]">登入系統</button></div>;
 
-            const findCurrentModule = () => {
-                for (const group of NAV_GROUPS) {
-                    const found = group.items.find(i => i.id === activeLevel2);
-                    if (found) return found;
-                }
-                return NAV_GROUPS[0].items[0];
-            };
-            const currentProject = findCurrentModule();
+            const currentProject = NAV_GROUPS.flatMap(g => g.items).find(i => i.id === activeLevel2);
 
             return (
-                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black text-sm">
+                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black">
                     {isGlobalLoading && <div className="overlay-loading font-black text-xl italic uppercase tracking-widest text-black"><div className="loader mb-4"></div>數據同步中...</div>}
                     {deleteTarget && <DeleteModal name={deleteTarget.name} onConfirm={confirmDelete} onCancel={()=>setDeleteTarget(null)} />}
                     
@@ -397,7 +381,7 @@
                         
                         <nav className="flex-1 overflow-y-auto pt-4 font-black custom-scrollbar">
                             {NAV_GROUPS.map(group => (
-                                <div key={group.id} className="mb-4">
+                                <div key={group.id} className="mb-6">
                                     {!isSidebarCollapsed ? (
                                         <div 
                                             className="px-6 py-3 text-sm text-slate-600 uppercase tracking-[0.2em] font-black flex items-center justify-between cursor-pointer hover:text-[#06C755] transition-colors"
