@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 穩定發送版 (v2.4.0)</title>
+    <title>FLEX Hub Pro - 全功能修復版 (v2.4.1)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -30,7 +30,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const APP_VERSION = "v2.4.0";
+        const APP_VERSION = "v2.4.1";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
@@ -48,9 +48,11 @@
             return s;
         }
 
+        // 專案入口清單 (已恢復電商版)
         const PROJECTS = [
             { id: 'PERSONAL', name: "個人名片版", url: "./tool-personal.html", icon: 'user' },
-            { id: 'SEQUENTIAL_PRO', name: "專業業務版", url: "./tool-sequential-pro.html", icon: 'award' }
+            { id: 'SEQUENTIAL_PRO', name: "專業業務版", url: "./tool-sequential-pro.html", icon: 'award' },
+            { id: 'ECOMMERCE', name: "電商商品版", url: "./tool-ecommerce.html", icon: 'shopping' }
         ];
 
         const Icon = ({ name, className = "w-4 h-4" }) => {
@@ -62,6 +64,7 @@
                 menu: <React.Fragment><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></React.Fragment>,
                 user: <React.Fragment><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></React.Fragment>,
                 award: <React.Fragment><circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" /></React.Fragment>,
+                shopping: <React.Fragment><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></React.Fragment>,
                 trash: <React.Fragment><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></React.Fragment>
             };
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || null}</svg>;
@@ -95,12 +98,11 @@
                 try {
                     const currentCode = latestJsonRef.current;
                     if (!currentCode || currentCode.length < 50) {
-                        alert("⚠️ 正在等待編輯器同步數據，請稍候 1 秒後再試。");
+                        alert("⚠️ 請等待編輯器完成同步後再試一次。");
                         return;
                     }
 
-                    let flexMessage = JSON.parse(currentCode);
-                    
+                    const flexMessage = JSON.parse(currentCode);
                     if (!liff.isLoggedIn()) { liff.login(); return; }
                     if (!liff.isApiAvailable('shareTargetPicker')) { alert("LIFF 權限未開啟。"); return; }
 
@@ -112,7 +114,7 @@
 
                     if (result) showMsg("✅ 已成功發送！");
                 } catch (e) {
-                    alert(`❌ 發送失敗：\n${e.message}\n可能原因：JSON 格式不符合 LINE 規範。`);
+                    alert(`❌ 發送失敗：\n${e.message}\n可能原因：JSON 格式不符合 LINE 規範，請檢查 px 單位或逗號。`);
                 }
             };
 
@@ -195,12 +197,14 @@
                             ))}
                         </nav>
                     </aside>
-                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner">
+                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner text-black">
                         {activeFile ? (
                             <EditorView key={String(activeFile.id)} file={activeFile} onSave={async (id, name, content)=>{
                                 setIsGlobalLoading(true);
-                                const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: user.uid, id: String(id), name, content }) });
-                                if ((await res.json()).success) { await refreshFiles(user.uid); setActiveFile(null); }
+                                try {
+                                    const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: user.uid, id: String(id), name, content }) });
+                                    if ((await res.json()).success) { await refreshFiles(user.uid); setActiveFile(null); }
+                                } catch(e) { alert("儲存失敗"); }
                                 setIsGlobalLoading(false);
                             }} onCancel={() => setActiveFile(null)} projectUrl={currentProject.url} />
                         ) : (
@@ -226,7 +230,7 @@
                                                             await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteFile', userId: user.uid, id: String(f.id) }) });
                                                             await refreshFiles(user.uid);
                                                             setIsGlobalLoading(false);
-                                                        }} className="text-red-500"><Icon name="trash" className="w-6 h-6 inline" /></button>
+                                                        }} className="text-red-500 transition-colors"><Icon name="trash" className="w-6 h-6 inline" /></button>
                                                     </td>
                                                 </tr>
                                             ))}
