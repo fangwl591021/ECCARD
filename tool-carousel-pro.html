@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carousel Pro - 12頁聚合編輯器</title>
-    <!-- 核心庫載入 -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <title>Carousel Pro - 100% 全功能聚合版</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide 圖示 -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
@@ -20,9 +18,10 @@
         .control-panel { background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .page-tab-active { background-color: #06C755 !important; color: white !important; border-color: #06C755 !important; transform: scale(1.1); z-index: 10; }
         .page-tab-empty { opacity: 0.4; border-style: dashed !important; }
-        .page-tab-hidden { background-color: #fee2e2 !important; border-color: #f87171 !important; }
+        .page-tab-hidden { opacity: 0.5; filter: grayscale(1); border-color: #f87171 !important; }
         .master-slider { accent-color: #f59e0b; }
         .preview-text-multiline { white-space: pre-wrap; word-break: break-all; }
+        .toggle-checkbox:checked { background-color: #06C755; border-color: #06C755; }
     </style>
 </head>
 <body>
@@ -31,7 +30,6 @@
     <script type="text/babel">
         const { useState, useEffect, useCallback } = React;
 
-        // --- 圖示資料庫 ---
         const SOCIAL_DATA = {
             NONE: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "無" },
             FB: { url: "https://cdn-icons-png.flaticon.com/512/733/733547.png", label: "FB" },
@@ -44,25 +42,24 @@
 
         const TEMPLATE_TYPES = {
             SEQUENTIAL_PRO: { name: "專業業務版", icon: "award" },
-            PERSONAL: { name: "個人名片版", icon: "user" },
-            ECOMMERCE: { name: "電商商品版", icon: "shopping-bag" }
+            PERSONAL: { name: "個人簡約版", icon: "user" },
+            ECOMMERCE: { name: "電商商品版", icon: "shopping-cart" }
         };
 
-        // 各版型的預設資料 (採用最新的 Sequential Pro 規範)
         const GET_DEFAULT_DATA = (type) => {
             if (type === 'SEQUENTIAL_PRO') return {
                 url: "https://aiwe.cc/wp-content/uploads/2025/12/cf75e54791dd1f49f918345fdfe2430b.png",
-                animated: false,
-                avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
+                animated: false, avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
                 avatarTop: 60, avatarAnimated: false,
                 name: "王大錘", nameTop: 155, nameColor: "#000000", nameWeight: "bold",
                 label1: "專業產品經理", label1Top: 190, label1Bg: "#FFFFFF33", label1Color: "#000000", label1Weight: "bold",
+                badgeText: "PREMIUM", badgeBg: "#D4AF37", badgeRadius: "xs", badgePos: "offsetEnd",
                 desc: "致力於提供最優質的\n數位轉型解決方案", descTop: 275, descColor: "#000000", descWeight: "regular", descAlign: "center",
-                socialTop: 215, icons: [{type: 'PHONE', uri: 'tel:0900000000'}, {type: 'LINE', uri: 'https://line.me'}],
+                icons: [{type: 'PHONE', uri: ''}, {type: 'LINE', uri: ''}], socialTop: 215,
                 footerBg: "#111111", footerLabel: "立刻聯繫我", footerUri: "https://line.me", footerThemeColor: "#D4AF37", footerTextColor: "#000000", footerWeight: "bold"
             };
-            if (type === 'PERSONAL') return { name: "個人簡介頁面", desc: "這是一個簡易的分頁範本" };
-            return { name: "商品資訊頁面", desc: "請輸入商品描述" };
+            if (type === 'PERSONAL') return { name: "個人簡介分頁", desc: "請輸入介紹內容", avatar: "https://lihi.cc/5OXMZ", url: "https://lihi.cc/5OXMZ", themeColor: "#06C755", btnLabel: "聯絡我" };
+            return { title: "特惠商品", price: "$999", url: "https://lihi.cc/mwMvo", btnLabel: "立即購買" };
         };
 
         const App = () => {
@@ -71,22 +68,18 @@
             const [activeTab, setActiveTab] = useState('editor');
             const [altText, setAltText] = useState("這是我的數位名片目錄");
 
-            // --- 數據同步與初始化 ---
+            const toPx = (v) => String(v).endsWith('px') ? v : `${v}px`;
+
             useEffect(() => {
                 const handleMessage = (e) => {
                     if (e.data?.type === 'LOAD_FLEX_DATA') {
                         const saved = e.data.json;
-                        if (saved && saved.startsWith('{')) {
+                        if (saved && typeof saved === 'string' && saved.startsWith('{')) {
                             try {
                                 const parsed = JSON.parse(saved);
-                                if (parsed.pages) {
-                                    setPages(parsed.pages);
-                                    setAltText(parsed.altText || "這是我的數位名片目錄");
-                                    return;
-                                }
+                                if (parsed.pages) { setPages(parsed.pages); setAltText(parsed.altText || "數位名片目錄"); return; }
                             } catch(err) {}
                         }
-                        // 首次初始化邏輯：給三頁範例
                         const initPages = Array(12).fill(null).map((_, i) => ({ id: i, template: null, isVisible: true, data: {} }));
                         initPages[0] = { id: 0, template: 'SEQUENTIAL_PRO', isVisible: true, data: GET_DEFAULT_DATA('SEQUENTIAL_PRO') };
                         initPages[1] = { id: 1, template: 'PERSONAL', isVisible: true, data: GET_DEFAULT_DATA('PERSONAL') };
@@ -99,22 +92,20 @@
                 return () => window.removeEventListener('message', handleMessage);
             }, []);
 
-            // --- 聚合發送 JSON 生成器 ---
             const buildJson = useCallback(() => {
                 const activePages = pages.filter(p => p.template && p.isVisible);
-                if (activePages.length === 0) return { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "請先設定分頁版型與內容" }] } };
+                if (activePages.length === 0) return { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "請配置內容" }] } };
 
                 const contents = activePages.map(page => {
                     const d = page.data;
-                    const toPx = (v) => `${v}px`;
-                    
                     if (page.template === 'SEQUENTIAL_PRO') {
-                        const bubble = {
+                        return {
                             type: "bubble", size: "mega",
                             body: {
                                 type: "box", layout: "vertical", paddingAll: "0px",
                                 contents: [
-                                    { type: "image", url: d.url, size: "full", aspectRatio: "400:600", aspectMode: "cover", animated: d.animated },
+                                    { type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: d.animated },
+                                    { type: "box", layout: "vertical", position: "absolute", offsetTop: "15px", [d.badgePos === 'offsetStart' ? 'offsetStart' : 'offsetEnd']: "15px", backgroundColor: d.badgeBg, cornerRadius: d.badgeRadius, paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px", contents: [{ type: "text", text: d.badgeText, color: "#ffffff", size: "xxs", weight: "bold" }] },
                                     { type: "box", layout: "vertical", position: "absolute", offsetTop: toPx(d.avatarTop), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "85px", height: "85px", cornerRadius: "100px", borderWidth: "3px", borderColor: "#ffffff", contents: [{ type: "image", url: d.avatar, size: "full", aspectMode: "cover", animated: d.avatarAnimated }] }] },
                                     { type: "box", layout: "vertical", position: "absolute", offsetTop: toPx(d.nameTop), offsetStart: "0px", offsetEnd: "0px", contents: [{ type: "text", text: d.name, weight: d.nameWeight, size: "xxl", color: d.nameColor, align: "center" }] },
                                     { type: "box", layout: "vertical", position: "absolute", offsetTop: toPx(d.label1Top), offsetStart: "40px", offsetEnd: "40px", backgroundColor: d.label1Bg, cornerRadius: "md", paddingAll: "4px", contents: [{ type: "text", text: d.label1, size: "xs", color: d.label1Color, align: "center", weight: d.label1Weight }] },
@@ -124,12 +115,22 @@
                             },
                             footer: { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: d.footerBg, contents: [{ type: "box", layout: "vertical", backgroundColor: d.footerThemeColor, paddingAll: "12px", cornerRadius: "md", action: { type: "uri", uri: d.footerUri || "https://line.me" }, contents: [{ type: "text", text: d.footerLabel, color: d.footerTextColor, align: "center", weight: d.footerWeight, size: "sm" }] }] }
                         };
-                        return bubble;
                     }
-                    // 其他版型...
-                    return { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: page.data.name || "內容開發中" }] } };
+                    if (page.template === 'PERSONAL') {
+                        return {
+                            type: "bubble", size: "mega",
+                            body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [
+                                { type: "image", url: d.url, size: "full", aspectRatio: "16:9", aspectMode: "cover" },
+                                { type: "box", layout: "vertical", paddingAll: "20px", contents: [
+                                    { type: "text", text: d.name, weight: "bold", size: "xl" },
+                                    { type: "text", text: d.desc, wrap: true, size: "sm", margin: "md" }
+                                ]}
+                            ]},
+                            footer: { type: "box", layout: "vertical", paddingAll: "10px", contents: [{ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: d.themeColor, cornerRadius: "md", contents: [{ type: "text", text: d.btnLabel, align: "center", color: "#ffffff", weight: "bold" }] }] }
+                        };
+                    }
+                    return { type: "bubble", size: "mega", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: d.title || "電商版" }] } };
                 });
-
                 return { type: "carousel", contents, altText };
             }, [pages, altText]);
 
@@ -137,7 +138,6 @@
                 window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify({ altText, pages }) }, '*');
             }, [pages, altText]);
 
-            // --- 狀態更新函數 ---
             const updateActivePageData = (path, val) => {
                 const next = [...pages];
                 const keys = path.split('.');
@@ -151,37 +151,25 @@
             };
 
             const handleMasterMove = (newVal) => {
-                const p = pages[activeIndex];
-                const diff = newVal - p.data.avatarTop;
-                const nextData = {
-                    ...p.data,
-                    avatarTop: newVal,
-                    nameTop: p.data.nameTop + diff,
-                    label1Top: p.data.label1Top + diff,
-                    socialTop: p.data.socialTop + diff,
-                    descTop: p.data.descTop + diff
-                };
-                const next = [...pages];
-                next[activeIndex].data = nextData;
-                setPages(next);
+                setPages(prev => {
+                    const next = [...prev];
+                    const p = next[activeIndex];
+                    const diff = newVal - p.data.avatarTop;
+                    p.data = { ...p.data, avatarTop: newVal, nameTop: p.data.nameTop + diff, label1Top: p.data.label1Top + diff, socialTop: p.data.socialTop + diff, descTop: p.data.descTop + diff };
+                    return next;
+                });
             };
 
             const renderEditor = () => {
-                const currentPage = pages[activeIndex];
-                if (!currentPage.template) {
+                const page = pages[activeIndex];
+                if (!page.template) {
                     return (
-                        <div className="text-center py-16 border-4 border-dashed rounded-3xl space-y-6">
-                            <h2 className="text-2xl font-black text-slate-300 italic uppercase">Page {activeIndex + 1} 空白中</h2>
-                            <p className="text-slate-400 text-sm">請選擇此頁面欲使用的版型格式：</p>
-                            <div className="grid grid-cols-1 gap-4 px-10">
-                                {Object.keys(TEMPLATE_TYPES).map(key => (
-                                    <button key={key} onClick={()=>{
-                                        const next = [...pages];
-                                        next[activeIndex] = { ...currentPage, template: key, data: GET_DEFAULT_DATA(key) };
-                                        setPages(next);
-                                    }} className="bg-white border-2 border-slate-200 p-4 rounded-2xl font-black hover:border-[#06C755] hover:text-[#06C755] transition-all flex items-center justify-between">
-                                        <span>{TEMPLATE_TYPES[key].name}</span>
-                                        <i data-lucide={TEMPLATE_TYPES[key].icon}></i>
+                        <div className="text-center py-16 border-4 border-dashed rounded-3xl space-y-4">
+                            <h2 className="text-xl font-black text-slate-300 uppercase italic">Page {activeIndex + 1} 空白</h2>
+                            <div className="grid grid-cols-1 gap-3 px-10">
+                                {Object.keys(TEMPLATE_TYPES).map(k => (
+                                    <button key={k} onClick={()=>{const n=[...pages]; n[activeIndex]={...page, template:k, data:GET_DEFAULT_DATA(k)}; setPages(n)}} className="bg-white border-2 border-slate-200 p-4 rounded-xl font-black hover:border-[#06C755] transition-all flex items-center justify-between">
+                                        <span>{TEMPLATE_TYPES[k].name}</span><i data-lucide={TEMPLATE_TYPES[k].icon}></i>
                                     </button>
                                 ))}
                             </div>
@@ -189,166 +177,80 @@
                     );
                 }
 
-                // 專業業務版完整編輯器
-                if (currentPage.template === 'SEQUENTIAL_PRO') {
-                    const d = currentPage.data;
+                if (page.template === 'SEQUENTIAL_PRO') {
+                    const d = page.data;
                     return (
-                        <div className="space-y-6 animate-in fade-in duration-500">
+                        <div className="space-y-6 animate-in fade-in duration-300">
                             <div className="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border">
-                                <div className="font-black text-[#06C755] flex items-center gap-2"><i data-lucide="award"></i> 版型：專業業務版</div>
-                                <button onClick={()=>{const n=[...pages]; n[activeIndex].template=null; setPages(n)}} className="text-[10px] text-red-400 underline font-black">重設版型</button>
+                                <div className="font-black text-[#06C755] flex items-center gap-2"><i data-lucide="award"></i> 業務版設定</div>
+                                <button onClick={()=>{const n=[...pages]; n[activeIndex].template=null; setPages(n)}} className="text-[10px] text-red-400 underline">重設</button>
                             </div>
-
-                            {/* 1. 動態與底圖 */}
-                            <div className="control-panel space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <h3 className="text-sm font-black text-slate-400 flex items-center gap-2"><i data-lucide="image"></i> 1. 背景與標籤</h3>
-                                    <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={d.animated} onChange={e=>updateActivePageData('animated', e.target.checked)} className="w-4 h-4 accent-green-600"/><span className="text-[10px] font-black text-green-600">動畫開關</span></label>
-                                </div>
-                                <input type="text" value={d.url} onChange={e=>updateActivePageData('url', e.target.value)} className="w-full p-2 border rounded text-xs" placeholder="底圖網址" />
-                            </div>
-
-                            {/* 2. 連動位移 */}
                             <div className="control-panel space-y-4 border-l-4 border-amber-500 bg-amber-50/20">
-                                <h3 className="text-sm font-black text-amber-600 flex items-center gap-2"><i data-lucide="move"></i> 2. 全局高度連動 (Master)</h3>
+                                <h3 className="text-sm font-black text-amber-600 flex items-center gap-2"><i data-lucide="move"></i> 全局高度連動 (Master)</h3>
                                 <input type="range" min="0" max="800" value={d.avatarTop} onChange={e=>handleMasterMove(parseInt(e.target.value))} className="w-full master-slider" />
                             </div>
-
-                            {/* 3. 姓名與職稱 */}
                             <div className="control-panel space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <h3 className="text-sm font-black text-slate-400 flex items-center gap-2"><i data-lucide="user"></i> 3. 身份資料設定</h3>
-                                    <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={d.avatarAnimated} onChange={e=>updateActivePageData('avatarAnimated', e.target.checked)} className="w-4 h-4 accent-green-600"/><span className="text-[10px] font-black text-green-600">頭像動畫</span></label>
-                                </div>
+                                <h3 className="text-sm font-black text-slate-400">身份與頭像</h3>
                                 <input type="text" value={d.avatar} onChange={e=>updateActivePageData('avatar', e.target.value)} className="w-full p-2 border rounded text-xs" placeholder="頭像網址" />
                                 <div className="flex gap-2">
-                                    <input type="text" value={d.name} onChange={e=>updateActivePageData('name', e.target.value)} className="flex-1 p-2 border rounded font-black text-lg" placeholder="姓名" />
+                                    <input type="text" value={d.name} onChange={e=>updateActivePageData('name', e.target.value)} className="flex-1 p-2 border rounded font-black" placeholder="姓名" />
                                     <input type="color" value={d.nameColor} onChange={e=>updateActivePageData('nameColor', e.target.value)} className="w-10 h-10 border rounded p-1" />
                                 </div>
-                                <div className="border-t pt-4 space-y-2">
-                                    <input type="text" value={d.label1} onChange={e=>updateActivePageData('label1', e.target.value)} className="w-full p-2 border rounded text-xs" placeholder="職稱標籤" />
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className="flex flex-col gap-1"><label className="text-[10px]">背景</label><input type="color" value={d.label1Bg.substring(0,7)} onChange={e=>updateActivePageData('label1Bg', e.target.value+'33')} className="w-full h-8" /></div>
-                                        <div className="flex flex-col gap-1"><label className="text-[10px]">文字</label><input type="color" value={d.label1Color} onChange={e=>updateActivePageData('label1Color', e.target.value)} className="w-full h-8" /></div>
-                                    </div>
-                                </div>
+                                <textarea value={d.desc} onChange={e=>updateActivePageData('desc', e.target.value)} className="w-full p-2 border rounded h-32 text-xs" placeholder="介紹內容..."></textarea>
                             </div>
-
-                            {/* 4. 社群與說明 */}
-                            <div className="control-panel space-y-4">
-                                <h3 className="text-sm font-black text-slate-400 flex items-center gap-2"><i data-lucide="align-left"></i> 4. 說明內容 (Enter換行)</h3>
-                                <textarea value={d.desc} onChange={e=>updateActivePageData('desc', e.target.value)} className="w-full p-2 border rounded h-32 text-xs" placeholder="介紹文案..."></textarea>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <input type="color" value={d.descColor} onChange={e=>updateActivePageData('descColor', e.target.value)} className="w-full h-8" />
-                                    <div className="flex bg-slate-100 p-1 rounded gap-1">
-                                        {['start', 'center', 'end'].map(a => <button key={a} onClick={()=>updateActivePageData('descAlign', a)} className={`flex-1 py-1 rounded text-[10px] ${d.descAlign===a?'bg-white shadow text-green-600':'text-slate-400'}`}>{a.toUpperCase()}</button>)}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* 5. Footer */}
-                            <div className="control-panel space-y-4">
-                                <h3 className="text-sm font-black text-slate-400 flex items-center gap-2"><i data-lucide="mouse-pointer-2"></i> 5. 底部按鈕設定</h3>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <input type="color" value={d.footerBg} onChange={e=>updateActivePageData('footerBg', e.target.value)} className="w-full h-8" title="Footer背景" />
-                                    <input type="color" value={d.footerThemeColor} onChange={e=>updateActivePageData('footerThemeColor', e.target.value)} className="w-full h-8" title="按鈕顏色" />
-                                </div>
-                                <input type="text" value={d.footerLabel} onChange={e=>updateActivePageData('footerLabel', e.target.value)} className="w-full p-2 border rounded text-xs" placeholder="按鈕文字" />
-                                <input type="text" value={d.footerUri} onChange={e=>updateActivePageData('footerUri', e.target.value)} className="w-full p-2 border rounded text-[10px] font-mono" placeholder="跳轉連結 (https://...)" />
-                            </div>
-
-                            {/* 顯示開關 */}
-                            <div className="p-4 bg-slate-800 rounded-3xl text-white flex justify-between items-center">
-                                <div className="font-black text-xs uppercase tracking-widest">發送時顯示本頁</div>
-                                <button onClick={()=>{const n=[...pages]; n[activeIndex].isVisible=!n[activeIndex].isVisible; setPages(n)}} className={`w-12 h-6 rounded-full relative transition-all ${currentPage.isVisible?'bg-[#06C755]':'bg-slate-600'}`}><div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${currentPage.isVisible?'left-7':'left-1'}`}></div></button>
-                            </div>
-                            <div className="pb-10">
-                                <button onClick={()=>{
-                                    if(activeIndex < 11) {
-                                        const next = [...pages];
-                                        next[activeIndex+1] = JSON.parse(JSON.stringify(currentPage));
-                                        next[activeIndex+1].id = activeIndex+1;
-                                        setPages(next);
-                                        setActiveIndex(activeIndex+1);
-                                    }
-                                }} className="w-full py-4 border-2 border-dashed border-slate-300 text-slate-400 rounded-2xl font-black text-xs hover:border-[#06C755] hover:text-[#06C755] transition-all flex items-center justify-center gap-2"><i data-lucide="copy"></i> 複製此頁內容至下一頁</button>
+                            <div className="p-4 bg-slate-800 rounded-3xl flex justify-between items-center">
+                                <div className="text-white text-xs font-black">發送時顯示本頁</div>
+                                <button onClick={()=>{const n=[...pages]; n[activeIndex].isVisible=!n[activeIndex].isVisible; setPages(n)}} className={`w-12 h-6 rounded-full relative transition-all ${page.isVisible?'bg-[#06C755]':'bg-slate-600'}`}><div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${page.isVisible?'left-7':'left-1'}`}></div></button>
                             </div>
                         </div>
                     );
                 }
-                return <div className="p-20 text-center italic text-slate-400">目前僅開放「專業業務版」分頁編輯。</div>;
+                return <div className="p-10 italic text-slate-400">此版型設定開發中...</div>;
+            };
+
+            const PreviewComp = () => {
+                const page = pages[activeIndex];
+                if (!page.template) return <div className="p-20 text-center italic text-slate-300">本頁空白</div>;
+                const width = 300;
+                const height = (width * 600) / 400; 
+                const scale = 300 / 400;
+
+                if (page.template === 'SEQUENTIAL_PRO') {
+                    const d = page.data;
+                    return (
+                        <div className="rounded-[40px] shadow-2xl overflow-hidden relative border-[8px] border-black bg-white" style={{ width: '300px' }}>
+                            <div className="relative overflow-hidden" style={{ height: '450px' }}>
+                                <img src={d.url} className="w-full h-full object-cover" />
+                                <div className="absolute w-full flex justify-center" style={{ top: (d.avatarTop * scale) + 'px' }}><img src={d.avatar} className="w-16 h-16 rounded-full border-2 border-white shadow-xl overflow-hidden bg-white" /></div>
+                                <div className="absolute w-full text-center px-4" style={{ top: (d.nameTop * scale) + 'px', color: d.nameColor, fontWeight: 900, fontSize: '18px' }}>{d.name}</div>
+                                <div className="absolute w-full px-[10px]" style={{ top: (d.descTop * scale) + 'px', textAlign: d.descAlign }}><p className="text-[10px] preview-text-multiline leading-relaxed" style={{ color: d.descColor }}>{d.desc}</p></div>
+                                <div className="absolute top-0 left-0 w-full h-full border-b-2 border-dashed border-red-500 pointer-events-none opacity-20"></div>
+                            </div>
+                            <div className="p-3" style={{ backgroundColor: d.footerBg }}><div className="py-2 text-center rounded-lg text-xs font-black shadow-sm" style={{ backgroundColor: d.footerThemeColor, color: d.footerTextColor }}>{d.footerLabel}</div></div>
+                        </div>
+                    );
+                }
+                return <div className="w-[300px] h-[500px] bg-white rounded-3xl border-4 border-dashed flex items-center justify-center italic text-slate-300">預覽載入中...</div>;
             };
 
             return (
                 <div className="flex h-screen bg-slate-100 overflow-hidden font-black">
-                    {/* 左側：設定區 */}
                     <div className="w-1/2 bg-white border-r flex flex-col shadow-2xl z-20">
-                        <div className="p-6 border-b shrink-0 flex items-center justify-between">
-                            <div className="flex items-center gap-3 text-black">
-                                <div className="bg-[#06C755] p-2 rounded-lg text-white shadow-lg"><i data-lucide="layers"></i></div>
-                                <h1 className="text-xl font-black italic uppercase tracking-tighter">Carousel Pro Factory</h1>
-                            </div>
-                        </div>
-
-                        {/* 12 分頁切換器 */}
+                        <div className="p-6 border-b shrink-0 flex items-center justify-between"><div className="flex items-center gap-3 text-black"><div className="bg-[#06C755] p-2 rounded-lg text-white shadow-lg"><i data-lucide="layers"></i></div><h1 className="text-xl uppercase italic">Carousel Pro Factory</h1></div></div>
                         <div className="p-4 bg-slate-50 border-b flex gap-2 overflow-x-auto custom-scrollbar shrink-0">
                             {pages.map((p, i) => (
-                                <button key={i} onClick={()=>setActiveIndex(i)} className={`shrink-0 w-10 h-10 border-2 rounded-xl font-black transition-all flex items-center justify-center ${activeIndex === i ? 'page-tab-active shadow-md' : 'bg-white border-slate-200'} ${!p.template ? 'page-tab-empty' : ''} ${!p.isVisible ? 'page-tab-hidden' : ''}`}>
-                                    {i + 1}
-                                </button>
+                                <button key={i} onClick={()=>setActiveIndex(i)} className={`shrink-0 w-10 h-10 border-2 rounded-xl font-black transition-all flex items-center justify-center ${activeIndex === i ? 'page-tab-active shadow-md' : 'bg-white border-slate-200'} ${!p.template ? 'page-tab-empty' : ''} ${!p.isVisible ? 'page-tab-hidden' : ''}`}>{i + 1}</button>
                             ))}
                         </div>
-
                         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar text-black font-bold">
-                            <div className="mb-6 control-panel border-2 border-[#06C755]">
-                                <label className="text-[10px] text-slate-400 uppercase tracking-widest block mb-1">全局分享預覽文字 (AltText)</label>
-                                <input type="text" value={altText} onChange={e=>setAltText(e.target.value)} className="w-full p-2 border-none outline-none font-black text-black" />
-                            </div>
+                            <div className="mb-6 control-panel border-2 border-[#06C755] p-4"><label className="text-[10px] text-slate-400 block mb-1">分享標題 (AltText)</label><input type="text" value={altText} onChange={e=>setAltText(e.target.value)} className="w-full p-1 outline-none font-black text-black" /></div>
                             {renderEditor()}
                         </div>
                     </div>
-
-                    {/* 右側：預覽區 */}
                     <div className="flex-1 flex flex-col chat-room-bg overflow-hidden text-black font-black">
-                        <div className="h-[70px] bg-white border-b flex items-center px-10 gap-8 shrink-0 shadow-sm">
-                            <button onClick={()=>setActiveTab('editor')} className={`h-full border-b-4 flex items-center gap-2 transition-all ${activeTab === 'editor' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}>視覺預覽</button>
-                            <button onClick={()=>setActiveTab('json')} className={`h-full border-b-4 flex items-center gap-2 transition-all ${activeTab === 'json' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}>JSON 代碼</button>
-                        </div>
+                        <div className="h-[70px] bg-white border-b flex items-center px-10 gap-8 shrink-0 shadow-sm"><button onClick={()=>setActiveTab('editor')} className={`h-full border-b-4 flex items-center gap-2 transition-all ${activeTab === 'editor' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}>視覺預覽</button><button onClick={()=>setActiveTab('json')} className={`h-full border-b-4 flex items-center gap-2 transition-all ${activeTab === 'json' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}>JSON 代碼</button></div>
                         <div className="flex-1 overflow-y-auto p-10 flex flex-col items-center">
-                            {activeTab === 'editor' ? (
-                                <div className="space-y-6 flex flex-col items-center">
-                                    <div className="px-6 py-2 bg-black text-white rounded-full text-[10px] tracking-[0.3em] font-black uppercase">
-                                        Previewing Page {activeIndex + 1} / 12
-                                    </div>
-                                    {pages[activeIndex].template === 'SEQUENTIAL_PRO' ? (
-                                        <div className="rounded-[40px] shadow-2xl overflow-hidden relative border-[8px] border-black bg-white" style={{ width: '300px' }}>
-                                            <div className="relative overflow-hidden" style={{ height: '450px' }}>
-                                                <img src={pages[activeIndex].data.url} className="w-full h-full object-cover" />
-                                                <div className="absolute w-full flex justify-center" style={{ top: pages[activeIndex].data.avatarTop/1.33 + 'px' }}>
-                                                    <div className="w-16 h-16 rounded-full border-2 border-white shadow-xl overflow-hidden"><img src={pages[activeIndex].data.avatar} className="w-full h-full object-cover" /></div>
-                                                </div>
-                                                <div className="absolute w-full text-center px-4" style={{ top: pages[activeIndex].data.nameTop/1.33 + 'px' }}>
-                                                    <div className="font-black" style={{ color: pages[activeIndex].data.nameColor, fontSize: '18px' }}>{pages[activeIndex].data.name}</div>
-                                                </div>
-                                                <div className="absolute w-full px-6 text-center" style={{ top: pages[activeIndex].data.descTop/1.33 + 'px' }}>
-                                                    <p className="text-[10px] preview-text-multiline" style={{ color: pages[activeIndex].data.descColor }}>{pages[activeIndex].data.desc}</p>
-                                                </div>
-                                            </div>
-                                            <div className="p-3" style={{ backgroundColor: pages[activeIndex].data.footerBg }}>
-                                                <div className="py-2 text-center rounded-lg text-xs font-black" style={{ backgroundColor: pages[activeIndex].data.footerThemeColor }}>{pages[activeIndex].data.footerLabel}</div>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="w-[300px] h-[500px] bg-white rounded-3xl border-4 border-dashed border-slate-300 flex items-center justify-center italic text-slate-300 px-10 text-center">本頁內容尚未配置或此版型預覽開發中</div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="w-full max-w-2xl">
-                                    <pre className="bg-slate-900 p-8 rounded-3xl text-green-400 text-xs overflow-x-auto leading-relaxed shadow-2xl border border-white/10 font-mono">
-                                        {JSON.stringify(buildJson(), null, 2)}
-                                    </pre>
-                                </div>
-                            )}
+                            {activeTab === 'editor' ? (<div className="space-y-6 flex flex-col items-center animate-in zoom-in-95 duration-300"><div className="px-6 py-2 bg-black text-white rounded-full text-[10px] tracking-[0.3em] font-black uppercase">Page {activeIndex + 1} Preview</div><PreviewComp /></div>) : (<pre className="bg-slate-900 p-8 rounded-3xl text-green-400 text-xs overflow-x-auto font-mono w-full shadow-2xl">{JSON.stringify(buildJson(), null, 2)}</pre>)}
                         </div>
                     </div>
                 </div>
