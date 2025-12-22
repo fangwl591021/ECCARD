@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FLEX Hub Pro - 終極移植版 (v2.1.9)</title>
+    <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- LINE LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
@@ -21,7 +23,14 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #000000; border-radius: 10px; }
         .drawer-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .overlay-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(2px); }
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #000; color: white; padding: 14px 28px; border-radius: 15px; z-index: 10000; font-weight: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideDown 0.3s ease-out; border: 2px solid #06C755; min-width: 250px; text-align: center; }
+        
+        .toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #000; color: white; padding: 14px 28px; border-radius: 15px;
+            z-index: 10000; font-weight: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: slideDown 0.3s ease-out; border: 2px solid #06C755;
+            min-width: 250px; text-align: center;
+        }
         @keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 20px; opacity: 1; } }
     </style>
 </head>
@@ -31,21 +40,33 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // --- 1. 配置與常量 ---
+        const APP_VERSION = "v2.1.9";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
+        // --- 2. 核心工具函式 (定義在頂部) ---
         function cleanJsonText(str) {
             if (!str) return "";
             let s = String(str).trim();
-            if (s.startsWith('"') && s.endsWith('"')) { s = s.substring(1, s.length - 1).replace(/""/g, '"'); }
+            // 處理 Excel 匯出可能產生的雙引號問題
+            if (s.startsWith('"') && s.endsWith('"')) { 
+                s = s.substring(1, s.length - 1).replace(/""/g, '"'); 
+            }
             return s;
         }
 
-        // --- 核心：這才是真正的完整範例模板 (包含全部 6 個商品、lihi、影片、背景) ---
+        // --- 3. 完整版型模板 ---
         const ECOMMERCE_FULL_TEMPLATE = JSON.stringify({
             "type": "bubble", "size": "mega",
-            "hero": { "type": "video", "url": "https://lihi.cc/YsmAp", "previewUrl": "https://lihi.cc/5OXMZ", "aspectRatio": "16:9", "altContent": { "type": "image", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover", "url": "https://lihi.cc/5OXMZ" } },
+            "hero": { 
+                "type": "video", 
+                "url": "https://lihi.cc/YsmAp", 
+                "previewUrl": "https://lihi.cc/5OXMZ", 
+                "aspectRatio": "16:9", 
+                "altContent": { "type": "image", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover", "url": "https://lihi.cc/5OXMZ" } 
+            },
             "body": {
                 "type": "box", "layout": "vertical", "backgroundColor": "#F8F8F8", "paddingAll": "none",
                 "contents": [{ "type": "box", "layout": "vertical", "contents": [
@@ -74,6 +95,8 @@
             ECOMMERCE: { id: 'ECOMMERCE', name: "電商商品版", url: "./tool-ecommerce.html", template: ECOMMERCE_FULL_TEMPLATE }
         };
 
+        // --- 4. 子組件定義 ---
+
         const Icon = ({ name, className = "w-4 h-4" }) => {
             const icons = {
                 left: <polyline points="15 18 9 12 15 6" />,
@@ -96,14 +119,14 @@
                     </div>
                     <button onClick={onAdd} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 shadow-md active:scale-95 transition-all"><Icon name="plus" /> 建立新設計</button>
                 </div>
-                <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
-                    <table className="w-full text-left text-base font-bold">
-                        <thead className="bg-slate-100 border-b border-slate-300 uppercase text-sm font-black">
+                <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm font-black">
+                    <table className="w-full text-left text-base">
+                        <thead className="bg-slate-100 border-b border-slate-300 uppercase text-sm">
                             <tr><th className="p-5">設計名稱</th><th className="p-5 text-center">狀態</th><th className="p-5 text-right">管理</th></tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
                             {files.length === 0 ? <tr><td colSpan="3" className="p-10 text-center italic opacity-30">無數據存檔...</td></tr> : files.map(f => (
-                                <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors font-black">
+                                <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors">
                                     <td className="p-5 font-black text-xl">{f.name}</td>
                                     <td className="p-5 text-center"><span className={`px-3 py-1 rounded-full text-xs font-black ${f.content ? 'bg-green-100 text-green-700' : 'bg-slate-200'}`}>{f.content ? '✓ 已存' : '○ 空白'}</span></td>
                                     <td className="p-5 text-right space-x-6">
@@ -138,25 +161,26 @@
 
             const handleSend = async () => {
                 try {
+                    // 傳送前先替換變數
                     const finalCode = cleanJsonText(localJson).replace(/\{\{LIFF_URL\}\}/g, LIFF_URL);
                     const flexMessage = JSON.parse(finalCode);
                     if (liff.isApiAvailable('shareTargetPicker')) {
                         const result = await liff.shareTargetPicker([{ type: "flex", altText: `設計：${localName}`, contents: flexMessage }]);
                         if (result) { setToast("✅ 發送成功！"); setTimeout(()=>setToast(null), 3000); }
                     }
-                } catch (e) { alert("JSON 格式錯誤"); }
+                } catch (e) { alert("JSON 格式錯誤，無法發送"); }
             };
 
             return (
                 <div className="h-full flex flex-col bg-white overflow-hidden relative font-black text-black">
                     {toast && <div className="toast">{toast}</div>}
-                    <div className="h-16 border-b border-slate-300 px-6 flex items-center justify-between bg-white z-20 shadow-sm font-black">
+                    <div className="h-16 border-b border-slate-300 px-6 flex items-center justify-between bg-white z-20 shadow-sm">
                         <div className="flex items-center gap-4 flex-1">
                             <button onClick={onCancel} className="text-black hover:text-green-600"><Icon name="left" className="w-8 h-8" /></button>
                             <input type="text" value={localName} onChange={e=>setLocalName(e.target.value)} className="bg-transparent border-none p-0 outline-none focus:text-[#06C755] text-lg w-full max-w-sm font-black" />
                         </div>
                         <div className="flex items-center gap-3">
-                            <button onClick={handleSend} className="bg-[#06C755] text-white px-5 py-2.5 rounded-lg text-sm flex items-center gap-2 active:scale-95 shadow-md font-black"><Icon name="send" /> <span>發送設計 (通訊錄)</span></button>
+                            <button onClick={handleSend} className="bg-[#06C755] text-white px-5 py-2.5 rounded-lg text-sm flex items-center gap-2 active:scale-95 shadow-md font-black"><Icon name="send" /> <span>發送設計</span></button>
                             <button onClick={()=>setShowJson(!showJson)} className={`p-2.5 rounded-lg border transition-all ${showJson ? 'bg-blue-600 text-white' : 'text-black'}`}><Icon name="code" /></button>
                             <button onClick={()=>onSave(file.id, localName, localJson)} className="bg-black text-white px-5 py-2.5 rounded-lg font-black text-sm active:scale-95 shadow-md font-black"><Icon name="save" /> 儲存至雲端</button>
                         </div>
@@ -164,7 +188,7 @@
                     <div className="flex-1 flex relative overflow-hidden">
                         <div className={`absolute right-0 top-0 bottom-0 w-96 bg-slate-900 border-l border-slate-800 z-30 shadow-2xl p-6 flex flex-col gap-4 drawer-transition ${showJson ? 'translate-x-0' : 'translate-x-full'}`}>
                             <div className="flex justify-between items-center text-white text-sm"><span className="flex items-center gap-2 text-green-400 uppercase tracking-widest"><Icon name="code" />JSON 同步</span><button onClick={()=>setShowJson(false)} className="text-white"><Icon name="x" /></button></div>
-                            <textarea value={localJson} onChange={e=>setLocalJson(e.target.value)} className="flex-1 w-full bg-slate-950 border border-slate-700 rounded-xl p-4 font-mono text-[11px] text-green-500 outline-none custom-scrollbar leading-relaxed font-bold" />
+                            <textarea value={localJson} onChange={e=>setLocalJson(e.target.value)} className="flex-1 w-full bg-slate-950 border border-slate-700 rounded-xl p-4 font-mono text-[11px] text-green-500 outline-none custom-scrollbar leading-relaxed font-bold font-black" />
                         </div>
                         <iframe ref={iframeRef} src={projectUrl} className="iframe-container" allow="clipboard-read; clipboard-write"></iframe>
                     </div>
@@ -193,7 +217,7 @@
                     const isPreview = window.location.href.includes('usercontent.goog');
                     try {
                         if (isPreview) {
-                            const mockUser = { uid: 'DEBUG', displayName: '測試員' };
+                            const mockUser = { uid: 'DEBUG', displayName: '測試管理員' };
                             setUser(mockUser); await refreshFiles(mockUser.uid); setViewState('MAIN'); return;
                         }
                         await liff.init({ liffId: LIFF_ID });
@@ -211,37 +235,37 @@
                 try {
                     const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: String(user.uid), id: String(id), name, content }) });
                     if ((await res.json()).success) { await refreshFiles(user.uid); setActiveFile(null); }
-                } catch (e) { alert("儲存失敗"); }
+                } catch (e) { alert("儲存失敗，請檢查權限設定"); }
                 setIsGlobalLoading(false);
             };
 
             const handleDelete = async (id) => {
-                if(!confirm("永久刪除設計？")) return;
+                if(!confirm("確定要永久刪除此設計？")) return;
                 setIsGlobalLoading(true);
                 try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteFile', userId: String(user.uid), id: String(id) }) }); await refreshFiles(user.uid); } catch (e) {}
                 setIsGlobalLoading(false);
             };
 
-            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white font-black italic animate-pulse font-black"><div className="loader mb-4 font-black"></div>SYNCING CENTER...</div>;
-            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">登入系統</button></div>;
+            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white italic animate-pulse font-black"><div className="loader mb-4"></div>HUB LOADING...</div>;
+            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">登入系統</button></div>;
 
             return (
-                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black font-black">
+                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black">
                     {isGlobalLoading && <div className="overlay-loading font-black text-xl uppercase italic"><div className="loader mb-4"></div>數據處理中...</div>}
                     <aside className="w-64 line-sidebar flex flex-col shrink-0 border-r border-slate-300 font-black">
                         <div className="h-16 flex flex-col justify-center px-6 border-b border-slate-300 bg-white shadow-sm z-10">
-                            <span className="font-black text-[#06C755] text-xl uppercase italic tracking-tighter">Flex Hub Center</span>
+                            <span className="font-black text-[#06C755] text-xl uppercase italic tracking-tighter">Flex Hub OA</span>
                         </div>
                         <nav className="flex-1 overflow-y-auto pt-4">
                             {Object.keys(PROJECTS).map(key => (
                                 <button key={key} onClick={()=>{setActiveLevel2(key); setActiveFile(null);}} className={`w-full text-left px-10 py-5 text-sm transition-all border-r-4 font-black ${activeLevel2 === key && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent'}`}>{PROJECTS[key].name}</button>
                             ))}
                         </nav>
-                        <div className="p-5 border-t border-slate-300 bg-white flex items-center gap-3 font-black font-black uppercase text-xs">
-                            <div className="truncate font-bold text-black font-black">{user?.displayName}</div>
+                        <div className="p-5 border-t border-slate-300 bg-white flex items-center gap-3 font-black uppercase text-xs">
+                            <div className="truncate font-bold text-black">{user?.displayName}</div>
                         </div>
                     </aside>
-                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner font-bold font-black">
+                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner font-bold">
                         {activeFile ? (
                             <EditorView key={String(activeFile.id)} file={activeFile} onSave={handleSave} onCancel={() => setActiveFile(null)} projectUrl={PROJECTS[activeLevel2].url} defaultTemplate={PROJECTS[activeLevel2].template} />
                         ) : (
