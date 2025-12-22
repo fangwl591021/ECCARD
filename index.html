@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 專業儀表板 (v2.3.5)</title>
+    <title>FLEX Hub Pro - 專業儀表板 (v2.3.6)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -52,21 +52,31 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const APP_VERSION = "v2.3.5";
+        const APP_VERSION = "v2.3.6";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
+        // --- 核心工具：修復後的數據清洗函數 ---
         function processFinalJson(str) {
             if (!str) return "";
             let s = String(str).trim();
-            if (s.startsWith('"') && s.endsWith('"')) { 
-                s = s.substring(1, s.length - 1).replace(/""/g, '"'); 
+            // 處理 GAS 傳回時可能被雙引號再次包裹且內容帶有轉義的情況
+            if (s.startsWith('"') && s.endsWith('"') && (s.includes('\\"') || s.includes('{'))) { 
+                try {
+                    // 嘗試解析一次，如果成功則是 JSON 字串
+                    const parsed = JSON.parse(s);
+                    if (typeof parsed === 'string') return parsed;
+                    return JSON.stringify(parsed);
+                } catch(e) {
+                    // 傳統回退處理
+                    s = s.substring(1, s.length - 1).replace(/""/g, '"'); 
+                }
             }
             return s;
         }
 
-        // --- 1. 電商完整模板 ---
+        // --- 模板定義 ---
         const ECOMMERCE_FULL_TEMPLATE = JSON.stringify({
             "type": "bubble", "size": "mega",
             "hero": { "type": "video", "url": "https://lihi.cc/YsmAp", "previewUrl": "https://lihi.cc/5OXMZ", "aspectRatio": "16:9", "altContent": { "type": "image", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover", "url": "https://lihi.cc/5OXMZ" } },
@@ -81,9 +91,8 @@
                     ] }
                 ] }]
             }
-        }, null, 2);
+        });
 
-        // --- 2. 個人名片完整模板 ---
         const PERSONAL_FULL_TEMPLATE = JSON.stringify({
             "type": "bubble", "size": "mega",
             "body": {
@@ -98,9 +107,8 @@
                 ]
             },
             "footer": { "type": "box", "layout": "vertical", "contents": [{ "type": "text", "text": "立即預約", "align": "center", "color": "#ffffff", "weight": "bold" }], "paddingAll": "10px", "backgroundColor": "#00b900", "cornerRadius": "md", "action": { "type": "uri", "uri": "https://line.me" } }
-        }, null, 2);
+        });
 
-        // --- 3. 專業業務型名片 (Sequential Pro) 模板 ---
         const SEQUENTIAL_PRO_TEMPLATE = JSON.stringify({
             "type": "bubble", "size": "mega",
             "body": {
@@ -111,7 +119,7 @@
                 ]
             },
             "footer": { "type": "box", "layout": "vertical", "paddingAll": "15px", "backgroundColor": "#111111", "contents": [{ "type": "box", "layout": "vertical", "backgroundColor": "#D4AF37", "paddingAll": "12px", "cornerRadius": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "text", "text": "聯繫我", "color": "#000000", "align": "center", "weight": "bold", "size": "sm" }] }] }
-        }, null, 2);
+        });
 
         const NAV_GROUPS = [
             {
@@ -132,6 +140,7 @@
             }
         ];
 
+        // --- 子組件：Icon ---
         const Icon = ({ name, className = "w-4 h-4" }) => {
             const icons = {
                 left: <polyline points="15 18 9 12 15 6" />,
@@ -155,10 +164,10 @@
                 <div className="bg-white rounded-3xl p-8 max-w-xs w-full shadow-2xl border-4 border-black font-black text-black text-center">
                     <div className="flex justify-center mb-4 text-red-600 animate-bounce"><Icon name="alert" className="w-12 h-12" /></div>
                     <h3 className="text-xl mb-2 font-black text-black">確定要刪除嗎？</h3>
-                    <p className="text-sm text-slate-500 mb-6 font-bold italic">「{name}」將會永久移除。</p>
+                    <p className="text-sm text-slate-500 mb-6 font-bold italic tracking-tight">「{name}」將會永久移除。</p>
                     <div className="flex gap-3">
-                        <button onClick={onCancel} className="flex-1 py-3 border-2 border-slate-300 rounded-xl font-black">取消</button>
-                        <button onClick={onConfirm} className="flex-1 py-3 bg-red-600 text-white rounded-xl shadow-lg active:scale-95 font-black">確定</button>
+                        <button onClick={onCancel} className="flex-1 py-3 border-2 border-slate-300 rounded-xl font-black transition-all hover:bg-slate-50">取消</button>
+                        <button onClick={onConfirm} className="flex-1 py-3 bg-red-600 text-white rounded-xl shadow-lg active:scale-95 font-black transition-all hover:bg-red-700">確定</button>
                     </div>
                 </div>
             </div>
@@ -175,20 +184,20 @@
                 </div>
                 <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
                     <table className="w-full text-left">
-                        <thead className="bg-slate-100 border-b border-slate-300 uppercase font-black tracking-widest">
+                        <thead className="bg-slate-100 border-b border-slate-300 uppercase font-black tracking-widest text-slate-500">
                             <tr>
                                 <th className="p-5 text-sm">專案名稱</th>
                                 <th className="p-5 text-sm text-center">狀態</th>
                                 <th className="p-5 text-sm text-right">操作管理</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-200">
+                        <tbody className="divide-y divide-slate-200 text-black">
                             {files.length === 0 ? <tr><td colSpan="3" className="p-10 text-center italic opacity-30">目前無存檔數據...</td></tr> : files.map(f => (
                                 <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors">
-                                    <td className="p-5 font-black text-base text-black">{f.name}</td>
-                                    <td className="p-5 text-center"><span className={`px-4 py-1 rounded-full text-xs font-black ${f.content ? 'bg-green-100 text-green-700' : 'bg-slate-200'}`}>{f.content ? '✓ 已同步' : '○ 空白'}</span></td>
+                                    <td className="p-5 font-black text-base">{f.name}</td>
+                                    <td className="p-5 text-center"><span className={`px-4 py-1 rounded-full text-xs font-black ${f.content ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>{f.content ? '✓ 已同步' : '○ 空白'}</span></td>
                                     <td className="p-5 text-right space-x-6">
-                                        <button onClick={()=>onEdit(f)} className="text-blue-700 font-black hover:underline text-base">編輯</button>
+                                        <button onClick={()=>onEdit(f)} className="text-blue-700 font-black hover:underline text-base transition-colors">編輯</button>
                                         <button onClick={()=>onDelete(f)} className="text-red-500 hover:text-red-700 transition-colors inline-block align-middle"><Icon name="trash" className="w-6 h-6" /></button>
                                     </td>
                                 </tr>
@@ -226,41 +235,39 @@
                 return () => window.removeEventListener('message', handleMessage);
             }, []);
 
+            // --- 修復後的發送邏輯 ---
             const handleSend = async () => {
                 try {
-                    if (!latestJsonRef.current || latestJsonRef.current === "{}") {
-                        alert("目前無有效的設計內容可發送。");
+                    const currentCode = latestJsonRef.current;
+                    if (!currentCode || currentCode === "{}") {
+                        alert("請先完成設計再發送。");
                         return;
                     }
 
-                    // 1. 替換變數
-                    const finalCode = latestJsonRef.current
+                    // 變數替換
+                    const finalCode = currentCode
                         .replace(/\{\{LIFF_URL\}\}/g, LIFF_URL)
                         .replace(/\{\{LIFF_ID\}\}/g, LIFF_ID);
                     
-                    // 2. 嘗試解析 JSON
                     let flexMessage;
                     try {
                         flexMessage = JSON.parse(finalCode);
                     } catch (parseErr) {
-                        alert("設計內容非有效的 JSON 格式，發送失敗。");
+                        alert("設計內容包含錯誤的 JSON 語法，請檢查標點符號或引號。");
                         return;
                     }
 
-                    // 3. 檢查 LIFF 環境
                     if (!liff.isLoggedIn()) {
-                        alert("請先登入 LINE 以執行此操作。");
+                        alert("連線逾時，請重新登入。");
                         liff.login();
                         return;
                     }
 
-                    // 4. 檢查發送功能可用性
                     if (!liff.isApiAvailable('shareTargetPicker')) {
-                        alert("您的 LIFF App 未開啟「shareTargetPicker」權限，請前往 LINE Developers 後台設定。");
+                        alert("目前 LINE 帳號不支援此功能，或權限未開啟。");
                         return;
                     }
 
-                    // 5. 執行發送
                     const result = await liff.shareTargetPicker([{ 
                         type: "flex", 
                         altText: `設計：${localName || "Flex"}`, 
@@ -269,12 +276,10 @@
 
                     if (result) {
                         showMsg("✅ 已成功發送至 LINE！");
-                    } else {
-                        // 使用者取消發送
                     }
                 } catch (e) { 
-                    console.error("LIFF Send Error:", e);
-                    alert(`發送失敗：${e.message || "未知原因"}\n請查看開發者控制台了解更多。`); 
+                    console.error("LINE Share Error:", e);
+                    alert(`發送失敗原因：${e.message || "未知錯誤"}\n請確認您的 LIFF 開發權限。`);
                 }
             };
 
@@ -285,12 +290,12 @@
                         <div className="flex items-center gap-6 flex-1">
                             <button onClick={onCancel} className="text-black hover:text-green-600 transition-colors shrink-0"><Icon name="left" className="w-10 h-10" /></button>
                             <div className="flex items-center gap-4 bg-slate-50 border-2 border-black rounded-2xl px-6 py-3 flex-1 max-w-2xl shadow-inner focus-within:bg-white focus-within:border-[#06C755] transition-all">
-                                <div className="flex flex-col shrink-0 border-r border-slate-200 pr-5"><span className="text-[10px] text-slate-400">FILENAME</span><span className="text-sm font-black uppercase tracking-widest">檔案名稱</span></div>
-                                <input type="text" value={localName} onChange={e=>setLocalName(e.target.value)} placeholder="請輸入名稱..." className="bg-transparent border-none outline-none text-xl w-full font-black text-black focus:ring-0" />
+                                <div className="flex flex-col shrink-0 border-r border-slate-200 pr-5"><span className="text-[10px] text-slate-400">FILENAME</span><span className="text-sm font-black uppercase">專案名稱</span></div>
+                                <input type="text" value={localName} onChange={e=>setLocalName(e.target.value)} placeholder="請輸入專案名稱..." className="bg-transparent border-none outline-none text-xl w-full font-black text-black focus:ring-0" />
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <button onClick={handleSend} className="bg-[#06C755] text-white px-8 py-4 rounded-2xl text-lg flex items-center gap-2 active:scale-95 shadow-xl font-black uppercase tracking-wider hover:bg-[#05b34c] transition-all"><Icon name="send" className="w-6 h-6" /> <span>發送設計</span></button>
+                            <button onClick={handleSend} className="bg-[#06C755] text-white px-8 py-4 rounded-2xl text-lg flex items-center gap-2 active:scale-95 shadow-xl font-black uppercase tracking-wider transition-all hover:bg-[#05b34c]"><Icon name="send" className="w-6 h-6" /> <span>發送設計</span></button>
                             <button onClick={()=>onSave(file.id, localName || "未命名設計", latestJsonRef.current)} className="bg-black text-white px-8 py-4 rounded-2xl font-black text-lg active:scale-95 shadow-xl flex items-center gap-2 hover:bg-slate-800 transition-all border-2 border-transparent"><Icon name="save" className="w-6 h-6" /> <span>儲存</span></button>
                         </div>
                     </div>
@@ -330,7 +335,7 @@
                     try {
                         const isPreview = window.location.href.includes('usercontent.goog');
                         if (isPreview) {
-                            const mockUser = { uid: 'DEBUG_USER', displayName: '測試員' };
+                            const mockUser = { uid: 'DEBUG_USER', displayName: '測試管理員' };
                             setUser(mockUser); setProfile({ status: 'APPROVED', name: '管理員', role: '系統管理員' });
                             await refreshFiles(mockUser.uid, '系統管理員'); setViewState('MAIN'); return;
                         }
@@ -352,7 +357,7 @@
                 try {
                     const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: String(user.uid), id: String(id), name, content }) });
                     if ((await res.json()).success) { await refreshFiles(user.uid, profile.role); setActiveFile(null); }
-                } catch (e) { alert("連線失敗。"); }
+                } catch (e) { alert("儲存失敗，請檢查網路連線。"); }
                 setIsGlobalLoading(false);
             };
 
@@ -365,7 +370,7 @@
                 setIsGlobalLoading(false);
             };
 
-            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white italic font-black animate-pulse"><div className="loader mb-4"></div>數據載入中...</div>;
+            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white italic font-black animate-pulse text-black"><div className="loader mb-4"></div>數據載入中...</div>;
             if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">登入系統</button></div>;
 
             const findCurrentModule = () => {
@@ -379,7 +384,7 @@
 
             return (
                 <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black">
-                    {isGlobalLoading && <div className="overlay-loading font-black text-xl italic uppercase tracking-widest"><div className="loader mb-4"></div>數據同步中...</div>}
+                    {isGlobalLoading && <div className="overlay-loading font-black text-xl italic uppercase tracking-widest text-black"><div className="loader mb-4"></div>數據同步中...</div>}
                     {deleteTarget && <DeleteModal name={deleteTarget.name} onConfirm={confirmDelete} onCancel={()=>setDeleteTarget(null)} />}
                     
                     <aside className={`line-sidebar border-r border-slate-300 ${isSidebarCollapsed ? 'w-16' : 'w-64'}`}>
@@ -401,7 +406,7 @@
                                 <div key={group.id} className="mb-4">
                                     {!isSidebarCollapsed ? (
                                         <div 
-                                            className="px-6 py-3 text-sm text-slate-600 uppercase tracking-[0.2em] font-black flex items-center justify-between cursor-pointer hover:text-[#06C755] transition-colors"
+                                            className="px-6 py-3 text-xs text-slate-400 uppercase tracking-[0.2em] font-black flex items-center justify-between cursor-pointer hover:text-[#06C755] transition-colors"
                                             onClick={() => toggleGroup(group.id)}
                                         >
                                             <span>{group.name}</span>
