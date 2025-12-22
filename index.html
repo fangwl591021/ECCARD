@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 儀表板優化版 (v2.3.2)</title>
+    <title>FLEX Hub Pro - 專業儀表板 (v2.3.3)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -52,7 +52,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const APP_VERSION = "v2.3.2";
+        const APP_VERSION = "v2.3.3";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
@@ -75,17 +75,11 @@
                     { "type": "image", "url": "https://lihi.cc/l5qqU", "position": "absolute", "size": "full", "aspectMode": "cover" },
                     { "type": "box", "layout": "vertical", "paddingAll": "md", "contents": [
                         { "type": "box", "layout": "horizontal", "contents": [
-                            { "type": "box", "layout": "vertical", "width": "32%", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/mwMvo", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 A", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
-                            { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/2Nu8G", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 B", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
-                            { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/yRfpn", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 C", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] }
+                            { "type": "box", "layout": "vertical", "width": "32%", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/mwMvo", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 A", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] }
                         ]}
                     ] }
                 ] }]
-            },
-            "footer": { "type": "box", "layout": "horizontal", "spacing": "md", "backgroundColor": "#ffffff", "paddingTop": "md", "contents": [
-                { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "品牌故事", "uri": "https://liff.line.me/2008704329-cTkwlRHm" } },
-                { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "好友分享", "uri": "line://nv/recommendOA/@754tjssx" } }
-            ]}
+            }
         }, null, 2);
 
         const PERSONAL_FULL_TEMPLATE = JSON.stringify({
@@ -143,7 +137,7 @@
             <div className="modal-overlay">
                 <div className="bg-white rounded-3xl p-8 max-w-xs w-full shadow-2xl border-4 border-black font-black text-black text-center">
                     <div className="flex justify-center mb-4 text-red-600 animate-bounce"><Icon name="alert" className="w-12 h-12" /></div>
-                    <h3 className="text-xl mb-2 font-black text-black">確定要刪除嗎？</h3>
+                    <h3 className="text-xl mb-2 font-black">確定要刪除嗎？</h3>
                     <p className="text-sm text-slate-500 mb-6 font-bold italic">「{name}」將會永久移除。</p>
                     <div className="flex gap-3">
                         <button onClick={onCancel} className="flex-1 py-3 border-2 border-slate-300 rounded-xl font-black">取消</button>
@@ -164,14 +158,19 @@
                 </div>
                 <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
                     <table className="w-full text-left">
-                        <thead className="bg-slate-100 border-b border-slate-300 uppercase text-[10px] font-black tracking-widest">
-                            <tr><th className="p-5">專案名稱</th><th className="p-5 text-center">狀態</th><th className="p-5 text-right">操作</th></tr>
+                        <thead className="bg-slate-100 border-b border-slate-300 uppercase font-black tracking-widest">
+                            {/* 優化：表格標頭放大至 text-sm */}
+                            <tr>
+                                <th className="p-5 text-sm">專案名稱</th>
+                                <th className="p-5 text-sm text-center">狀態</th>
+                                <th className="p-5 text-sm text-right">操作管理</th>
+                            </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
                             {files.length === 0 ? <tr><td colSpan="3" className="p-10 text-center italic opacity-30">目前無存檔數據...</td></tr> : files.map(f => (
                                 <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors">
                                     <td className="p-5 font-black text-base text-black">{f.name}</td>
-                                    <td className="p-5 text-center"><span className={`px-4 py-1 rounded-full text-[10px] font-black ${f.content ? 'bg-green-100 text-green-700' : 'bg-slate-200'}`}>{f.content ? '✓ 已同步' : '○ 空白'}</span></td>
+                                    <td className="p-5 text-center"><span className={`px-4 py-1 rounded-full text-xs font-black ${f.content ? 'bg-green-100 text-green-700' : 'bg-slate-200'}`}>{f.content ? '✓ 已同步' : '○ 空白'}</span></td>
                                     <td className="p-5 text-right space-x-6">
                                         <button onClick={()=>onEdit(f)} className="text-blue-700 font-black hover:underline text-base">編輯</button>
                                         <button onClick={()=>onDelete(f)} className="text-red-500 hover:text-red-700 transition-colors inline-block align-middle"><Icon name="trash" className="w-6 h-6" /></button>
@@ -230,7 +229,7 @@
                             <button onClick={onCancel} className="text-black hover:text-green-600 transition-colors shrink-0"><Icon name="left" className="w-10 h-10" /></button>
                             <div className="flex items-center gap-4 bg-slate-50 border-2 border-black rounded-2xl px-6 py-3 flex-1 max-w-2xl shadow-inner focus-within:bg-white focus-within:border-[#06C755] transition-all">
                                 <div className="flex flex-col shrink-0 border-r border-slate-200 pr-5"><span className="text-[10px] text-slate-400">FILENAME</span><span className="text-sm font-black uppercase tracking-widest">檔案名稱</span></div>
-                                <input type="text" value={localName} onChange={e=>setLocalName(e.target.value)} placeholder="請輸入專案名稱..." className="bg-transparent border-none p-0 outline-none text-xl w-full font-black text-black focus:ring-0" />
+                                <input type="text" value={localName} onChange={e=>setLocalName(e.target.value)} placeholder="請輸入名稱..." className="bg-transparent border-none p-0 outline-none text-xl w-full font-black text-black focus:ring-0" />
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -326,6 +325,7 @@
                     {isGlobalLoading && <div className="overlay-loading font-black text-xl italic uppercase tracking-widest"><div className="loader mb-4"></div>數據同步中...</div>}
                     {deleteTarget && <DeleteModal name={deleteTarget.name} onConfirm={confirmDelete} onCancel={()=>setDeleteTarget(null)} />}
                     
+                    {/* 側邊欄縮圖化優化 */}
                     <aside className={`line-sidebar border-r border-slate-300 ${isSidebarCollapsed ? 'w-16' : 'w-64'}`}>
                         <div 
                             className={`h-24 flex items-center border-b border-slate-300 bg-white shadow-sm z-10 cursor-pointer hover:bg-slate-50 transition-all ${isSidebarCollapsed ? 'justify-center px-0' : 'px-6'}`}
@@ -342,20 +342,20 @@
                         
                         <nav className="flex-1 overflow-y-auto pt-4 font-black custom-scrollbar">
                             {NAV_GROUPS.map(group => (
-                                <div key={group.id} className="mb-4">
+                                <div key={group.id} className="mb-6">
                                     {!isSidebarCollapsed ? (
                                         <div 
-                                            /* 優化：名片區、工具區文字調大 (text-xs) */
-                                            className="px-6 py-3 text-xs text-slate-400 uppercase tracking-widest font-black flex items-center justify-between cursor-pointer hover:text-black transition-colors"
+                                            /* 優化：名片區、工具區文字調大 (text-sm + tracking) */
+                                            className="px-6 py-3 text-sm text-slate-600 uppercase tracking-[0.2em] font-black flex items-center justify-between cursor-pointer hover:text-[#06C755] transition-colors"
                                             onClick={() => toggleGroup(group.id)}
                                         >
                                             <span>{group.name}</span>
                                             <span className={`chevron-rotate ${collapsedGroups[group.id] ? 'chevron-up' : 'chevron-down'}`}>
-                                                <Icon name="chevron" className="w-3 h-3" />
+                                                <Icon name="chevron" className="w-4 h-4" />
                                             </span>
                                         </div>
                                     ) : (
-                                        <div className="border-b border-slate-200 mx-4 mb-2"></div>
+                                        <div className="border-b border-slate-200 mx-4 mb-4"></div>
                                     )}
 
                                     {(!collapsedGroups[group.id] || isSidebarCollapsed) && (
@@ -364,12 +364,12 @@
                                                 <button 
                                                     key={item.id} 
                                                     onClick={()=>{setActiveLevel2(item.id); setActiveFile(null);}} 
-                                                    className={`w-full transition-all border-r-4 font-black flex items-center ${activeLevel2 === item.id && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent'} ${isSidebarCollapsed ? 'justify-center px-0 py-6' : 'px-6 py-5 gap-4'}`}
+                                                    className={`w-full transition-all border-r-4 font-black flex items-center ${activeLevel2 === item.id && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent'} ${isSidebarCollapsed ? 'justify-center px-0 py-6' : 'px-8 py-4 gap-4'}`}
                                                     title={isSidebarCollapsed ? item.name : ""}
                                                 >
-                                                    <span className="shrink-0"><Icon name={item.icon} className="w-6 h-6" /></span>
-                                                    {/* 優化：內層導覽文字調小 (text-base) */}
-                                                    {!isSidebarCollapsed && <span className="text-base truncate">{item.name}</span>}
+                                                    <span className="shrink-0"><Icon name={item.icon} className="w-5 h-5" /></span>
+                                                    {/* 優化：內層導覽文字調小且變細 (text-sm) */}
+                                                    {!isSidebarCollapsed && <span className="text-sm truncate">{item.name}</span>}
                                                 </button>
                                             ))}
                                         </div>
@@ -382,7 +382,6 @@
                             <div className="w-8 h-8 bg-[#06C755] rounded-full flex items-center justify-center text-white text-[10px] shrink-0">
                                 {user?.displayName?.charAt(0) || 'U'}
                             </div>
-                            {/* 優化：用戶名稱文字調大 (text-xs) */}
                             {!isSidebarCollapsed && <div className="truncate text-xs opacity-60 uppercase">{profile?.name || user?.displayName}</div>}
                         </div>
                     </aside>
