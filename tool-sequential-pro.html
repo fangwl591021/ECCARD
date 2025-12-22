@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sequential Pro - 完整功能與頭像修正版</title>
+    <title>Sequential Pro - 動態支援與 400:600 專業版</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -27,6 +27,7 @@
         }
         .control-panel { background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .master-slider { accent-color: #f59e0b; }
+        .toggle-checkbox:checked { background-color: #06C755; border-color: #06C755; }
     </style>
 </head>
 <body>
@@ -53,6 +54,7 @@
             media: {
                 url: "https://aiwe.cc/wp-content/uploads/2025/12/cf75e54791dd1f49f918345fdfe2430b.png",
                 aspectRatio: "400:600",
+                animated: false, // 底圖動畫設定
                 badgeText: "PREMIUM",
                 badgeBg: "#D4AF37",
                 badgeRadius: "xs",
@@ -62,6 +64,7 @@
             identity: {
                 avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
                 avatarTop: 60,
+                animated: false, // 頭像動畫設定
                 name: "張志明",
                 nameTop: 155,
                 nameColor: "#000000",
@@ -121,11 +124,31 @@
                     body: {
                         type: "box", layout: "vertical", paddingAll: "0px",
                         contents: [
-                            { type: "image", url: data.media.url, size: "full", aspectRatio: "400:600", aspectMode: "cover" },
+                            // 底圖
+                            { 
+                                type: "image", 
+                                url: data.media.url, 
+                                size: "full", 
+                                aspectRatio: "400:600", 
+                                aspectMode: "cover",
+                                animated: data.media.animated // 動畫設定
+                            },
                             // 頂部標籤
                             { type: "box", layout: "vertical", position: "absolute", offsetTop: toPx(data.media.badgeTop), [data.media.badgePos]: "20px", backgroundColor: data.media.badgeBg, cornerRadius: data.media.badgeRadius, paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px", contents: [{ type: "text", text: data.media.badgeText, color: "#ffffff", size: "xxs", weight: "bold" }] },
                             // 頭像
-                            { type: "box", layout: "vertical", position: "absolute", offsetTop: toPx(data.identity.avatarTop), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "85px", height: "85px", cornerRadius: "100px", borderWidth: "3px", borderColor: "#ffffff", contents: [{ type: "image", url: data.identity.avatar, size: "full", aspectMode: "cover" }] }] },
+                            { 
+                                type: "box", layout: "vertical", position: "absolute", offsetTop: toPx(data.identity.avatarTop), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", 
+                                contents: [{ 
+                                    type: "box", layout: "vertical", width: "85px", height: "85px", cornerRadius: "100px", borderWidth: "3px", borderColor: "#ffffff", 
+                                    contents: [{ 
+                                        type: "image", 
+                                        url: data.identity.avatar, 
+                                        size: "full", 
+                                        aspectMode: "cover",
+                                        animated: data.identity.animated // 動畫設定
+                                    }] 
+                                }] 
+                            },
                             // 姓名
                             { type: "box", layout: "vertical", position: "absolute", offsetTop: toPx(data.identity.nameTop), offsetStart: "0px", offsetEnd: "0px", contents: [{ type: "text", text: data.identity.name, weight: data.identity.nameWeight, size: "xxl", color: data.identity.nameColor, align: "center" }] },
                             // 職稱標籤
@@ -180,7 +203,7 @@
                 const width = data.size === 'giga' ? 420 : 300;
                 const height = (width * 600) / 400;
                 return (
-                    <div className="flex justify-center p-4 min-h-full font-black">
+                    <div className="flex justify-center p-4 min-h-full font-black text-black">
                         <div className="rounded-3xl shadow-2xl overflow-hidden relative border border-white/10 bg-white" style={{ width: `${width}px` }}>
                             <div className="relative overflow-hidden" style={{ height: `${height}px` }}>
                                 <img src={data.media.url} className="w-full h-full object-cover" />
@@ -201,12 +224,18 @@
             return (
                 <div className="flex h-screen bg-slate-100 overflow-hidden font-bold">
                     <div className="w-1/2 bg-white border-r flex flex-col shadow-2xl z-20">
-                        <div className="p-6 border-b flex items-center justify-between font-black"><h1 className="text-xl font-black uppercase tracking-tighter text-black">Sequential Pro master</h1></div>
+                        <div className="p-6 border-b flex items-center justify-between font-black text-black"><h1 className="text-xl font-black uppercase tracking-tighter">Sequential Pro master</h1></div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar text-black">
                             
                             {/* 1. 標籤與底圖設定 */}
                             <div className="control-panel space-y-4">
-                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><i data-lucide="image"></i> 1. 標籤與底圖設定 (400:600)</h3>
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><i data-lucide="image"></i> 1. 標籤與底圖設定</h3>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked={data.media.animated} onChange={e=>updateData('media.animated', e.target.checked)} className="w-4 h-4 accent-green-600" />
+                                        <span className="text-[10px] font-black uppercase text-green-600">底圖動畫</span>
+                                    </label>
+                                </div>
                                 <input type="text" value={data.media.url} onChange={e=>updateData('media.url', e.target.value)} className="w-full p-2 border rounded" placeholder="底圖網址" />
                                 <div className="grid grid-cols-2 gap-2">
                                     <input type="text" value={data.media.badgeText} onChange={e=>updateData('media.badgeText', e.target.value)} className="p-2 border rounded" placeholder="標籤文字" />
@@ -216,7 +245,7 @@
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                     <input type="color" value={data.media.badgeBg} onChange={e=>updateData('media.badgeBg', e.target.value)} className="w-full h-10 border rounded p-1" />
-                                    <select value={data.media.badgePos} onChange={e=>updateData('media.badgePos', e.target.value)} className="p-2 border rounded bg-white text-xs">
+                                    <select value={data.media.badgePos} onChange={e=>updateData('media.badgePos', e.target.value)} className="p-2 border rounded bg-white text-xs text-black">
                                         <option value="offsetStart">標籤靠左</option>
                                         <option value="offsetEnd">標籤靠右</option>
                                     </select>
@@ -229,11 +258,16 @@
                                 <input type="range" min="0" max="800" value={parseInt(data.identity.avatarTop)} onChange={e=>handleMasterMove(parseInt(e.target.value))} className="w-full master-slider" />
                             </div>
 
-                            {/* 3. 頭像、姓名與職稱設定 (修正補回頭像網址) */}
+                            {/* 3. 頭像、姓名與職稱設定 */}
                             <div className="control-panel space-y-4">
-                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><i data-lucide="user"></i> 3. 頭像、姓名與職稱</h3>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] text-slate-400">頭像網址</label>
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><i data-lucide="user"></i> 3. 頭像、姓名與職稱</h3>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked={data.identity.animated} onChange={e=>updateData('identity.animated', e.target.checked)} className="w-4 h-4 accent-green-600" />
+                                        <span className="text-[10px] font-black uppercase text-green-600">頭像動畫</span>
+                                    </label>
+                                </div>
+                                <div className="space-y-2 text-black">
                                     <input type="text" value={data.identity.avatar} onChange={e=>updateData('identity.avatar', e.target.value)} className="w-full p-2 border rounded text-xs" placeholder="頭像網址" />
                                 </div>
                                 <div className="flex gap-2">
@@ -241,7 +275,7 @@
                                     <input type="color" value={data.identity.nameColor} onChange={e=>updateData('identity.nameColor', e.target.value)} className="w-10 h-10 border rounded" />
                                 </div>
                                 <select value={data.identity.nameWeight} onChange={e=>updateData('identity.nameWeight', e.target.value)} className="w-full border rounded p-2 text-black"><option value="bold">姓名粗體</option><option value="regular">姓名一般</option></select>
-                                <div className="border-t pt-4 space-y-2">
+                                <div className="border-t pt-4 space-y-2 text-black">
                                     <input type="text" value={data.identity.label1} onChange={e=>updateData('identity.label1', e.target.value)} className="w-full p-2 border rounded text-xs" placeholder="職稱文字" />
                                     <div className="grid grid-cols-3 gap-2">
                                         <div className="flex flex-col gap-1"><label className="text-[10px]">職稱文字</label><input type="color" value={data.identity.label1Color} onChange={e=>updateData('identity.label1Color', e.target.value)} className="w-full h-8" /></div>
@@ -263,29 +297,29 @@
                                         <select value={s.type} onChange={e=>{const nl=[...data.social.icons]; nl[i].type=e.target.value; updateData('social.icons', nl)}} className="border rounded text-[10px] w-24 text-black">
                                             {Object.keys(SOCIAL_DATA).map(k=><option key={k} value={k}>{SOCIAL_DATA[k].label}</option>)}
                                         </select>
-                                        <input type="text" value={s.uri} onChange={e=>{const nl=[...data.social.icons]; nl[i].uri=e.target.value; updateData('social.icons', nl)}} className="flex-1 p-1 border rounded text-[10px] font-mono text-black" placeholder="https://..." />
+                                        <input type="text" value={s.uri} onChange={e=>{const nl=[...data.social.icons]; nl[i].uri=e.target.value; updateData('social.icons', nl)}} className="flex-1 p-1 border rounded text-[10px] font-mono text-black" placeholder="跳轉連結" />
                                     </div>
                                 ))}
                             </div>
 
                             {/* 5. 說明區設定 */}
                             <div className="control-panel space-y-4">
-                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><i data-lucide="align-left"></i> 5. 說明區設定 (各邊 10px)</h3>
-                                <div className="flex bg-slate-100 p-1 rounded gap-1 text-black">
+                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><i data-lucide="align-left"></i> 5. 說明區設定 (10px 邊界)</h3>
+                                <div className="flex bg-slate-100 p-1 rounded gap-1">
                                     {['start', 'center', 'end'].map(align => (
                                         <button key={align} onClick={()=>updateData('identity.descAlign', align)} className={`flex-1 py-1 rounded text-[10px] font-black ${data.identity.descAlign === align ? 'bg-white shadow text-green-600' : 'text-slate-400'}`}>{align.toUpperCase()}</button>
                                     ))}
                                 </div>
                                 <textarea value={data.identity.desc} onChange={e=>updateData('identity.desc', e.target.value)} className="w-full p-2 border rounded h-24 text-xs text-black" placeholder="說明內容"></textarea>
-                                <div className="grid grid-cols-2 gap-2 text-black">
+                                <div className="grid grid-cols-2 gap-2">
                                     <div className="flex items-center gap-2 border p-1 rounded">
                                         <label className="text-[10px]">文字色</label>
                                         <input type="color" value={data.identity.descColor} onChange={e=>updateData('identity.descColor', e.target.value)} className="flex-1 h-6" />
                                     </div>
-                                    <select value={data.identity.descWeight} onChange={e=>updateData('identity.descWeight', e.target.value)} className="text-xs border rounded text-black"><option value="regular">說明一般</option><option value="bold">說明粗體</option></select>
+                                    <select value={data.identity.descWeight} onChange={e=>updateData('identity.descWeight', e.target.value)} className="text-xs border rounded text-black"><option value="regular">一般</option><option value="bold">粗體</option></select>
                                 </div>
                                 <div className="flex items-center gap-4 text-xs mt-2">
-                                    <span className="shrink-0 text-slate-400">說明區高度</span>
+                                    <span className="shrink-0 text-slate-400">高度位置</span>
                                     <input type="range" min="0" max="1000" value={data.identity.descTop} onChange={e=>updateData('identity.descTop', parseInt(e.target.value))} className="flex-1" />
                                     <span className="w-10 text-right">{data.identity.descTop}px</span>
                                 </div>
@@ -310,7 +344,7 @@
                             </div>
                         </div>
                     </div>
-                    <div className="flex-1 flex flex-col chat-room-bg overflow-hidden text-black">
+                    <div className="flex-1 flex flex-col chat-room-bg overflow-hidden text-black font-black">
                         <div className="h-[70px] bg-white border-b flex items-center px-10 gap-8 shrink-0 shadow-sm">
                             <button onClick={()=>setActiveTab('editor')} className={`h-full border-b-4 flex items-center gap-2 transition-all ${activeTab === 'editor' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}>視覺預覽</button>
                             <button onClick={()=>setActiveTab('json')} className={`h-full border-b-4 flex items-center gap-2 transition-all ${activeTab === 'json' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}>JSON 代碼</button>
