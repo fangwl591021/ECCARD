@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人電商版 LINE Flex Message Editor (v2.0.0)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; color: #000000; font-weight: 700; }
+        
+        .chat-room-bg {
+            background-color: #7988a0;
+            width: 100%; height: 100%;
+            overflow-y: auto;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px;
+        }
+
+        .flex-bubble-container {
+            width: 100%;
+            max-width: 350px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #000000; border-radius: 10px; }
+        
+        .bg-line-green { background-color: #06C755; }
+        .text-line-green { color: #06C755; }
+
+        .aspect-1-1 { aspect-ratio: 1 / 1; }
+        .aspect-16-9 { aspect-ratio: 16 / 9; }
+        .aspect-4-3 { aspect-ratio: 4 / 3; }
+        .aspect-1_91-1 { aspect-ratio: 1.91 / 1; }
+        .aspect-3-4 { aspect-ratio: 3 / 4; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="h-16 bg-white border-b border-slate-300 flex items-center justify-between px-6 z-20 flex-shrink-0 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="bg-line-green p-2 rounded-lg text-white">
+                <i data-lucide="layout-grid" class="w-6 h-6"></i>
+            </div>
+            <h1 class="font-black text-xl text-slate-900">電商版 Flex 設計器</h1>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="undo()" id="btn-undo" class="px-4 py-2 text-sm font-black text-slate-800 border-2 border-slate-300 rounded-lg hover:bg-slate-100 transition disabled:opacity-30 flex items-center gap-1">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i> 復原
+            </button>
+            <!-- 同步按鈕：這是跨檔案通訊的核心 -->
+            <button onclick="syncToParent()" class="px-4 py-2 text-sm font-black text-white bg-[#06C755] rounded-lg hover:bg-[#05b34c] transition shadow-md flex items-center gap-2">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i> 同步回主系統
+            </button>
+            <button onclick="exportJSON()" class="px-4 py-2 text-sm font-black text-white bg-black rounded-lg hover:bg-slate-800 transition shadow-lg flex items-center gap-2">
+                <i data-lucide="copy" class="w-4 h-4"></i> 複製 JSON
+            </button>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden">
+        <!-- 左側編輯區 -->
+        <aside class="w-full md:w-[500px] bg-white border-r-2 border-slate-300 overflow-y-auto p-6 space-y-8 custom-scrollbar z-10 flex-shrink-0">
+            
+            <!-- Hero 設定 -->
+            <div class="border-2 border-black rounded-xl bg-white overflow-hidden">
+                <div class="p-3 bg-slate-100 border-b-2 border-black flex items-center gap-2 font-black text-black">
+                    <i data-lucide="image" class="w-5 h-5"></i> 頂部 Hero 視覺
+                </div>
+                <div class="p-4 space-y-4">
+                    <div class="flex bg-slate-200 p-1 rounded-lg">
+                        <button onclick="updateHeroType('image')" id="btn-type-image" class="flex-1 py-1.5 text-xs font-black rounded transition">靜態圖片</button>
+                        <button onclick="updateHeroType('video')" id="btn-type-video" class="flex-1 py-1.5 text-xs font-black rounded transition">影片</button>
+                        <button onclick="updateHeroType('none')" id="btn-type-none" class="flex-1 py-1.5 text-xs font-black rounded transition">不使用</button>
+                    </div>
+
+                    <div id="hero-settings-container" class="space-y-4">
+                        <div>
+                            <label class="text-[10px] font-black text-slate-500 uppercase block mb-1">顯示比例</label>
+                            <select id="hero-aspect" onchange="updateConfig('heroAspect', this.value)" class="w-full text-sm p-2 border-2 border-slate-300 rounded-lg font-black outline-none">
+                                <option value="16:9">16:9 寬螢幕</option>
+                                <option value="1:1">1:1 正方形</option>
+                                <option value="4:3">4:3 矩形</option>
+                                <option value="1.91:1">1.91:1 橫幅</option>
+                                <option value="3:4">3:4 直式</option>
+                            </select>
+                        </div>
+                        <div id="hero-inputs" class="space-y-4">
+                            <div>
+                                <label class="text-[10px] font-black text-slate-500 uppercase block mb-1" id="label-hero-url">圖片網址</label>
+                                <input type="text" id="input-hero-url" oninput="updateConfig('heroUrl', this.value)" class="w-full text-sm p-2 border-2 border-slate-300 rounded-lg outline-none font-bold">
+                            </div>
+                            <div id="field-video-url" class="hidden">
+                                <label class="text-[10px] font-black text-slate-500 uppercase block mb-1">影片網址 (.mp4)</label>
+                                <input type="text" id="input-video-url" oninput="updateConfig('videoUrl', this.value)" class="w-full text-sm p-2 border-2 border-slate-300 rounded-lg outline-none font-bold">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-slate-500 uppercase block mb-1">點擊連結</label>
+                                <input type="text" id="input-hero-link" oninput="updateConfig('heroLink', this.value)" class="w-full text-sm p-2 border-2 border-slate-300 rounded-lg outline-none font-bold">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body 設定 -->
+            <div class="border-2 border-black rounded-xl bg-white overflow-hidden">
+                <div class="p-3 bg-slate-100 border-b-2 border-black flex items-center justify-between font-black text-black">
+                    <div class="flex items-center gap-2"><i data-lucide="shopping-bag" class="w-5 h-5"></i> 商品列表設定</div>
+                    <span class="text-xs bg-black text-white px-2 py-0.5 rounded" id="item-count-badge">0</span>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] font-black text-slate-500 block mb-1 uppercase">每行顯示</label>
+                            <select id="body-columns" onchange="updateConfig('columns', parseInt(this.value))" class="w-full text-sm p-2 border-2 border-slate-300 rounded-lg font-black outline-none">
+                                <option value="3">3 欄</option>
+                                <option value="4">4 欄</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black text-slate-500 block mb-1 uppercase">卡片尺寸</label>
+                            <select id="bubble-size" onchange="updateConfig('bubbleSize', this.value)" class="w-full text-sm p-2 border-2 border-slate-300 rounded-lg font-black outline-none">
+                                <option value="mega">MEGA</option>
+                                <option value="giga">GIGA</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="items-container" class="space-y-3">
+                        <!-- 商品動態列表 -->
+                    </div>
+
+                    <button onclick="addItem()" class="w-full py-3 border-2 border-dashed border-slate-400 rounded-xl text-slate-900 font-black hover:bg-slate-50 transition flex items-center justify-center gap-2 mt-4">
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i> 新增商品項目
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer 設定 -->
+            <div class="border-2 border-black rounded-xl bg-white overflow-hidden">
+                <div class="p-3 bg-slate-100 border-b-2 border-black font-black flex items-center gap-2">
+                    <i data-lucide="mouse-pointer" class="w-5 h-5"></i> 底部動作按鈕
+                </div>
+                <div class="p-4 space-y-4">
+                    <div class="p-3 bg-slate-50 border-2 border-slate-200 rounded-lg">
+                        <div class="font-black text-xs mb-2">按鈕 1</div>
+                        <input type="text" id="input-f1-label" oninput="updateConfig('f1L', this.value)" class="w-full text-sm p-2 mb-2 border border-slate-300 rounded outline-none font-bold" placeholder="標籤名稱">
+                        <input type="text" id="input-f1-uri" oninput="updateConfig('f1U', this.value)" class="w-full text-xs p-2 border border-slate-300 rounded outline-none font-mono" placeholder="URL">
+                    </div>
+                    <div class="p-3 bg-slate-50 border-2 border-slate-200 rounded-lg">
+                        <div class="font-black text-xs mb-2">按鈕 2</div>
+                        <input type="text" id="input-f2-label" oninput="updateConfig('f2L', this.value)" class="w-full text-sm p-2 mb-2 border border-slate-300 rounded outline-none font-bold" placeholder="標籤名稱">
+                        <input type="text" id="input-f2-uri" oninput="updateConfig('f2U', this.value)" class="w-full text-xs p-2 border border-slate-300 rounded outline-none font-mono" placeholder="URL">
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- 右側預覽區 -->
+        <main class="flex-1 bg-slate-200 relative overflow-hidden flex flex-col">
+            <div class="chat-room-bg custom-scrollbar">
+                <div class="flex items-start gap-2 mb-8 w-full justify-center">
+                    <div class="w-8 h-8 rounded-full bg-slate-400 shrink-0 mt-1 shadow-sm"></div>
+                    <div class="bg-white rounded-xl overflow-hidden flex-bubble-container flex flex-col">
+                        <!-- Hero 預覽 -->
+                        <div id="view-hero-container" class="relative w-full bg-black overflow-hidden shrink-0">
+                            <img id="view-hero-img" src="" class="w-full h-full object-cover hidden">
+                            <div id="view-video-ui" class="absolute inset-0 flex items-center justify-center hidden">
+                                <img id="view-video-poster" src="" class="absolute inset-0 w-full h-full object-cover opacity-60">
+                                <div class="relative z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg"><i data-lucide="play" class="w-5 h-5 text-black fill-black ml-1"></i></div>
+                            </div>
+                        </div>
+                        <!-- Body 預覽 -->
+                        <div class="relative w-full" id="view-body-container">
+                            <img id="view-body-bg" src="" class="absolute inset-0 w-full h-full object-cover z-0 hidden">
+                            <div class="relative z-10 p-4">
+                                <div class="grid gap-2" id="view-grid"></div>
+                            </div>
+                        </div>
+                        <!-- Footer 預覽 -->
+                        <div class="p-3 border-t border-slate-100 flex flex-col gap-2 shrink-0 relative z-10" id="view-footer">
+                            <div class="flex gap-2 w-full">
+                                <div id="view-btn-1" class="flex-1 py-2 rounded text-[10px] font-black text-white text-center"></div>
+                                <div id="view-btn-2" class="flex-1 py-2 rounded text-[10px] font-black text-white text-center"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="h-20 w-full shrink-0"></div>
+            </div>
+
+            <!-- Toast 訊息 -->
+            <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-black text-white px-6 py-3 rounded-full shadow-2xl text-sm font-black transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-2 z-50 border-2 border-line-green">
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> 操作成功
+            </div>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        let state = {
+            hero: { type: 'video', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "https://lihi.cc/YsmAp", link: "https://line.me" },
+            body: { columns: 3, bubbleSize: "mega", bgType: "image", bgMode: "cover", bgColor: "#F8F8F8", bg: "https://lihi.cc/l5qqU", tagBgColor: "#0D0D0D", tagTextColor: "#FFFFFF",
+                items: [
+                    { title: "品項 A", img: "https://lihi.cc/mwMvo", url: "https://line.me" },
+                    { title: "品項 B", img: "https://lihi.cc/2Nu8G", url: "https://line.me" },
+                    { title: "品項 C", img: "https://lihi.cc/yRfpn", url: "https://line.me" }
+                ]
+            },
+            footer: { bg: "#ffffff", btn1: { label: "官方網站", color: "#000000", uri: "https://line.me" }, btn2: { label: "聯繫客服", color: "#000000", uri: "https://line.me" } }
+        };
+
+        let history = [];
+
+        // --- 跨檔案同步核心函式 ---
+        function syncToParent() {
+            const flexJson = generateFlexJSON();
+            // 透過 postMessage 發送訊息給 index.html
+            window.parent.postMessage({
+                type: 'SYNC_FLEX_DATA',
+                json: JSON.stringify(flexJson)
+            }, '*');
+
+            showToast("✨ 已同步至管理系統！", "refresh-cw");
+        }
+
+        function saveState() {
+            if (history.length > 20) history.shift();
+            history.push(JSON.parse(JSON.stringify(state)));
+            document.getElementById('btn-undo').disabled = false;
+        }
+
+        function undo() {
+            if (history.length > 0) {
+                state = history.pop();
+                if (history.length === 0) document.getElementById('btn-undo').disabled = true;
+                syncUI(); render();
+                syncToParent(); // 復原後也要同步
+            }
+        }
+
+        function updateHeroType(type) {
+            saveState(); state.hero.type = type;
+            syncUI(); render();
+            syncToParent();
+        }
+
+        function updateConfig(path, value) {
+            saveState();
+            if(path === 'heroAspect') state.hero.aspectRatio = value;
+            if(path === 'heroUrl') state.hero.url = value;
+            if(path === 'videoUrl') state.hero.videoUrl = value;
+            if(path === 'heroLink') state.hero.link = value;
+            if(path === 'columns') state.body.columns = value;
+            if(path === 'bubbleSize') state.body.bubbleSize = value;
+            if(path === 'f1L') state.footer.btn1.label = value;
+            if(path === 'f1U') state.footer.btn1.uri = value;
+            if(path === 'f2L') state.footer.btn2.label = value;
+            if(path === 'f2U') state.footer.btn2.uri = value;
+            render();
+            syncToParent(); // 每次修改都自動同步
+        }
+
+        function updateItem(index, field, value) {
+            saveState();
+            state.body.items[index][field] = value;
+            render();
+            syncToParent();
+        }
+
+        function addItem() {
+            saveState();
+            state.body.items.push({ title: "新商品", img: "https://lihi.cc/mwMvo", url: "https://line.me" });
+            syncUI(); render(); syncToParent();
+        }
+
+        function deleteItem(index) {
+            saveState();
+            state.body.items.splice(index, 1);
+            syncUI(); render(); syncToParent();
+        }
+
+        function syncUI() {
+            const activeClass = "flex-1 py-1 text-[10px] font-black rounded transition bg-black text-white shadow-sm";
+            const inactiveClass = "flex-1 py-1 text-[10px] font-black rounded transition text-slate-600 hover:bg-slate-300";
+            
+            document.getElementById('btn-type-image').className = state.hero.type === 'image' ? activeClass : inactiveClass;
+            document.getElementById('btn-type-video').className = state.hero.type === 'video' ? activeClass : inactiveClass;
+            document.getElementById('btn-type-none').className = state.hero.type === 'none' ? activeClass : inactiveClass;
+
+            document.getElementById('hero-settings-container').classList.toggle('hidden', state.hero.type === 'none');
+            document.getElementById('field-video-url').classList.toggle('hidden', state.hero.type !== 'video');
+            document.getElementById('label-hero-url').innerText = state.hero.type === 'video' ? "封面圖 URL" : "圖片網址";
+
+            document.getElementById('item-count-badge').innerText = state.body.items.length;
+            const container = document.getElementById('items-container');
+            container.innerHTML = '';
+            state.body.items.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-white border-2 border-slate-200 rounded-lg space-y-2 relative";
+                div.innerHTML = `
+                    <button onclick="deleteItem(${i})" class="absolute top-2 right-2 text-slate-400 hover:text-red-600"><i data-lucide="x-circle" class="w-4 h-4"></i></button>
+                    <div class="flex items-center gap-3">
+                        <img src="${item.img}" class="w-10 h-10 rounded object-cover border border-slate-300">
+                        <input type="text" value="${item.title}" oninput="updateItem(${i}, 'title', this.value)" class="flex-1 text-sm p-1 border-b border-slate-300 font-black outline-none" placeholder="品名">
+                    </div>
+                    <input type="text" value="${item.img}" oninput="updateItem(${i}, 'img', this.value)" class="w-full text-[10px] p-1 border border-slate-200 rounded font-mono" placeholder="圖片URL">
+                    <input type="text" value="${item.url}" oninput="updateItem(${i}, 'url', this.value)" class="w-full text-[10px] p-1 border border-slate-200 rounded font-mono" placeholder="點擊URL">
+                `;
+                container.appendChild(div);
+            });
+            lucide.createIcons();
+        }
+
+        function render() {
+            const ratioMap = { '1:1': 'aspect-1-1', '16:9': 'aspect-16-9', '4:3': 'aspect-4-3', '1.91:1': 'aspect-1_91-1', '3:4': 'aspect-3-4' };
+            const heroContainer = document.getElementById('view-hero-container');
+            heroContainer.className = `relative w-full bg-black overflow-hidden shrink-0 ${ratioMap[state.hero.aspectRatio]}`;
+            heroContainer.style.display = state.hero.type === 'none' ? 'none' : 'block';
+
+            if (state.hero.type === 'image') {
+                document.getElementById('view-hero-img').src = state.hero.url;
+                document.getElementById('view-hero-img').classList.remove('hidden');
+                document.getElementById('view-video-ui').classList.add('hidden');
+            } else if (state.hero.type === 'video') {
+                document.getElementById('view-hero-img').classList.add('hidden');
+                document.getElementById('view-video-poster').src = state.hero.url;
+                document.getElementById('view-video-ui').classList.remove('hidden');
+            }
+
+            const grid = document.getElementById('view-grid');
+            grid.className = `grid gap-2 ${state.body.columns === 3 ? "grid-cols-3" : "grid-cols-4"}`;
+            grid.innerHTML = '';
+            state.body.items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = "bg-white rounded p-1 shadow-sm flex flex-col";
+                el.innerHTML = `
+                    <div class="relative w-full aspect-square bg-slate-100 rounded-sm overflow-hidden mb-1"><img src="${item.img}" class="w-full h-full object-cover"></div>
+                    <div style="background-color: ${state.body.tagBgColor}; color: ${state.body.tagTextColor};" class="text-[8px] font-black text-center py-0.5 rounded-sm truncate">${item.title}</div>
+                `;
+                grid.appendChild(el);
+            });
+
+            document.getElementById('view-body-container').style.backgroundColor = state.body.bgColor;
+            document.getElementById('view-body-bg').src = state.body.bg;
+            document.getElementById('view-body-bg').classList.remove('hidden');
+
+            document.getElementById('view-btn-1').innerText = state.footer.btn1.label;
+            document.getElementById('view-btn-1').style.backgroundColor = state.footer.btn1.color;
+            document.getElementById('view-btn-2').innerText = state.footer.btn2.label;
+            document.getElementById('view-btn-2').style.backgroundColor = state.footer.btn2.color;
+        }
+
+        function generateFlexJSON() {
+            const cols = state.body.columns;
+            const width = cols === 3 ? "32%" : "23%";
+            const chunk = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) => arr.slice(i * size, i * size + size));
+            
+            const flex = {
+                "type": "bubble", "size": state.body.bubbleSize,
+                "body": {
+                    "type": "box", "layout": "vertical", "backgroundColor": state.body.bgColor, "paddingAll": "none",
+                    "contents": [
+                        { "type": "box", "layout": "vertical", "contents": [
+                            { "type": "image", "url": state.body.bg, "position": "absolute", "size": "full", "aspectMode": "cover" },
+                            { "type": "box", "layout": "vertical", "paddingAll": "md", "contents": chunk(state.body.items, cols).map((row, idx) => ({
+                                "type": "box", "layout": "horizontal", "margin": idx === 0 ? "none" : "md",
+                                "contents": row.map((item, colIdx) => ({
+                                    "type": "box", "layout": "vertical", "width": width, "margin": colIdx === 0 ? "none" : "md",
+                                    "action": { "type": "uri", "uri": item.url },
+                                    "contents": [
+                                        { "type": "image", "url": item.img, "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" },
+                                        { "type": "box", "layout": "vertical", "backgroundColor": state.body.tagBgColor, "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm",
+                                          "contents": [{ "type": "text", "text": item.title, "size": "xxs", "color": state.body.tagTextColor, "align": "center", "weight": "bold", "wrap": true }]
+                                        }
+                                    ]
+                                }))
+                            }))}
+                        ]}
+                    ]
+                },
+                "footer": {
+                    "type": "box", "layout": "horizontal", "spacing": "md", "backgroundColor": state.footer.bg, "paddingTop": "md", "contents": [
+                        { "type": "button", "style": "primary", "height": "sm", "color": state.footer.btn1.color, "action": { "type": "uri", "label": state.footer.btn1.label, "uri": state.footer.btn1.uri } },
+                        { "type": "button", "style": "primary", "height": "sm", "color": state.footer.btn2.color, "action": { "type": "uri", "label": state.footer.btn2.label, "uri": state.footer.btn2.uri } }
+                    ]
+                }
+            };
+
+            if (state.hero.type !== 'none') {
+                flex.hero = state.hero.type === 'video' ? {
+                    "type": "video", "url": state.hero.videoUrl, "previewUrl": state.hero.url, "aspectRatio": state.hero.aspectRatio,
+                    "altContent": { "type": "image", "size": "full", "aspectRatio": state.hero.aspectRatio, "aspectMode": "cover", "url": state.hero.url }
+                } : {
+                    "type": "image", "url": state.hero.url, "size": "full", "aspectRatio": state.hero.aspectRatio, "aspectMode": "cover", "action": { "type": "uri", "uri": state.hero.link }
+                };
+            }
+            return flex;
+        }
+
+        function showToast(msg, icon = "check-circle") {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-emerald-400"></i> ${msg}`;
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            lucide.createIcons();
+            setTimeout(() => toast.classList.add('translate-y-24', 'opacity-0'), 2500);
+        }
+
+        function exportJSON() {
+            const json = JSON.stringify(generateFlexJSON(), null, 2);
+            const el = document.createElement('textarea');
+            el.value = json; document.body.appendChild(el); el.select();
+            document.execCommand('copy'); document.body.removeChild(el);
+            showToast("JSON 已複製到剪貼簿");
+            syncToParent(); // 複製時也觸發同步
+        }
+
+        window.onload = () => { syncUI(); render(); syncToParent(); };
+    </script>
+</body>
+</html>
