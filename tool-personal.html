@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人單頁名片 - 專業通訊版 (v2.0.0)</title>
+    <!-- 核心庫載入 -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide 圖示載入 -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; color: #000000; font-weight: 700; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #000000; border-radius: 10px; }
+        .lucide { width: 1.2em; height: 1.2em; vertical-align: middle; display: inline-block; }
+        
+        /* 模擬 LINE 聊天室背景 */
+        .chat-room-bg {
+            background-color: #7988a0;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        .flex-bubble-shadow { box-shadow: 0 15px 50px rgba(0,0,0,0.3); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const LIFF_ID = "2008541971-XPIDtaaj";
+        const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
+
+        const SOCIAL_DATA = {
+            NONE: { url: "", label: "無圖示" },
+            FB: { url: "https://cdn-icons-png.flaticon.com/512/733/733547.png", label: "Facebook" },
+            IG: { url: "https://cdn-icons-png.flaticon.com/512/2111/2111463.png", label: "Instagram" },
+            TIKTOK: { url: "https://cdn-icons-png.flaticon.com/512/3046/3046121.png", label: "TikTok" },
+            YOUTUBE: { url: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png", label: "YouTube" },
+            LINE: { url: "https://cdn-icons-png.flaticon.com/512/124/124027.png", label: "LINE" },
+            LINE_AT: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "LINE@" }, 
+            PHONE: { url: "https://cdn-icons-png.flaticon.com/512/3616/3616215.png", label: "電話聯繫" },
+            WEB: { url: "https://cdn-icons-png.flaticon.com/512/1006/1006771.png", label: "官方網站" }
+        };
+
+        const FONT_SIZES = ['xxs', 'xs', 'sm', 'md', 'lg', 'xl', 'xxl', '3xl'];
+        const ASPECT_RATIOS = ['1:1', '4:3', '16:9', '9:16', '20:13'];
+        const CORNER_RADIUS_OPTIONS = ['none', 'xs', 'sm', 'md', 'lg', 'xl', 'xxl', '100px'];
+
+        const initialFlex = {
+            size: "mega",
+            media: { url: "https://lihi.cc/5OXMZ", uri: "https://line.me", aspectRatio: "16:9", gravity: "center", badgeText: "旗艦店", badgeUri: "https://line.me", badgeBg: "#ff0000", badgePos: "left" },
+            avatar: { show: true, url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200", borderColor: "#ffffff", gravity: "center", cornerRadius: "100px" },
+            content: { name: "王小明", nameSize: "xl", nameAlign: "start", nameColor: "#111111", desc: "資深開發工程師\n專業 LINE Bot 解決方案", descSize: "sm", descAlign: "start", descColor: "#666666" },
+            footer: {
+                longBtns: [
+                    { label: "立即預約", uri: "{{LIFF_URL}}", themeColor: "#00b900", textColor: "#ffffff", isSolid: true },
+                    { label: "查看詳情", uri: "https://line.me", themeColor: "#00b900", textColor: "#00b900", isSolid: false }
+                ],
+                shortBtns: [
+                    { type: "PHONE", label: "電話", uri: "tel:0900000000", themeColor: "#dddddd", textColor: "#444444", isSolid: false },
+                    { type: "LINE_AT", label: "LINE@", uri: "https://line.me", themeColor: "#dddddd", textColor: "#444444", isSolid: false },
+                    { type: "WEB", label: "官網", uri: "https://google.com", themeColor: "#dddddd", textColor: "#444444", isSolid: false }
+                ]
+            }
+        };
+
+        const App = () => {
+            const [data, setData] = useState(initialFlex);
+            const [activeTab, setActiveTab] = useState('editor');
+            const [mediaType, setMediaType] = useState('image');
+            const [videoConfig, setVideoConfig] = useState({ url: "https://lihi.cc/YsmAp", previewUrl: "https://lihi.cc/5OXMZ" });
+
+            const getMediaHeight = () => {
+                const [w, h] = data.media.aspectRatio.split(':').map(Number);
+                const baseW = data.size === 'giga' ? 420 : 300;
+                return (h / w) * baseW;
+            };
+
+            const buildFinalJson = () => {
+                const bubble = { type: "bubble", size: data.size, body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [] } };
+                const mediaH = getMediaHeight();
+
+                if (mediaType === 'video') {
+                    bubble.hero = { type: "video", url: videoConfig.url, previewUrl: videoConfig.previewUrl, aspectRatio: data.media.aspectRatio, altContent: { type: "image", size: "full", aspectRatio: data.media.aspectRatio, aspectMode: "cover", url: videoConfig.previewUrl, backgroundColor: "#000000" } };
+                } else {
+                    bubble.body.contents.push({ type: "box", layout: "vertical", contents: [
+                        { type: "image", url: data.media.url, size: "full", aspectRatio: data.media.aspectRatio, aspectMode: "cover", gravity: data.media.gravity, animated: true, action: data.media.uri ? { type: "uri", uri: data.media.uri } : undefined },
+                        { type: "box", layout: "vertical", position: "absolute", backgroundColor: data.media.badgeBg, cornerRadius: "15px", paddingAll: "4px", paddingStart: "10px", paddingEnd: "10px", offsetTop: "10px", [data.media.badgePos === 'left' ? 'offsetStart' : 'offsetEnd']: "10px", action: data.media.badgeUri ? { type: "uri", uri: data.media.badgeUri } : undefined, contents: [{ type: "text", text: data.media.badgeText, color: "#ffffff", align: "center", size: "xs", weight: "bold" }] }
+                    ]});
+                }
+
+                const infoBox = { type: "box", layout: "vertical", paddingAll: "15px", paddingTop: data.avatar.show ? (mediaType === 'video' ? "95px" : "45px") : "15px", contents: [
+                    { type: "text", text: data.content.name, weight: "bold", size: data.content.nameSize, align: data.content.nameAlign, color: data.content.nameColor },
+                    { type: "text", text: data.content.desc, wrap: true, color: data.content.descColor, size: data.content.descSize, margin: "md", align: data.content.descAlign }
+                ]};
+
+                if (data.avatar.show) {
+                    const avatarBox = { type: "box", layout: "vertical", position: "absolute", offsetTop: mediaType === 'video' ? `${mediaH + 10}px` : `${mediaH - 45}px`, offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [
+                        { type: "box", layout: "vertical", width: "80px", height: "80px", cornerRadius: data.avatar.cornerRadius, borderWidth: "3px", borderColor: data.avatar.borderColor, contents: [{ type: "image", url: data.avatar.url, size: "full", aspectRatio: "1:1", aspectMode: "cover", gravity: data.avatar.gravity, animated: true }] }
+                    ]};
+                    bubble.body.contents.push(avatarBox);
+                }
+                bubble.body.contents.splice(data.avatar.show ? bubble.body.contents.length - 1 : bubble.body.contents.length, 0, infoBox);
+
+                bubble.footer = { type: "box", layout: "vertical", spacing: "md", paddingAll: "10px", contents: data.footer.longBtns.map(btn => ({
+                    type: "box", layout: "vertical", contents: [{ type: "text", text: btn.label, align: "center", color: btn.textColor, size: "sm", weight: "bold" }], paddingAll: "10px", borderWidth: "1px", borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : undefined, cornerRadius: "md", action: { type: "uri", uri: btn.uri }
+                }))};
+
+                if (data.footer.shortBtns.length > 0) {
+                    bubble.footer.contents.push({ type: "box", layout: "horizontal", spacing: "md", contents: data.footer.shortBtns.map(btn => ({
+                        type: "box", layout: "vertical", spacing: "xs", paddingAll: "8px", borderWidth: "1px", borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : undefined, cornerRadius: "sm", action: { type: "uri", uri: btn.uri }, contents: [
+                            { type: "image", url: SOCIAL_DATA[btn.type]?.url || SOCIAL_DATA.WEB.url, size: "xxs", aspectRatio: "1:1" },
+                            { type: "text", text: btn.label, align: "center", color: btn.textColor, size: "xxs" }
+                        ]
+                    }))});
+                }
+                return bubble;
+            };
+
+            // --- 核心同步功能 ---
+            const syncToParent = () => {
+                const json = buildFinalJson();
+                window.parent.postMessage({
+                    type: 'SYNC_FLEX_DATA',
+                    json: JSON.stringify(json)
+                }, '*');
+            };
+
+            // 監控變化並自動同步
+            useEffect(() => {
+                syncToParent();
+                if (window.lucide) window.lucide.createIcons();
+            }, [data, mediaType, videoConfig]);
+
+            const handleUpdate = (section, field, value) => {
+                setData(prev => (section === 'root' ? { ...prev, [field]: value } : { ...prev, [section]: { ...prev[section], [field]: value } }));
+            };
+
+            return (
+                <div className="flex h-screen bg-slate-100 overflow-hidden">
+                    {/* 左側 Sidebar (編輯) */}
+                    <div className="w-1/2 bg-white border-r-2 border-slate-300 flex flex-col shadow-xl z-10">
+                        <div className="p-5 bg-white border-b-2 border-slate-300 flex items-center justify-between shrink-0 shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-[#00b900] p-2 rounded-lg text-white"><i data-lucide="user-check"></i></div>
+                                <h1 className="font-black text-xl text-slate-900 uppercase">名片版 Flex 設計器</h1>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={syncToParent} className="bg-[#06C755] hover:bg-[#05b34c] text-white px-5 py-2 rounded-xl text-sm font-black flex items-center gap-2 transition-all shadow-md active:scale-95">
+                                    <i data-lucide="refresh-cw" className="w-4 h-4"></i> 同步至主系統
+                                </button>
+                                <button onClick={() => { navigator.clipboard.writeText(JSON.stringify(buildFinalJson(), null, 2)); alert("JSON 已複製！"); }} className="bg-black hover:bg-slate-800 text-white px-5 py-2 rounded-xl text-sm font-black flex items-center gap-2 transition-all shadow-md active:scale-95">
+                                    <i data-lucide="copy" className="w-4 h-4"></i> 複製 JSON
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+                            {/* 媒體層設定 */}
+                            <div className="border-2 border-black rounded-2xl bg-white overflow-hidden shadow-sm">
+                                <div className="p-4 bg-slate-100 border-b-2 border-black flex items-center gap-2 font-black text-black"><i data-lucide="image"></i> 1. 頂部媒體設定</div>
+                                <div className="p-5 space-y-4">
+                                    <div className="flex bg-slate-200 p-1 rounded-xl">
+                                        <button onClick={() => setMediaType('image')} className={`flex-1 py-2 text-xs font-black rounded-lg transition ${mediaType === 'image' ? 'bg-black text-white' : 'text-slate-500'}`}>圖片模式</button>
+                                        <button onClick={() => setMediaType('video')} className={`flex-1 py-2 text-xs font-black rounded-lg transition ${mediaType === 'video' ? 'bg-black text-white' : 'text-slate-500'}`}>影片模式</button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><label className="text-[10px] font-black text-slate-400 block mb-1">顯示比例</label><select value={data.media.aspectRatio} onChange={(e) => handleUpdate('media', 'aspectRatio', e.target.value)} className="w-full text-sm p-2 border-2 border-slate-200 rounded-lg font-black outline-none">{ASPECT_RATIOS.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
+                                        <div><label className="text-[10px] font-black text-slate-400 block mb-1">卡片規格</label><select value={data.size} onChange={(e) => handleUpdate('root', 'size', e.target.value)} className="w-full text-sm p-2 border-2 border-slate-200 rounded-lg font-black outline-none"><option value="mega">MEGA (標)</option><option value="giga">GIGA (寬)</option></select></div>
+                                    </div>
+                                    <input type="text" value={mediaType === 'image' ? data.media.url : videoConfig.url} onChange={(e) => mediaType === 'image' ? handleUpdate('media', 'url', e.target.value) : setVideoConfig({...videoConfig, url: e.target.value})} className="w-full p-3 text-sm border-2 border-slate-200 rounded-xl outline-none font-bold" placeholder={mediaType === 'image' ? "圖片 URL" : "影片 MP4 URL"} />
+                                </div>
+                            </div>
+
+                            {/* 個人縮圖 */}
+                            <div className="border-2 border-black rounded-2xl bg-white overflow-hidden shadow-sm">
+                                <div className="p-4 bg-slate-100 border-b-2 border-black flex items-center justify-between font-black text-black">
+                                    <div className="flex items-center gap-2"><i data-lucide="user"></i> 2. 個人大頭貼</div>
+                                    <input type="checkbox" checked={data.avatar.show} onChange={() => handleUpdate('avatar', 'show', !data.avatar.show)} className="w-5 h-5 accent-black" />
+                                </div>
+                                {data.avatar.show && (
+                                    <div className="p-5 space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><label className="text-[10px] font-black text-slate-400 block mb-1">圓角設定</label><select value={data.avatar.cornerRadius} onChange={(e) => handleUpdate('avatar', 'cornerRadius', e.target.value)} className="w-full text-sm p-2 border-2 border-slate-200 rounded-lg font-black outline-none">{CORNER_RADIUS_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
+                                            <div><label className="text-[10px] font-black text-slate-400 block mb-1">邊框色</label><input type="color" value={data.avatar.borderColor} onChange={(e) => handleUpdate('avatar', 'borderColor', e.target.value)} className="w-full h-9 p-0 border-none rounded cursor-pointer" /></div>
+                                        </div>
+                                        <input type="text" value={data.avatar.url} onChange={(e) => handleUpdate('avatar', 'url', e.target.value)} className="w-full p-3 text-sm border-2 border-slate-200 rounded-xl outline-none font-bold" placeholder="大頭貼 URL" />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 文字內容 */}
+                            <div className="border-2 border-black rounded-2xl bg-white overflow-hidden shadow-sm">
+                                <div className="p-4 bg-slate-100 border-b-2 border-black flex items-center gap-2 font-black text-black"><i data-lucide="type"></i> 3. 姓名與說明文字</div>
+                                <div className="p-5 space-y-4">
+                                    <input type="text" value={data.content.name} onChange={(e) => handleUpdate('content', 'name', e.target.value)} className="w-full p-4 text-xl font-black border-2 border-slate-200 rounded-2xl outline-none text-black bg-slate-50 focus:border-black" placeholder="姓名 / 標題" />
+                                    <textarea value={data.content.desc} onChange={(e) => handleUpdate('content', 'desc', e.target.value)} className="w-full p-4 text-sm font-bold border-2 border-slate-200 rounded-2xl h-28 resize-none outline-none leading-relaxed text-slate-700 bg-slate-50 focus:border-black" placeholder="職稱或自我介紹說明..." />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 右側 Preview */}
+                    <div className="flex-1 flex flex-col overflow-hidden bg-slate-200 chat-room-bg">
+                        <div className="h-[70px] bg-white border-b-2 border-slate-300 flex items-center px-10 gap-10 shrink-0 shadow-md">
+                            <span className="text-[#00b900] border-b-[5px] border-[#00b900] h-full flex items-center font-black tracking-widest gap-2"><i data-lucide="eye"></i> 視覺即時預覽 (LIVE)</span>
+                        </div>
+                        <div className="flex-1 overflow-y-auto flex flex-col items-center py-10">
+                            <div className="mb-6 px-6 py-2 bg-slate-900 rounded-full text-white font-black text-xs uppercase tracking-widest shadow-2xl border-2 border-white/20">LINE Flex {mediaType.toUpperCase()} Preview</div>
+                            
+                            {/* 名片氣泡本體 */}
+                            <div className="bg-white rounded-2xl overflow-hidden flex-bubble-shadow relative h-fit" style={{ width: data.size === 'giga' ? '400px' : '300px' }}>
+                                <div className="relative bg-black overflow-hidden" style={{ height: `${getMediaHeight()}px` }}>
+                                    {mediaType === 'image' ? <img src={data.media.url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-black"><i data-lucide="play-circle" className="w-12 h-12 text-white/80"></i></div>}
+                                </div>
+                                <div className="p-4" style={{ paddingTop: data.avatar.show ? '50px' : '20px' }}>
+                                    <div className="font-black text-2xl" style={{ textAlign: data.content.nameAlign }}>{data.content.name}</div>
+                                    <div className="mt-2 text-sm whitespace-pre-wrap text-slate-600 font-bold" style={{ textAlign: data.content.descAlign }}>{data.content.desc}</div>
+                                </div>
+                                {data.avatar.show && (
+                                    <div className="absolute w-full flex justify-center" style={{ top: `${getMediaHeight() - 40}px` }}>
+                                        <div className="w-20 h-20 rounded-full border-4 shadow-xl overflow-hidden" style={{ borderColor: data.avatar.borderColor }}>
+                                            <img src={data.avatar.url} className="w-full h-full object-cover" />
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="p-3 border-t border-slate-100 flex flex-col gap-2">
+                                    {data.footer.longBtns.map((btn, i) => <div key={i} className="py-2.5 text-center rounded-lg font-black text-xs" style={{ backgroundColor: btn.isSolid ? btn.themeColor : 'transparent', color: btn.textColor, border: `1px solid ${btn.themeColor}` }}>{btn.label}</div>)}
+                                    <div className="flex gap-2">
+                                        {data.footer.shortBtns.map((btn, i) => <div key={i} className="flex-1 py-2 flex flex-col items-center gap-1 rounded-lg border border-slate-200"><img src={SOCIAL_DATA[btn.type]?.url} className="w-4 h-4 object-contain" /><span className="text-[9px] font-black text-slate-500 uppercase">{btn.label}</span></div>)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
