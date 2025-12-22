@@ -1,259 +1,314 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 終極移植版 (v2.1.9)</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>個人電商版 LINE Flex Message Editor (v2.1.9 終極移植版)</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f5f7; margin: 0; overflow: hidden; color: #000000; font-weight: 700; }
-        .sidebar-item-active { background-color: #ffffff !important; color: #06C755 !important; font-weight: 900; border-right: 4px solid #06C755; }
-        .line-sidebar { background-color: #F4F5F7; border-right: 1px solid #E5E7EB; }
-        .iframe-container { width: 100%; height: 100%; border: none; background: #fff; }
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #06C755; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; color: #000000; font-weight: 700; }
+        .chat-room-bg { background-color: #7988a0; width: 100%; height: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .flex-bubble-container { width: 100%; max-width: 350px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #000000; border-radius: 10px; }
-        .drawer-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .overlay-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(2px); }
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #000; color: white; padding: 14px 28px; border-radius: 15px; z-index: 10000; font-weight: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideDown 0.3s ease-out; border: 2px solid #06C755; min-width: 250px; text-align: center; }
-        @keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 20px; opacity: 1; } }
+        .aspect-1-1 { aspect-ratio: 1 / 1; }
+        .aspect-16-9 { aspect-ratio: 16 / 9; }
+        .aspect-4-3 { aspect-ratio: 4 / 3; }
+        .aspect-1_91-1 { aspect-ratio: 1.91 / 1; }
+        .aspect-3-4 { aspect-ratio: 3 / 4; }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="h-screen flex flex-col overflow-hidden text-slate-900">
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+    <header class="h-16 bg-white border-b border-slate-300 flex items-center justify-between px-6 z-20 flex-shrink-0 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="bg-[#06C755] p-2 rounded-lg text-white"><i data-lucide="layout-grid" class="w-6 h-6"></i></div>
+            <h1 class="font-bold text-xl text-slate-800">個人電商版 Flex 產生器</h1>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="undo()" id="btn-undo" class="px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition disabled:opacity-50 flex items-center gap-1"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> 復原</button>
+            <button onclick="syncToParent()" class="px-4 py-2 text-sm font-black text-white bg-[#06C755] rounded-lg hover:bg-[#05b34c] transition shadow-md flex items-center gap-2"><i data-lucide="refresh-cw" class="w-4 h-4"></i> 同步回主系統</button>
+        </div>
+    </header>
 
-        const LIFF_ID = "2008541971-XPIDtaaj";
-        const LIFF_URL = `https://liff.line.me/${LIFF_ID}`;
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
-
-        function cleanJsonText(str) {
-            if (!str) return "";
-            let s = String(str).trim();
-            if (s.startsWith('"') && s.endsWith('"')) { s = s.substring(1, s.length - 1).replace(/""/g, '"'); }
-            return s;
-        }
-
-        // --- 核心：這才是真正的完整範例模板 (包含全部 6 個商品、lihi、影片、背景) ---
-        const ECOMMERCE_FULL_TEMPLATE = JSON.stringify({
-            "type": "bubble", "size": "mega",
-            "hero": { "type": "video", "url": "https://lihi.cc/YsmAp", "previewUrl": "https://lihi.cc/5OXMZ", "aspectRatio": "16:9", "altContent": { "type": "image", "size": "full", "aspectRatio": "16:9", "aspectMode": "cover", "url": "https://lihi.cc/5OXMZ" } },
-            "body": {
-                "type": "box", "layout": "vertical", "backgroundColor": "#F8F8F8", "paddingAll": "none",
-                "contents": [{ "type": "box", "layout": "vertical", "contents": [
-                    { "type": "image", "url": "https://lihi.cc/l5qqU", "position": "absolute", "size": "full", "aspectMode": "cover" },
-                    { "type": "box", "layout": "vertical", "paddingAll": "md", "contents": [
-                        { "type": "box", "layout": "horizontal", "contents": [
-                            { "type": "box", "layout": "vertical", "width": "32%", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/mwMvo", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 A", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
-                            { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/2Nu8G", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 B", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
-                            { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/yRfpn", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 C", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] }
-                        ]},
-                        { "type": "box", "layout": "horizontal", "margin": "md", "contents": [
-                            { "type": "box", "layout": "vertical", "width": "32%", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/yRfpn", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 D", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
-                            { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/2Nu8G", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 E", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] },
-                            { "type": "box", "layout": "vertical", "width": "32%", "margin": "md", "action": { "type": "uri", "uri": "https://line.me" }, "contents": [{ "type": "image", "url": "https://lihi.cc/mwMvo", "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": "#0D0D0D", "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": "商品 F", "size": "xxs", "color": "#FFFFFF", "align": "center", "weight": "bold", "wrap": true }] }] }
-                        ]}
-                    ] }
-                ] }]
-            },
-            "footer": { "type": "box", "layout": "horizontal", "spacing": "md", "backgroundColor": "#ffffff", "paddingTop": "md", "contents": [
-                { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "品牌故事", "uri": "https://liff.line.me/2008704329-cTkwlRHm" } },
-                { "type": "button", "style": "primary", "height": "sm", "color": "#000000", "action": { "type": "uri", "label": "好友分享", "uri": "line://nv/recommendOA/@754tjssx" } }
-            ]}
-        }, null, 2);
-
-        const PROJECTS = {
-            ECOMMERCE: { id: 'ECOMMERCE', name: "電商商品版", url: "./tool-ecommerce.html", template: ECOMMERCE_FULL_TEMPLATE }
-        };
-
-        const Icon = ({ name, className = "w-4 h-4" }) => {
-            const icons = {
-                left: <polyline points="15 18 9 12 15 6" />,
-                plus: <React.Fragment><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></React.Fragment>,
-                save: <React.Fragment><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></React.Fragment>,
-                send: <React.Fragment><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></React.Fragment>,
-                trash: <React.Fragment><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></React.Fragment>,
-                code: <React.Fragment><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></React.Fragment>,
-                x: <React.Fragment><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></React.Fragment>
-            };
-            return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || null}</svg>;
-        };
-
-        const DirectoryView = ({ files, projectName, onAdd, onEdit, onDelete }) => (
-            <div className="p-8 h-full overflow-y-auto custom-scrollbar animate-in fade-in duration-300 font-bold text-black">
-                <div className="flex justify-between items-end border-b border-slate-300 pb-6 mb-6">
-                    <div>
-                        <h2 className="text-2xl font-black uppercase tracking-tighter">{projectName}</h2>
-                        <p className="text-black text-sm mt-1 opacity-60">FLEX HUB OA (v2.1.9)</p>
+    <div class="flex-1 flex overflow-hidden">
+        <aside class="w-full md:w-[550px] bg-white border-r border-slate-300 overflow-y-auto p-6 space-y-8 custom-scrollbar z-10 flex-shrink-0">
+            <!-- 1. Hero 設定 -->
+            <div class="border-2 border-[#06C755] rounded-xl bg-white overflow-hidden shadow-sm">
+                <div class="p-4 bg-[#06C755] border-b border-[#06C755] flex items-center gap-2 font-bold text-white text-lg"><i data-lucide="image" class="w-5 h-5 text-white"></i> 頂部 Hero 視覺</div>
+                <div class="p-5 space-y-5 font-black">
+                    <div class="flex bg-slate-100 p-1.5 rounded-lg border border-slate-300">
+                        <button onclick="updateHeroType('image')" id="btn-type-image" class="flex-1 py-2 text-sm font-bold rounded-md transition text-slate-600">靜態圖片</button>
+                        <button onclick="updateHeroType('video')" id="btn-type-video" class="flex-1 py-2 text-sm font-bold rounded-md transition text-slate-600">影片播放</button>
+                        <button onclick="updateHeroType('none')" id="btn-type-none" class="flex-1 py-2 text-sm font-bold rounded-md transition text-slate-600">無</button>
                     </div>
-                    <button onClick={onAdd} className="bg-[#06C755] text-white px-6 py-3 rounded-lg font-black text-sm flex items-center gap-2 shadow-md active:scale-95 transition-all"><Icon name="plus" /> 建立新設計</button>
-                </div>
-                <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
-                    <table className="w-full text-left text-base font-bold">
-                        <thead className="bg-slate-100 border-b border-slate-300 uppercase text-sm font-black">
-                            <tr><th className="p-5">設計名稱</th><th className="p-5 text-center">狀態</th><th className="p-5 text-right">管理</th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200">
-                            {files.length === 0 ? <tr><td colSpan="3" className="p-10 text-center italic opacity-30">無數據存檔...</td></tr> : files.map(f => (
-                                <tr key={String(f.id)} className="hover:bg-slate-50 transition-colors font-black">
-                                    <td className="p-5 font-black text-xl">{f.name}</td>
-                                    <td className="p-5 text-center"><span className={`px-3 py-1 rounded-full text-xs font-black ${f.content ? 'bg-green-100 text-green-700' : 'bg-slate-200'}`}>{f.content ? '✓ 已存' : '○ 空白'}</span></td>
-                                    <td className="p-5 text-right space-x-6">
-                                        <button onClick={()=>onEdit(f)} className="text-blue-700 font-black hover:underline text-xl">編輯</button>
-                                        <button onClick={()=>onDelete(f.id)} className="text-red-600 hover:text-red-800"><Icon name="trash" className="w-6 h-6" /></button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <div id="hero-settings-container">
+                        <div class="mb-5"><label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">顯示比例</label>
+                            <select id="hero-aspect" onchange="updateConfig('heroAspect', this.value)" class="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white outline-none">
+                                <option value="16:9">16:9 (寬螢幕)</option><option value="1:1">1:1 (正方形)</option><option value="4:3">4:3 (矩形)</option><option value="1.91:1">1.91:1 (橫幅)</option><option value="3:4">3:4 (直式)</option>
+                            </select>
+                        </div>
+                        <div id="hero-inputs" class="space-y-5">
+                            <div id="field-hero-url"><label class="block mb-1.5 text-sm font-bold text-slate-700 uppercase" id="label-hero-url">圖片網址</label><input type="text" id="input-hero-url" oninput="updateConfig('heroUrl', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg outline-none font-bold"></div>
+                            <div id="field-video-url" class="hidden"><label class="block mb-1.5 text-sm font-bold text-slate-700 uppercase">影片網址 (.mp4)</label><input type="text" id="input-video-url" oninput="updateConfig('videoUrl', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg outline-none font-bold"></div>
+                            <div id="field-hero-link"><label class="block mb-1.5 text-sm font-bold text-slate-700 uppercase">點擊連結 (Action URL)</label><input type="text" id="input-hero-link" oninput="updateConfig('heroLink', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg outline-none font-bold"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        );
 
-        const EditorView = ({ file, onSave, onCancel, projectUrl, defaultTemplate }) => {
-            const [localName, setLocalName] = useState(file.name || "未命名設計");
-            const [localJson, setLocalJson] = useState(cleanJsonText(file.content || defaultTemplate));
-            const [showJson, setShowJson] = useState(false);
-            const [toast, setToast] = useState(null);
-            const iframeRef = useRef(null);
-
-            useEffect(() => {
-                const handleMessage = (event) => {
-                    if (event.data && event.data.type === 'SYNC_FLEX_DATA') setLocalJson(cleanJsonText(event.data.json));
-                    if (event.data && event.data.type === 'CHILD_READY') {
-                        if (iframeRef.current) iframeRef.current.contentWindow.postMessage({ type: 'LOAD_FLEX_DATA', json: localJson || defaultTemplate }, '*');
-                    }
-                };
-                window.addEventListener('message', handleMessage);
-                return () => window.removeEventListener('message', handleMessage);
-            }, [localJson, defaultTemplate]);
-
-            const handleSend = async () => {
-                try {
-                    const finalCode = cleanJsonText(localJson).replace(/\{\{LIFF_URL\}\}/g, LIFF_URL);
-                    const flexMessage = JSON.parse(finalCode);
-                    if (liff.isApiAvailable('shareTargetPicker')) {
-                        const result = await liff.shareTargetPicker([{ type: "flex", altText: `設計：${localName}`, contents: flexMessage }]);
-                        if (result) { setToast("✅ 發送成功！"); setTimeout(()=>setToast(null), 3000); }
-                    }
-                } catch (e) { alert("JSON 格式錯誤"); }
-            };
-
-            return (
-                <div className="h-full flex flex-col bg-white overflow-hidden relative font-black text-black">
-                    {toast && <div className="toast">{toast}</div>}
-                    <div className="h-16 border-b border-slate-300 px-6 flex items-center justify-between bg-white z-20 shadow-sm font-black">
-                        <div className="flex items-center gap-4 flex-1">
-                            <button onClick={onCancel} className="text-black hover:text-green-600"><Icon name="left" className="w-8 h-8" /></button>
-                            <input type="text" value={localName} onChange={e=>setLocalName(e.target.value)} className="bg-transparent border-none p-0 outline-none focus:text-[#06C755] text-lg w-full max-w-sm font-black" />
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <button onClick={handleSend} className="bg-[#06C755] text-white px-5 py-2.5 rounded-lg text-sm flex items-center gap-2 active:scale-95 shadow-md font-black"><Icon name="send" /> <span>發送設計 (通訊錄)</span></button>
-                            <button onClick={()=>setShowJson(!showJson)} className={`p-2.5 rounded-lg border transition-all ${showJson ? 'bg-blue-600 text-white' : 'text-black'}`}><Icon name="code" /></button>
-                            <button onClick={()=>onSave(file.id, localName, localJson)} className="bg-black text-white px-5 py-2.5 rounded-lg font-black text-sm active:scale-95 shadow-md font-black"><Icon name="save" /> 儲存至雲端</button>
-                        </div>
+            <!-- 2. Body 設定 -->
+            <div class="border-2 border-[#06C755] rounded-xl bg-white overflow-hidden shadow-sm">
+                <div class="p-4 bg-[#06C755] border-b border-[#06C755] flex items-center justify-between font-bold text-white text-lg">
+                    <div class="flex items-center gap-2"><i data-lucide="palette" class="w-5 h-5 text-white"></i> Body 內容與尺寸</div>
+                    <span class="text-xs bg-white/20 px-3 py-1 rounded-full text-white font-mono" id="item-count-badge">0 items</span>
+                </div>
+                <div class="p-5 space-y-5 font-black">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-sm font-bold text-slate-700 block">卡片尺寸</label><select id="bubble-size" onchange="updateConfig('bubbleSize', this.value)" class="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white outline-none"><option value="mega">MEGA</option><option value="giga">GIGA</option></select></div>
+                        <div><label class="text-sm font-bold text-slate-700 block">每行欄數</label><select id="body-columns" onchange="updateConfig('columns', parseInt(this.value))" class="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white outline-none"><option value="3">3 欄</option><option value="4">4 欄</option></select></div>
                     </div>
-                    <div className="flex-1 flex relative overflow-hidden">
-                        <div className={`absolute right-0 top-0 bottom-0 w-96 bg-slate-900 border-l border-slate-800 z-30 shadow-2xl p-6 flex flex-col gap-4 drawer-transition ${showJson ? 'translate-x-0' : 'translate-x-full'}`}>
-                            <div className="flex justify-between items-center text-white text-sm"><span className="flex items-center gap-2 text-green-400 uppercase tracking-widest"><Icon name="code" />JSON 同步</span><button onClick={()=>setShowJson(false)} className="text-white"><Icon name="x" /></button></div>
-                            <textarea value={localJson} onChange={e=>setLocalJson(e.target.value)} className="flex-1 w-full bg-slate-950 border border-slate-700 rounded-xl p-4 font-mono text-[11px] text-green-500 outline-none custom-scrollbar leading-relaxed font-bold" />
-                        </div>
-                        <iframe ref={iframeRef} src={projectUrl} className="iframe-container" allow="clipboard-read; clipboard-write"></iframe>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-sm font-bold text-slate-700 block">標籤背景色</label><input type="color" id="input-tag-bg-color" onchange="updateConfig('tagBgColor', this.value)" class="w-full h-10 p-1 border rounded cursor-pointer"></div>
+                        <div><label class="text-sm font-bold text-slate-700 block">標籤文字色</label><input type="color" id="input-tag-text-color" onchange="updateConfig('tagTextColor', this.value)" class="w-full h-10 p-1 border rounded cursor-pointer"></div>
+                    </div>
+                    <div><label class="text-sm font-bold text-slate-700 block">背景圖片網址</label><input type="text" id="input-body-bg" oninput="updateConfig('bodyBg', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg outline-none font-bold"></div>
+                    <div id="items-container" class="space-y-4"></div>
+                    <button onclick="addItem()" class="w-full py-3 border-2 border-dashed border-slate-400 rounded-xl text-slate-600 font-bold hover:bg-emerald-50 transition">+ 新增商品</button>
+                </div>
+            </div>
+
+            <!-- 3. Footer 設定 -->
+            <div class="border-2 border-[#06C755] rounded-xl bg-white overflow-hidden shadow-sm mb-12">
+                <div class="p-4 bg-[#06C755] border-b border-[#06C755] flex items-center gap-2 font-bold text-white text-lg"><i data-lucide="mouse-pointer-click" class="w-5 h-5 text-white"></i> 動作按鈕</div>
+                <div class="p-5 space-y-5 font-black">
+                    <div class="p-4 bg-slate-50 border rounded-xl space-y-3">
+                        <div class="flex items-center justify-between"><span class="text-xs font-black">按鈕 1</span><input type="color" id="input-f1-color" onchange="updateConfig('f1C', this.value)" class="w-8 h-8 p-1 rounded border"></div>
+                        <input type="text" id="input-f1-label" oninput="updateConfig('f1L', this.value)" class="w-full text-sm p-2 border rounded font-bold" placeholder="名稱">
+                        <input type="text" id="input-f1-uri" oninput="updateConfig('f1U', this.value)" class="w-full text-xs p-2 border rounded font-mono" placeholder="連結 URL">
+                    </div>
+                    <div class="p-4 bg-slate-50 border rounded-xl space-y-3">
+                        <div class="flex items-center justify-between"><span class="text-xs font-black">按鈕 2</span><input type="color" id="input-f2-color" onchange="updateConfig('f2C', this.value)" class="w-8 h-8 p-1 rounded border"></div>
+                        <input type="text" id="input-f2-label" oninput="updateConfig('f2L', this.value)" class="w-full text-sm p-2 border rounded font-bold" placeholder="名稱">
+                        <input type="text" id="input-f2-uri" oninput="updateConfig('f2U', this.value)" class="w-full text-xs p-2 border rounded font-mono" placeholder="連結 URL">
                     </div>
                 </div>
-            );
-        };
+            </div>
+        </aside>
 
-        const App = () => {
-            const [viewState, setViewState] = useState('LOADING'); 
-            const [user, setUser] = useState(null);
-            const [activeLevel2, setActiveLevel2] = useState('ECOMMERCE');
-            const [activeFile, setActiveFile] = useState(null);
-            const [userFiles, setUserFiles] = useState([]);
-            const [isGlobalLoading, setIsGlobalLoading] = useState(false);
-
-            const refreshFiles = async (uid) => {
-                try {
-                    const res = await fetch(`${GAS_URL}?userId=${uid}&action=getFiles`);
-                    const data = await res.json();
-                    setUserFiles(data || []);
-                } catch(e) {}
-            };
-
-            useEffect(() => {
-                const init = async () => {
-                    const isPreview = window.location.href.includes('usercontent.goog');
-                    try {
-                        if (isPreview) {
-                            const mockUser = { uid: 'DEBUG', displayName: '測試員' };
-                            setUser(mockUser); await refreshFiles(mockUser.uid); setViewState('MAIN'); return;
-                        }
-                        await liff.init({ liffId: LIFF_ID });
-                        if (!liff.isLoggedIn()) { setViewState('LOGIN'); return; }
-                        const lp = await liff.getProfile();
-                        setUser({ uid: lp.userId, displayName: lp.displayName });
-                        await refreshFiles(lp.userId); setViewState('MAIN');
-                    } catch (e) { setViewState('LOGIN'); }
-                };
-                init();
-            }, []);
-
-            const handleSave = async (id, name, content) => {
-                setIsGlobalLoading(true);
-                try {
-                    const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: String(user.uid), id: String(id), name, content }) });
-                    if ((await res.json()).success) { await refreshFiles(user.uid); setActiveFile(null); }
-                } catch (e) { alert("儲存失敗"); }
-                setIsGlobalLoading(false);
-            };
-
-            const handleDelete = async (id) => {
-                if(!confirm("永久刪除設計？")) return;
-                setIsGlobalLoading(true);
-                try { await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteFile', userId: String(user.uid), id: String(id) }) }); await refreshFiles(user.uid); } catch (e) {}
-                setIsGlobalLoading(false);
-            };
-
-            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white font-black italic animate-pulse font-black"><div className="loader mb-4 font-black"></div>SYNCING CENTER...</div>;
-            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">登入系統</button></div>;
-
-            return (
-                <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black font-black">
-                    {isGlobalLoading && <div className="overlay-loading font-black text-xl uppercase italic"><div className="loader mb-4"></div>數據處理中...</div>}
-                    <aside className="w-64 line-sidebar flex flex-col shrink-0 border-r border-slate-300 font-black">
-                        <div className="h-16 flex flex-col justify-center px-6 border-b border-slate-300 bg-white shadow-sm z-10">
-                            <span className="font-black text-[#06C755] text-xl uppercase italic tracking-tighter">Flex Hub Center</span>
+        <!-- 預覽區 -->
+        <main class="flex-1 bg-slate-200 chat-room-bg custom-scrollbar relative">
+            <div class="flex items-start gap-2 mb-8 w-full justify-center">
+                <div class="w-8 h-8 rounded-full bg-slate-400 shrink-0 mt-1 shadow-sm"></div>
+                <div class="bg-white rounded-xl overflow-hidden flex-bubble-container flex flex-col shadow-2xl">
+                    <div id="view-hero-container" class="relative w-full aspect-16-9 bg-black overflow-hidden shrink-0">
+                        <img id="view-hero-img" src="" class="w-full h-full object-cover hidden">
+                        <div id="view-video-ui" class="absolute inset-0 flex items-center justify-center hidden">
+                            <img id="view-video-poster" src="" class="absolute inset-0 w-full h-full object-cover opacity-60">
+                            <div class="relative z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center"><i data-lucide="play" class="w-5 h-5 text-black fill-black ml-1"></i></div>
                         </div>
-                        <nav className="flex-1 overflow-y-auto pt-4">
-                            {Object.keys(PROJECTS).map(key => (
-                                <button key={key} onClick={()=>{setActiveLevel2(key); setActiveFile(null);}} className={`w-full text-left px-10 py-5 text-sm transition-all border-r-4 font-black ${activeLevel2 === key && !activeFile ? 'sidebar-item-active' : 'hover:bg-white border-transparent'}`}>{PROJECTS[key].name}</button>
-                            ))}
-                        </nav>
-                        <div className="p-5 border-t border-slate-300 bg-white flex items-center gap-3 font-black font-black uppercase text-xs">
-                            <div className="truncate font-bold text-black font-black">{user?.displayName}</div>
+                    </div>
+                    <div class="relative w-full p-4" id="view-body-container">
+                        <img id="view-body-bg" src="" class="absolute inset-0 w-full h-full object-cover z-0">
+                        <div id="view-grid" class="relative z-10 grid gap-2"></div>
+                    </div>
+                    <div class="p-3 border-t border-slate-100 flex flex-col gap-2" id="view-footer">
+                        <div class="flex gap-2">
+                            <button id="view-btn-1" class="flex-1 py-2 rounded text-[10px] font-black text-white text-center transition hover:opacity-90"></button>
+                            <button id="view-btn-2" class="flex-1 py-2 rounded text-[10px] font-black text-white text-center transition hover:opacity-90"></button>
                         </div>
-                    </aside>
-                    <main className="flex-1 bg-white relative overflow-hidden flex flex-col shadow-inner font-bold font-black">
-                        {activeFile ? (
-                            <EditorView key={String(activeFile.id)} file={activeFile} onSave={handleSave} onCancel={() => setActiveFile(null)} projectUrl={PROJECTS[activeLevel2].url} defaultTemplate={PROJECTS[activeLevel2].template} />
-                        ) : (
-                            <DirectoryView projectName={PROJECTS[activeLevel2].name} files={userFiles} onAdd={()=>setActiveFile({id: String(Date.now()), name:"新專案設計", content: PROJECTS[activeLevel2].template})} onEdit={f=>setActiveFile(f)} onDelete={handleDelete} />
-                        )}
-                    </main>
+                    </div>
                 </div>
-            );
+            </div>
+            <div class="h-20 w-full shrink-0"></div>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        let state = {
+            hero: { type: 'video', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "https://lihi.cc/YsmAp", link: "https://line.me" },
+            body: { columns: 3, bubbleSize: "mega", bgType: "image", bgMode: "cover", bgColor: "#F8F8F8", bg: "https://lihi.cc/l5qqU", tagBgColor: "#0D0D0D", tagTextColor: "#FFFFFF", items: [] },
+            footer: { bg: "#ffffff", btn1: { label: "品牌故事", color: "#000000", uri: "https://line.me" }, btn2: { label: "聯繫客服", color: "#000000", uri: "https://line.me" } }
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        let history = [];
+
+        // --- 與母系統通訊 ---
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'LOAD_FLEX_DATA') {
+                try {
+                    const flex = JSON.parse(e.data.json);
+                    reverseMapFlexToState(flex);
+                    syncUI(); render();
+                } catch(err) { console.error("還原失敗", err); }
+            }
+        });
+
+        window.onload = () => { 
+            window.parent.postMessage({ type: 'CHILD_READY' }, '*'); 
+            syncUI(); render();
+        };
+
+        function syncToParent() {
+            window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify(generateFlexJSON()) }, '*');
+        }
+
+        // --- 核心：全屬性還原還原 ---
+        function reverseMapFlexToState(flex) {
+            state.hero.type = flex.hero ? (flex.hero.type === 'video' ? 'video' : 'image') : 'none';
+            state.hero.url = flex.hero?.previewUrl || flex.hero?.url || "";
+            state.hero.videoUrl = flex.hero?.url || "";
+            state.hero.link = flex.hero?.action?.uri || "";
+            state.hero.aspectRatio = flex.hero?.aspectRatio || '16:9';
+
+            state.body.bubbleSize = flex.size || 'mega';
+            const bodyBox = flex.body?.contents?.[0];
+            state.body.bg = bodyBox?.contents?.[0]?.url || "";
+            state.body.bgColor = flex.body?.backgroundColor || "#F8F8F8";
+
+            const allItems = [];
+            const rows = bodyBox?.contents?.[1]?.contents || [];
+            rows.forEach(row => {
+                row.contents?.forEach(item => {
+                    allItems.push({
+                        title: item.contents?.[1]?.contents?.[0]?.text || "商品",
+                        img: item.contents?.[0]?.url || "",
+                        url: item.action?.uri || ""
+                    });
+                    state.body.tagBgColor = item.contents?.[1]?.backgroundColor || "#0D0D0D";
+                    state.body.tagTextColor = item.contents?.[1]?.contents?.[0]?.color || "#FFFFFF";
+                });
+            });
+            state.body.items = allItems;
+            state.body.columns = rows[0]?.contents?.length || 3;
+
+            const btns = flex.footer?.contents?.[0]?.contents || flex.footer?.contents || [];
+            if (btns[0]) { state.footer.btn1.label = btns[0].action?.label; state.footer.btn1.uri = btns[0].action?.uri; state.footer.btn1.color = btns[0].color; }
+            if (btns[1]) { state.footer.btn2.label = btns[1].action?.label; state.footer.btn2.uri = btns[1].action?.uri; state.footer.btn2.color = btns[1].color; }
+        }
+
+        function saveState() {
+            if (history.length > 20) history.shift();
+            history.push(JSON.parse(JSON.stringify(state)));
+            document.getElementById('btn-undo').disabled = false;
+        }
+
+        function undo() {
+            if (history.length > 0) { state = history.pop(); syncUI(); render(); syncToParent(); }
+        }
+
+        function updateHeroType(type) { saveState(); state.hero.type = type; syncUI(); render(); syncToParent(); }
+
+        function updateConfig(path, value) {
+            saveState();
+            if(path === 'heroAspect') state.hero.aspectRatio = value;
+            if(path === 'heroUrl') state.hero.url = value;
+            if(path === 'videoUrl') state.hero.videoUrl = value;
+            if(path === 'heroLink') state.hero.link = value;
+            if(path === 'bodyBg') state.body.bg = value;
+            if(path === 'bubbleSize') state.body.bubbleSize = value;
+            if(path === 'columns') state.body.columns = value;
+            if(path === 'tagBgColor') state.body.tagBgColor = value;
+            if(path === 'tagTextColor') state.body.tagTextColor = value;
+            if(path === 'f1L') state.footer.btn1.label = value;
+            if(path === 'f1U') state.footer.btn1.uri = value;
+            if(path === 'f1C') state.footer.btn1.color = value;
+            if(path === 'f2L') state.footer.btn2.label = value;
+            if(path === 'f2U') state.footer.btn2.uri = value;
+            if(path === 'f2C') state.footer.btn2.color = value;
+            render(); syncToParent();
+        }
+
+        function addItem() { saveState(); state.body.items.push({ title: "新商品", img: "https://lihi.cc/mwMvo", url: "https://line.me" }); syncUI(); render(); syncToParent(); }
+
+        function syncUI() {
+            const act = "flex-1 py-1.5 text-xs font-bold rounded-md transition bg-white shadow-sm text-[#06C755] border border-[#06C755]";
+            const inact = "flex-1 py-1.5 text-xs font-bold rounded-md transition text-slate-600 hover:bg-slate-200";
+            document.getElementById('btn-type-image').className = state.hero.type === 'image' ? act : inact;
+            document.getElementById('btn-type-video').className = state.hero.type === 'video' ? act : inact;
+            document.getElementById('btn-type-none').className = state.hero.type === 'none' ? act : inact;
+
+            document.getElementById('hero-aspect').value = state.hero.aspectRatio;
+            document.getElementById('input-hero-url').value = state.hero.url;
+            document.getElementById('input-video-url').value = state.hero.videoUrl;
+            document.getElementById('input-hero-link').value = state.hero.link;
+            document.getElementById('bubble-size').value = state.body.bubbleSize;
+            document.getElementById('body-columns').value = state.body.columns;
+            document.getElementById('input-body-bg').value = state.body.bg;
+            document.getElementById('input-tag-bg-color').value = state.body.tagBgColor;
+            document.getElementById('input-tag-text-color').value = state.body.tagTextColor;
+            document.getElementById('input-f1-label').value = state.footer.btn1.label;
+            document.getElementById('input-f1-uri').value = state.footer.btn1.uri;
+            document.getElementById('input-f1-color').value = state.footer.btn1.color;
+            document.getElementById('input-f2-label').value = state.footer.btn2.label;
+            document.getElementById('input-f2-uri').value = state.footer.btn2.uri;
+            document.getElementById('input-f2-color').value = state.footer.btn2.color;
+            document.getElementById('item-count-badge').innerText = state.body.items.length;
+
+            const container = document.getElementById('items-container');
+            container.innerHTML = '';
+            state.body.items.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-white border-2 border-slate-200 rounded-lg space-y-2 relative shadow-sm";
+                div.innerHTML = `
+                    <button onclick="state.body.items.splice(${i},1);syncUI();render();syncToParent()" class="absolute top-2 right-2 text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <div class="flex items-center gap-3"><img src="${item.img}" class="w-10 h-10 rounded object-cover border"><input type="text" value="${item.title}" oninput="state.body.items[${i}].title=this.value;render();syncToParent()" class="flex-1 text-sm border-b font-black outline-none" placeholder="品名"></div>
+                    <input type="text" value="${item.img}" oninput="state.body.items[${i}].img=this.value;render();syncToParent()" class="w-full text-[9px] border rounded p-1 font-mono" placeholder="圖片URL">
+                    <input type="text" value="${item.url}" oninput="state.body.items[${i}].url=this.value;render();syncToParent()" class="w-full text-[9px] border rounded p-1 font-mono" placeholder="跳轉URL">
+                `;
+                container.appendChild(div);
+            });
+            lucide.createIcons();
+        }
+
+        function render() {
+            const h = document.getElementById('view-hero-container');
+            h.style.display = state.hero.type === 'none' ? 'none' : 'block';
+            const rMap = { '1:1': 'aspect-1-1', '16:9': 'aspect-16-9', '4:3': 'aspect-4-3', '1.91:1': 'aspect-1_91-1', '3:4': 'aspect-3-4' };
+            h.className = `relative w-full bg-black overflow-hidden shrink-0 ${rMap[state.hero.aspectRatio]}`;
+            if (state.hero.type === 'image') { document.getElementById('view-hero-img').src = state.hero.url; document.getElementById('view-hero-img').classList.remove('hidden'); document.getElementById('view-video-ui').classList.add('hidden'); }
+            else if (state.hero.type === 'video') { document.getElementById('view-hero-img').classList.add('hidden'); document.getElementById('view-video-poster').src = state.hero.url; document.getElementById('view-video-ui').classList.remove('hidden'); }
+
+            document.getElementById('view-body-bg').src = state.body.bg;
+            const grid = document.getElementById('view-grid');
+            grid.className = `relative z-10 grid gap-2 ${state.body.columns === 3 ? "grid-cols-3" : "grid-cols-4"}`;
+            grid.innerHTML = '';
+            state.body.items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = "bg-white rounded p-1 shadow-sm flex flex-col";
+                el.innerHTML = `<div class="aspect-square bg-slate-100 rounded-sm overflow-hidden mb-1"><img src="${item.img}" class="w-full h-full object-cover"></div><div style="background-color: ${state.body.tagBgColor}; color: ${state.body.tagTextColor};" class="text-[8px] font-black text-center py-0.5 rounded-sm truncate">${item.title}</div>`;
+                grid.appendChild(el);
+            });
+            const b1 = document.getElementById('view-btn-1'); b1.innerText = state.footer.btn1.label; b1.style.backgroundColor = state.footer.btn1.color;
+            const b2 = document.getElementById('view-btn-2'); b2.innerText = state.footer.btn2.label; b2.style.backgroundColor = state.footer.btn2.color;
+        }
+
+        function generateFlexJSON() {
+            const chunk = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) => arr.slice(i * size, i * size + size));
+            return {
+                "type": "bubble", "size": state.body.bubbleSize,
+                "hero": state.hero.type === 'none' ? undefined : (state.hero.type === 'video' ? { "type": "video", "url": state.hero.videoUrl, "previewUrl": state.hero.url, "aspectRatio": state.hero.aspectRatio, "altContent": { "type": "image", "size": "full", "aspectRatio": state.hero.aspectRatio, "aspectMode": "cover", "url": state.hero.url } } : { "type": "image", "url": state.hero.url, "size": "full", "aspectRatio": state.hero.aspectRatio, "aspectMode": "cover", "action": { "type": "uri", "uri": state.hero.link } }),
+                "body": {
+                    "type": "box", "layout": "vertical", "backgroundColor": state.body.bgColor, "paddingAll": "none",
+                    "contents": [{ "type": "box", "layout": "vertical", "contents": [
+                        { "type": "image", "url": state.body.bg, "position": "absolute", "size": "full", "aspectMode": "cover" },
+                        { "type": "box", "layout": "vertical", "paddingAll": "md", "contents": chunk(state.body.items, state.body.columns).map(row => ({
+                            "type": "box", "layout": "horizontal", "contents": row.map(item => ({ "type": "box", "layout": "vertical", "width": state.body.columns === 3 ? "32%" : "23%", "action": { "type": "uri", "uri": item.url }, "contents": [ { "type": "image", "url": item.img, "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "backgroundColor": state.body.tagBgColor, "cornerRadius": "sm", "paddingAll": "xs", "margin": "sm", "contents": [{ "type": "text", "text": item.title, "size": "xxs", "color": state.body.tagTextColor, "align": "center", "weight": "bold", "wrap": true }] } ] }))
+                        }))}
+                    ]}]
+                },
+                "footer": { "type": "box", "layout": "horizontal", "spacing": "md", "backgroundColor": state.footer.bg, "paddingTop": "md", "contents": [
+                    { "type": "button", "style": "primary", "height": "sm", "color": state.footer.btn1.color, "action": { "type": "uri", "label": state.footer.btn1.label, "uri": state.footer.btn1.uri } },
+                    { "type": "button", "style": "primary", "height": "sm", "color": state.footer.btn2.color, "action": { "type": "uri", "label": state.footer.btn2.label, "uri": state.footer.btn2.uri } }
+                ]}
+            };
+        }
     </script>
 </body>
 </html>
