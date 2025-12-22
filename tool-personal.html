@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人單頁名片 - 整合版 (v2.3.0)</title>
+    <title>個人單頁名片 - 整合版 (v2.3.1)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -25,6 +25,7 @@
             background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
             background-size: 20px 20px;
         }
+        .peer:checked ~ .peer-checked-bg { background-color: rgba(255,255,255,0.5); }
     </style>
 </head>
 <body>
@@ -83,6 +84,7 @@
                 descColor: "#666666"
             },
             footer: {
+                showShortBtns: true, // 功能開關狀態
                 longBtns: [
                     { label: "立即預約", uri: "https://line.me", themeColor: "#00b900", textColor: "#ffffff", isSolid: true },
                     { label: "查看詳情", uri: "https://line.me", themeColor: "#00b900", textColor: "#00b900", isSolid: false }
@@ -172,7 +174,8 @@
                     }))
                 };
 
-                if (data.footer.shortBtns.length > 0) {
+                // 如果開關開啟，才加入底部快捷按鈕
+                if (data.footer.showShortBtns && data.footer.shortBtns.length > 0) {
                     bubble.footer.contents.push({
                         type: "box", layout: "horizontal", spacing: "md",
                         contents: data.footer.shortBtns.map(btn => ({
@@ -253,7 +256,7 @@
 
             // --- 底部快捷按鈕功能 ---
             const addShortBtn = () => {
-                if (data.footer.shortBtns.length >= 5) return;
+                if (!data.footer.showShortBtns || data.footer.shortBtns.length >= 5) return;
                 const newBtn = { type: "WEB", label: "新連結", uri: "https://", themeColor: "#dddddd", textColor: "#444444", isSolid: false };
                 setData(prev => ({
                     ...prev,
@@ -299,7 +302,9 @@
                             {data.avatar.show && <div className="absolute w-full flex justify-center transition-all duration-500" style={{ top: `${avatarOff}px`, left: 0, zIndex: 30 }}><div className="overflow-hidden bg-white shadow-xl" style={{ width: '80px', height: '80px', border: `4px solid ${data.avatar.borderColor}`, borderRadius: data.avatar.cornerRadius.includes('px') ? data.avatar.cornerRadius : '12px' }}><img src={data.avatar.url} className="w-full h-full object-cover" style={{ objectPosition: data.avatar.gravity }} /></div></div>}
                             <div className="flex flex-col gap-3 p-[10px] pt-0">
                                 {data.footer.longBtns.map((btn, i) => <div key={i} className="py-2.5 text-center rounded-md border font-bold text-[14px]" style={{ borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : 'transparent', color: btn.textColor }}>{btn.label}</div>)}
-                                <div className="flex gap-2">{data.footer.shortBtns.map((btn, i) => <div key={i} className="flex-1 py-2 flex flex-col items-center gap-1 rounded-sm border shadow-sm" style={{ borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : 'transparent' }}><img src={SOCIAL_DATA[btn.type]?.url} className="w-4 h-4 object-contain" /><span className="text-[10px] font-medium" style={{ color: btn.textColor }}>{btn.label}</span></div>)}</div>
+                                {data.footer.showShortBtns && (
+                                    <div className="flex gap-2">{data.footer.shortBtns.map((btn, i) => <div key={i} className="flex-1 py-2 flex flex-col items-center gap-1 rounded-sm border shadow-sm" style={{ borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : 'transparent' }}><img src={SOCIAL_DATA[btn.type]?.url} className="w-4 h-4 object-contain" /><span className="text-[10px] font-medium" style={{ color: btn.textColor }}>{btn.label}</span></div>)}</div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -455,9 +460,17 @@
                             <div className="border-2 border-[#00b900] rounded-xl bg-white overflow-hidden shadow-sm mb-12">
                                 <div className="p-4 bg-[#00b900] border-b border-[#00b900] flex items-center justify-between font-bold text-white text-lg">
                                     <div className="flex items-center gap-2"><i data-lucide="share-2" className="w-5 h-5"></i> 5. 底部快捷 ({data.footer.shortBtns.length}/5)</div>
-                                    <button onClick={addShortBtn} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition-all"><i data-lucide="plus" className="w-4 h-4"></i> 新增</button>
+                                    <div className="flex items-center gap-3">
+                                        {data.footer.showShortBtns && (
+                                            <button onClick={addShortBtn} className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1 transition-all"><i data-lucide="plus" className="w-4 h-4"></i> 新增</button>
+                                        )}
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" checked={data.footer.showShortBtns} onChange={() => handleUpdate('footer', 'showShortBtns', !data.footer.showShortBtns)} className="sr-only peer" />
+                                            <div className="w-11 h-6 bg-white/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-white/50"></div>
+                                        </label>
+                                    </div>
                                 </div>
-                                <div className="p-5 space-y-8">
+                                <div className={`p-5 space-y-8 transition-all duration-300 ${!data.footer.showShortBtns ? 'opacity-30 grayscale pointer-events-none' : ''}`}>
                                     {data.footer.shortBtns.map((btn, idx) => (
                                         <div key={idx} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 relative group hover:border-[#00b900]/50 transition-all">
                                             <button onClick={() => deleteShortBtn(idx)} className="absolute -top-3 -right-3 bg-red-500 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
@@ -478,6 +491,9 @@
                                             </div>
                                         </div>
                                     ))}
+                                    {data.footer.shortBtns.length === 0 && (
+                                        <div className="text-center py-10 text-slate-400 italic text-sm">點擊上方「新增」來加入按鈕</div>
+                                    )}
                                 </div>
                             </div>
                         </div>
