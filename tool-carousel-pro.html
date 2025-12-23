@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carousel Pro - 個人名片基礎穩定版 v2.8.0</title>
+    <title>Carousel Pro - 穩定發送版 v2.8.1</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -41,25 +41,15 @@
             WEB: { url: "https://cdn-icons-png.flaticon.com/512/1006/1006771.png", label: "官網" }
         };
 
-        const TEMPLATE_TYPES = {
-            PERSONAL: { name: "個人簡約版", icon: "user" },
-            SEQUENTIAL_PRO: { name: "專業業務版", icon: "award" }
-        };
-
         const GET_DEFAULT_DATA = (type) => {
             if (type === 'PERSONAL') return {
                 url: "https://lihi.cc/5OXMZ",
                 aspectRatio: "16:9",
-                name: "王小明",
-                nameColor: "#111111",
-                desc: "資深開發工程師\n專業 LINE Bot 解決方案",
-                descColor: "#666666",
-                themeColor: "#00b900",
-                btnLabel: "立即預約",
-                btnUri: "https://line.me",
+                name: "王小明", nameColor: "#111111",
+                desc: "資深開發工程師\n專業 LINE Bot 解決方案", descColor: "#666666",
+                themeColor: "#00b900", btnLabel: "立即預約", btnUri: "https://line.me",
                 icons: [{ type: 'LINE', uri: 'https://line.me' }]
             };
-            // 業務版預設值略過，先專注於個人版測試
             return { name: "新分頁", desc: "編輯中..." };
         };
 
@@ -89,15 +79,16 @@
                 return () => window.removeEventListener('message', handleMessage);
             }, []);
 
-            // --- 核心發送修復：輸出乾淨的 LINE Carousel JSON ---
+            // --- 核心改進：生成 100% 合規的 LINE Carousel JSON ---
             const buildJson = useCallback(() => {
                 const activePages = pages.filter(p => p.template && p.isVisible);
-                if (activePages.length === 0) return { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "請先配置內容" }] } };
+                if (activePages.length === 0) return { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "未配置內容" }] } };
 
                 const contents = activePages.map(page => {
                     const d = page.data;
                     const cleanUri = (u) => (u && u.trim() !== "" && u.startsWith('http')) ? u.trim() : "https://line.me";
 
+                    // 只輸出 LINE 認識的純淨 Bubble 物件
                     if (page.template === 'PERSONAL') {
                         return {
                             type: "bubble",
@@ -133,25 +124,27 @@
                             }
                         };
                     }
-                    return { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "版型不支援發送" }] } };
+                    return { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "版型不支援" }] } };
                 });
 
+                // 注意：這裡只傳回 LINE 發送需要的純淨結構
                 return { type: "carousel", contents, altText: "這是我的數位名片，請多指教" };
             }, [pages]);
 
+            // 同步給父視窗（包含 metadata 供儲存，包含 flex 供發送）
             useEffect(() => {
-                window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify({ altText: "這是我的數位名片，請多指教", pages }) }, '*');
-            }, [pages]);
+                const flex = buildJson();
+                // 這裡是一個技巧：把 pages 原始數據塞在一個隱藏屬性裡，讓 index.html 儲存，但發送時刪除它
+                const syncObj = { ...flex, _pages: pages }; 
+                window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify(syncObj) }, '*');
+            }, [pages, buildJson]);
 
             const updateActivePageData = (path, val) => {
                 setPages(prev => {
                     const next = [...prev];
                     const keys = path.split('.');
                     let curr = next[activeIndex].data;
-                    for (let i = 0; i < keys.length - 1; i++) {
-                        curr[keys[i]] = { ...curr[keys[i]] };
-                        curr = curr[keys[i]];
-                    }
+                    for (let i = 0; i < keys.length - 1; i++) { curr[keys[i]] = { ...curr[keys[i]] }; curr = curr[keys[i]]; }
                     curr[keys[keys.length - 1]] = val;
                     return next;
                 });
@@ -162,143 +155,114 @@
                 if (!page.template) {
                     return (
                         <div className="text-center py-20 border-4 border-dashed rounded-3xl space-y-6">
-                            <h2 className="text-2xl font-black text-slate-300 italic uppercase">Page {activeIndex + 1} Empty</h2>
-                            <div className="grid grid-cols-1 gap-4 px-10">
-                                <button onClick={()=>{const n=[...pages]; n[activeIndex]={...page, template:'PERSONAL', data:GET_DEFAULT_DATA('PERSONAL')}; setPages(n)}} className="bg-white border-2 border-slate-200 p-8 rounded-2xl font-black hover:border-[#06C755] transition-all flex items-center justify-between text-xl text-black">
-                                    <span>個人名片版</span><i data-lucide="user" className="w-8 h-8"></i>
-                                </button>
-                            </div>
+                            <h2 className="text-2xl font-black text-slate-300 uppercase">Page {activeIndex + 1} 空白</h2>
+                            <button onClick={()=>{const n=[...pages]; n[activeIndex]={...page, template:'PERSONAL', data:GET_DEFAULT_DATA('PERSONAL')}; setPages(n)}} className="bg-white border-2 border-slate-200 p-8 rounded-2xl font-black hover:border-[#06C755] transition-all flex items-center justify-between text-xl text-black shadow-sm">
+                                <span>個人簡約版</span><i data-lucide="user" className="w-8 h-8 text-[#06C755]"></i>
+                            </button>
                         </div>
                     );
                 }
 
-                if (page.template === 'PERSONAL') {
-                    const d = page.data;
-                    return (
-                        <div className="space-y-8 animate-in fade-in duration-300 pb-20 text-black">
-                            <div className="flex justify-between items-center bg-[#06C755] p-5 rounded-2xl shadow-lg">
-                                <div className="font-black text-xl text-white flex items-center gap-2"><i data-lucide="user"></i> 正在編輯：個人簡約版</div>
-                                <button onClick={()=>{const n=[...pages]; n[activeIndex].template=null; setPages(n)}} className="bg-white/20 text-white px-4 py-1.5 rounded-lg text-sm font-bold">重選</button>
-                            </div>
-
-                            <div className="control-panel space-y-6">
-                                <h3 className="text-lg font-black text-slate-800 border-b pb-4 flex items-center gap-2"><i data-lucide="image"></i> 1. 背景主圖設定</h3>
-                                <input type="text" value={d.url} onChange={e=>updateActivePageData('url', e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-xl font-bold" placeholder="主圖網址" />
-                                <div className="space-y-2">
-                                    <label className="text-sm font-black text-slate-400">主圖比例</label>
-                                    <select value={d.aspectRatio} onChange={e=>updateActivePageData('aspectRatio', e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-xl font-black"><option value="16:9">16:9 (標準)</option><option value="1:1">1:1 (正方形)</option><option value="4:3">4:3 (傳統)</option></select>
-                                </div>
-                            </div>
-
-                            <div className="control-panel space-y-6">
-                                <h3 className="text-lg font-black text-slate-800 border-b pb-4">2. 內容排版</h3>
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2"><label className="text-sm font-bold text-slate-400">姓名/標題</label><input type="text" value={d.name} onChange={e=>updateActivePageData('name', e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-xl font-black text-xl" /></div>
-                                    <div className="space-y-2"><label className="text-sm font-bold text-slate-400">姓名顏色</label><input type="color" value={d.nameColor} onChange={e=>updateActivePageData('nameColor', e.target.value)} /></div>
-                                </div>
-                                <div className="space-y-2 pt-4">
-                                    <label className="text-sm font-bold text-slate-400">簡介內容 (支援換行)</label>
-                                    <textarea value={d.desc} onChange={e=>updateActivePageData('desc', e.target.value)} className="w-full p-5 border-2 border-slate-100 rounded-3xl h-40 font-bold leading-relaxed text-lg" placeholder="請輸入介紹文字..."></textarea>
-                                </div>
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2"><label className="text-sm font-bold text-slate-400">簡介文字顏色</label><input type="color" value={d.descColor} onChange={e=>updateActivePageData('descColor', e.target.value)} /></div>
-                                </div>
-                            </div>
-
-                            <div className="control-panel space-y-8">
-                                <div className="flex justify-between items-center border-b pb-4">
-                                    <h3 className="text-lg font-black text-slate-800 flex items-center gap-2"><i data-lucide="share-2"></i> 3. 社群快捷按鈕</h3>
-                                    <button onClick={()=>{if(d.icons.length < 5) updateActivePageData('icons', [...d.icons, {type:'LINE', uri:'https://line.me'}])}} className="bg-slate-900 text-white px-6 py-3 rounded-2xl flex items-center gap-2 font-black active:scale-95 transition-all text-sm shadow-lg"><i data-lucide="plus-circle" className="w-6 h-6"></i> 新增按鈕</button>
-                                </div>
-                                <div className="space-y-4">
-                                    {d.icons.map((s, i) => (
-                                        <div key={i} className="flex gap-4 bg-slate-50 p-5 rounded-3xl relative border-2 border-slate-100 group transition-all hover:border-green-400">
-                                            <button onClick={()=>{const nl=d.icons.filter((_,idx)=>idx!==i); updateActivePageData('icons', nl)}} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-2 shadow-xl z-10 hover:scale-110 transition-transform"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
-                                            <select value={s.type} onChange={e=>{const nl=[...d.icons]; nl[i].type=e.target.value; updateActivePageData('icons', nl)}} className="border-2 border-slate-200 rounded-xl p-3 w-40 font-black bg-white shadow-inner">{Object.keys(SOCIAL_DATA).map(k=><option key={k} value={k}>{SOCIAL_DATA[k].label}</option>)}</select>
-                                            <input type="text" value={s.uri} onChange={e=>{const nl=[...d.icons]; nl[i].uri=e.target.value; updateActivePageData('icons', nl)}} className="flex-1 p-3 border-2 border-slate-200 rounded-xl font-mono text-base bg-white shadow-inner font-black" placeholder="連結 URL" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="control-panel space-y-6 shadow-2xl border-2 border-black">
-                                <h3 className="text-xl font-black text-black border-b-4 border-black pb-4 uppercase tracking-tighter">4. 底部長型動作按鈕</h3>
-                                <div className="grid grid-cols-2 gap-8">
-                                    <div className="space-y-2"><label className="text-sm font-black text-slate-400 uppercase tracking-widest">按鈕背景色</label><input type="color" value={d.themeColor} onChange={e=>updateActivePageData('themeColor', e.target.value)} /></div>
-                                    <div className="space-y-2"><label className="text-sm font-black text-slate-400 uppercase tracking-widest">按鈕文字內容</label><input type="text" value={d.btnLabel} onChange={e=>updateActivePageData('btnLabel', e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-2xl font-black text-lg text-center" /></div>
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-sm font-black text-slate-400">點擊跳轉網址</label>
-                                    <input type="text" value={d.btnUri} onChange={e=>updateActivePageData('btnUri', e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-2xl font-mono text-sm shadow-inner font-black" placeholder="https://..." />
-                                </div>
-                            </div>
-
-                            <div className="p-8 bg-slate-900 rounded-[40px] flex justify-between items-center shadow-2xl">
-                                <div className="text-white font-black text-xl uppercase tracking-widest flex items-center gap-3"><i data-lucide="send" className="w-8 h-8 text-[#06C755]"></i> 發送時顯示本頁</div>
-                                <button onClick={()=>setPages(p=>{const n=[...p]; n[activeIndex].isVisible=!n[activeIndex].isVisible; return n})} className={`w-20 h-10 rounded-full relative transition-all shadow-inner ${page.isVisible?'bg-[#06C755]':'bg-slate-700'}`}><div className={`absolute top-1.5 w-7 h-7 bg-white rounded-full transition-all shadow-xl ${page.isVisible?'left-11':'left-2'}`}></div></button>
-                            </div>
-                            
-                            <button onClick={()=>{if(activeIndex < 11){const n=[...pages]; n[activeIndex+1]=JSON.parse(JSON.stringify(page)); n[activeIndex+1].id=activeIndex+1; setPages(n); setActiveIndex(activeIndex+1)}}} className="w-full py-8 border-4 border-dashed border-slate-300 text-slate-400 rounded-[40px] font-black text-xl hover:border-[#06C755] hover:text-[#06C755] hover:bg-green-50 transition-all flex items-center justify-center gap-4 active:scale-95 mb-20"><i data-lucide="copy" className="w-8 h-8"></i> 複製內容至下一頁 (Page {activeIndex+2})</button>
+                const d = page.data;
+                return (
+                    <div className="space-y-8 animate-in fade-in duration-300 pb-20 text-black font-black">
+                        <div className="flex justify-between items-center bg-[#06C755] p-5 rounded-2xl shadow-lg">
+                            <div className="font-black text-xl text-white flex items-center gap-2"><i data-lucide="user"></i> 個人簡約版設定</div>
+                            <button onClick={()=>{const n=[...pages]; n[activeIndex].template=null; setPages(n)}} className="bg-white/20 text-white px-4 py-1.5 rounded-lg text-sm">重選</button>
                         </div>
-                    );
-                }
-                return <div className="p-20 text-center font-black text-2xl">設定中...</div>;
+
+                        <div className="control-panel space-y-6">
+                            <h3 className="text-lg font-black text-slate-800 border-b pb-4 flex items-center gap-2"><i data-lucide="image"></i> 1. 主圖設定</h3>
+                            <input type="text" value={d.url} onChange={e=>updateActivePageData('url', e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-xl font-bold" placeholder="圖片網址" />
+                            <select value={d.aspectRatio} onChange={e=>updateActivePageData('aspectRatio', e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-xl font-black"><option value="16:9">16:9 標準</option><option value="1:1">1:1 正方形</option><option value="4:3">4:3 比例</option></select>
+                        </div>
+
+                        <div className="control-panel space-y-6">
+                            <h3 className="text-lg font-black text-slate-800 border-b pb-4">2. 文字內容與顏色</h3>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2"><label className="text-sm font-bold text-slate-400">姓名顏色</label><input type="color" value={d.nameColor} onChange={e=>updateActivePageData('nameColor', e.target.value)} /></div>
+                                <div className="space-y-2"><label className="text-sm font-bold text-slate-400">簡介顏色</label><input type="color" value={d.descColor} onChange={e=>updateActivePageData('descColor', e.target.value)} /></div>
+                            </div>
+                            <input type="text" value={d.name} onChange={e=>updateActivePageData('name', e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-xl font-black text-xl" placeholder="請輸入姓名" />
+                            <textarea value={d.desc} onChange={e=>updateActivePageData('desc', e.target.value)} className="w-full p-5 border-2 border-slate-100 rounded-3xl h-40 font-bold leading-relaxed text-lg" placeholder="介紹文字...按 Enter 換行"></textarea>
+                        </div>
+
+                        <div className="control-panel space-y-8">
+                            <div className="flex justify-between items-center border-b pb-4">
+                                <h3 className="text-lg font-black text-slate-800">3. 社群按鈕</h3>
+                                {/* 修正：新增時帶入預設內容 */}
+                                <button onClick={()=>{if(d.icons.length < 5) updateActivePageData('icons', [...d.icons, {type:'LINE', uri:'https://line.me'}])}} className="bg-slate-900 text-white px-6 py-3 rounded-2xl flex items-center gap-2 font-black active:scale-95 text-sm shadow-lg font-black"><i data-lucide="plus-circle" className="w-6 h-6"></i> 新增按鈕</button>
+                            </div>
+                            {d.icons.map((s, i) => (
+                                <div key={i} className="flex gap-4 bg-slate-50 p-5 rounded-3xl relative border-2 border-slate-100 group transition-all hover:border-green-400">
+                                    <button onClick={()=>{const nl=d.icons.filter((_,idx)=>idx!==i); updateActivePageData('icons', nl)}} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-2 shadow-xl opacity-0 group-hover:opacity-100"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
+                                    <select value={s.type} onChange={e=>{const nl=[...d.icons]; nl[i].type=e.target.value; updateActivePageData('icons', nl)}} className="border-2 border-slate-200 rounded-xl p-3 w-40 font-black bg-white">{Object.keys(SOCIAL_DATA).map(k=><option key={k} value={k}>{SOCIAL_DATA[k].label}</option>)}</select>
+                                    <input type="text" value={s.uri} onChange={e=>{const nl=[...d.icons]; nl[i].uri=e.target.value; updateActivePageData('icons', nl)}} className="flex-1 p-3 border-2 border-slate-200 rounded-xl font-mono font-black bg-white" placeholder="連結 URL" />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="control-panel space-y-6 shadow-2xl border-2 border-black">
+                            <h3 className="text-xl font-black text-black border-b-4 border-black pb-4 uppercase">4. 底部動作按鈕</h3>
+                            <div className="grid grid-cols-2 gap-8">
+                                <div className="space-y-2"><label className="text-sm font-black text-slate-400">按鈕底色</label><input type="color" value={d.themeColor} onChange={e=>updateActivePageData('themeColor', e.target.value)} /></div>
+                                <div className="space-y-2"><label className="text-sm font-black text-slate-400">按鈕文字</label><input type="text" value={d.btnLabel} onChange={e=>updateActivePageData('btnLabel', e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-2xl font-black text-lg text-center" /></div>
+                            </div>
+                            <input type="text" value={d.btnUri} onChange={e=>updateActivePageData('btnUri', e.target.value)} className="w-full p-4 border-2 border-slate-100 rounded-2xl font-mono text-sm font-black" placeholder="跳轉網址 https://..." />
+                        </div>
+
+                        <div className="p-8 bg-slate-900 rounded-[40px] flex justify-between items-center shadow-2xl">
+                            <div className="text-white font-black text-xl flex items-center gap-3"><i data-lucide="send" className="w-8 h-8 text-[#06C755]"></i> 發送時顯示本頁</div>
+                            <button onClick={()=>setPages(p=>{const n=[...p]; n[activeIndex].isVisible=!n[activeIndex].isVisible; return n})} className={`w-20 h-10 rounded-full relative transition-all shadow-inner ${page.isVisible?'bg-[#06C755]':'bg-slate-700'}`}><div className={`absolute top-1.5 w-7 h-7 bg-white rounded-full transition-all shadow-xl ${page.isVisible?'left-11':'left-2'}`}></div></button>
+                        </div>
+                        
+                        <button onClick={()=>{if(activeIndex < 11){const n=[...pages]; n[activeIndex+1]=JSON.parse(JSON.stringify(page)); n[activeIndex+1].id=activeIndex+1; setPages(n); setActiveIndex(activeIndex+1)}}} className="w-full py-8 border-4 border-dashed border-slate-300 text-slate-400 rounded-[40px] font-black text-xl hover:border-[#06C755] hover:text-[#06C755] hover:bg-green-50 transition-all flex items-center justify-center gap-4 active:scale-95 mb-20 font-black"><i data-lucide="copy" className="w-8 h-8"></i> 複製內容至下一頁</button>
+                    </div>
+                );
             };
 
             const PreviewComp = () => {
                 const page = pages[activeIndex];
                 if (!page.template) return <div className="p-20 text-center italic text-slate-300 font-black text-2xl">本分頁內容為空</div>;
-                const width = 300;
-                if (page.template === 'PERSONAL') {
-                    const d = page.data;
-                    const [w, h] = (d.aspectRatio || "16:9").split(':').map(Number);
-                    const mediaH = (h / w) * width;
-                    return (
-                        <div className="rounded-[40px] bg-white shadow-2xl overflow-hidden relative border-[8px] border-black" style={{ width: '300px' }}>
-                            <div className="bg-slate-100" style={{ height: `${mediaH}px` }}>
-                                <img src={d.url} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="p-5 pt-8">
-                                <div className="font-black text-xl" style={{ color: d.nameColor }}>{d.name}</div>
-                                <div className="mt-3 text-sm leading-relaxed whitespace-pre-wrap font-bold" style={{ color: d.descColor }}>{d.desc}</div>
-                                <div className="flex gap-2 mt-5">
-                                    {(d.icons || []).map((icon, i) => (
-                                        <div key={i} className="w-10 h-10 p-2 bg-slate-50 border rounded-full flex items-center justify-center shadow-sm">
-                                            <img src={SOCIAL_DATA[icon.type]?.url} className="w-full h-full object-contain" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="p-4 pt-0">
-                                <div className="py-3 text-center rounded-xl text-white font-black text-sm shadow-md" style={{ backgroundColor: d.themeColor }}>{d.btnLabel}</div>
+                const d = page.data;
+                const [w, h] = (d.aspectRatio || "16:9").split(':').map(Number);
+                const mediaH = (h / w) * 300;
+                return (
+                    <div className="rounded-[40px] bg-white shadow-2xl overflow-hidden relative border-[10px] border-black animate-in zoom-in-95 duration-500" style={{ width: '300px' }}>
+                        <div className="bg-slate-100" style={{ height: `${mediaH}px` }}><img src={d.url} className="w-full h-full object-cover" /></div>
+                        <div className="p-6 pt-8">
+                            <div className="font-black text-2xl" style={{ color: d.nameColor }}>{d.name}</div>
+                            <div className="mt-4 text-sm leading-relaxed whitespace-pre-wrap font-bold" style={{ color: d.descColor }}>{d.desc}</div>
+                            <div className="flex gap-2 mt-6">
+                                {(d.icons || []).map((icon, i) => <div key={i} className="w-12 h-12 p-2.5 bg-slate-50 border-2 border-slate-100 rounded-full flex items-center justify-center shadow-sm"><img src={SOCIAL_DATA[icon.type]?.url} className="w-full h-full object-contain" /></div>)}
                             </div>
                         </div>
-                    );
-                }
-                return null;
+                        <div className="p-5 pt-0"><div className="py-3.5 text-center rounded-2xl text-white font-black text-base shadow-lg" style={{ backgroundColor: d.themeColor }}>{d.btnLabel}</div></div>
+                    </div>
+                );
             };
 
             return (
                 <div className="flex h-screen bg-slate-100 overflow-hidden font-black">
                     <div className="w-1/2 bg-white border-r flex flex-col shadow-2xl z-20 font-black">
-                        <div className="p-8 border-b shrink-0 flex items-center justify-between font-black text-black"><div className="flex items-center gap-4 font-black"><div className="bg-[#06C755] p-3 rounded-2xl text-white shadow-xl rotate-3"><i data-lucide="layers" className="w-8 h-8"></i></div><h1 className="text-2xl uppercase italic font-black tracking-tighter">Carousel Factory</h1></div></div>
-                        <div className="p-5 bg-slate-50 border-b flex gap-4 overflow-x-auto custom-scrollbar shrink-0 no-scrollbar items-center font-black text-black">
+                        <div className="p-8 border-b shrink-0 flex items-center justify-between font-black text-black"><div className="flex items-center gap-4"><div className="bg-[#06C755] p-3 rounded-2xl text-white shadow-xl rotate-3 font-black"><i data-lucide="layers" className="w-8 h-8"></i></div><h1 className="text-2xl uppercase italic font-black tracking-tighter">Carousel Factory</h1></div></div>
+                        <div className="p-5 bg-slate-50 border-b flex gap-4 overflow-x-auto custom-scrollbar shrink-0 no-scrollbar items-center">
                             {pages.map((p, i) => (
-                                <button key={i} onClick={()=>setActiveIndex(i)} className={`shrink-0 w-14 h-14 border-4 rounded-2xl font-black transition-all flex items-center justify-center text-xl shadow-sm ${activeIndex === i ? 'page-tab-active' : 'bg-white border-slate-200'} ${!p.template ? 'page-tab-empty' : ''} ${!p.isVisible ? 'page-tab-hidden' : ''}`}>{i + 1}</button>
+                                <button key={i} onClick={()=>setActiveIndex(i)} className={`shrink-0 w-14 h-14 border-4 rounded-2xl font-black transition-all flex items-center justify-center text-xl shadow-sm ${activeIndex === i ? 'page-tab-active shadow-[#06C755]/40' : 'bg-white border-slate-200'} ${!p.template ? 'page-tab-empty' : ''} ${!p.isVisible ? 'page-tab-hidden' : ''}`}>{i + 1}</button>
                             ))}
                         </div>
                         <div className="flex-1 overflow-y-auto p-10 custom-scrollbar text-black font-black">
-                            <div className="mb-12 control-panel border-4 border-[#06C755] bg-green-50/10 font-black text-black">
-                                <label className="text-sm text-slate-500 block mb-3 uppercase tracking-widest font-black">分享標題文字 (AltText)</label>
-                                <input type="text" value={altText} onChange={e=>setAltText(e.target.value)} className="w-full p-4 border-none outline-none font-black text-2xl text-black bg-transparent focus:ring-0" placeholder="分享標題..." />
+                            <div className="mb-12 control-panel border-4 border-[#06C755] bg-green-50/10">
+                                <label className="text-sm text-slate-500 block mb-3 font-black uppercase">通知標題文字</label>
+                                <div className="text-xl font-black p-4 bg-white/50 rounded-xl border-2 border-slate-100 text-slate-400">這是我的數位名片，請多指教</div>
                             </div>
                             {renderEditor()}
                         </div>
                     </div>
                     <div className="flex-1 flex flex-col chat-room-bg overflow-hidden text-black font-black">
-                        <div className="h-[90px] bg-white border-b flex items-center px-12 gap-10 shrink-0 shadow-sm relative z-30 font-black text-black"><button onClick={()=>setActiveTab('editor')} className={`h-full border-b-[10px] flex items-center gap-3 transition-all text-xl font-black ${activeTab === 'editor' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}><i data-lucide="eye"></i> 視覺預覽</button><button onClick={()=>setActiveTab('json')} className={`h-full border-b-[10px] flex items-center gap-3 transition-all text-xl font-black ${activeTab === 'json' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}><i data-lucide="code"></i> JSON 代碼</button></div>
-                        <div className="flex-1 overflow-y-auto p-12 flex flex-col items-center custom-scrollbar font-black text-black">
-                            {activeTab === 'editor' ? (<div className="space-y-10 flex flex-col items-center animate-in zoom-in-95 duration-500 font-black text-black"><div className="px-10 py-4 bg-black text-white rounded-full text-sm tracking-[0.5em] font-black uppercase shadow-2xl">Page {activeIndex + 1} LIVE PREVIEW</div><PreviewComp /></div>) : (<div className="w-full max-w-2xl mx-auto"><pre className="bg-slate-900 p-12 rounded-[50px] text-green-400 text-xs overflow-x-auto font-mono w-full shadow-2xl leading-relaxed border border-white/10 font-black">{JSON.stringify(buildJson(), null, 2)}</pre></div>)}
+                        <div className="h-[90px] bg-white border-b flex items-center px-12 gap-10 shrink-0 shadow-sm relative z-30 font-black"><button onClick={()=>setActiveTab('editor')} className={`h-full border-b-[10px] flex items-center gap-3 transition-all text-xl font-black ${activeTab === 'editor' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}><i data-lucide="eye"></i> 視覺預覽</button><button onClick={()=>setActiveTab('json')} className={`h-full border-b-[10px] flex items-center gap-3 transition-all text-xl font-black ${activeTab === 'json' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}><i data-lucide="code"></i> JSON 代碼</button></div>
+                        <div className="flex-1 overflow-y-auto p-12 flex flex-col items-center custom-scrollbar">
+                            {activeTab === 'editor' ? (<div className="space-y-10 flex flex-col items-center"><div className="px-10 py-4 bg-black text-white rounded-full text-sm tracking-[0.5em] font-black uppercase shadow-2xl">Page {activeIndex + 1} LIVE PREVIEW</div><PreviewComp /></div>) : (<div className="w-full max-w-2xl mx-auto"><pre className="bg-slate-900 p-12 rounded-[50px] text-green-400 text-xs overflow-x-auto font-mono w-full shadow-2xl leading-relaxed border border-white/10 font-black">{JSON.stringify(buildJson(), null, 2)}</pre></div>)}
                         </div>
                     </div>
                 </div>
