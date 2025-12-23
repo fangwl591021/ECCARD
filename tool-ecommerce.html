@@ -275,7 +275,7 @@
             footer: {
                 bg: "#ffffff", textEnabled: false, text: "※ 請注意：優惠商品數量有限，售完為止。", textColor: "#666666", textAlign: "center",
                 btn1: { label: "品牌故事", color: "#000000", textColor: "#FFFFFF", uri: "https://line.me" },
-                btn2: { label: "好友分享", color: "#000000", textColor: "#FFFFFF", uri: "https://line.me" }
+                btn2: { label: "好友分享", color: "#000000", textColor: "#FFFFFF", uri: "line://nv/recommendOA/@754tjssx" }
             }
         };
 
@@ -380,8 +380,8 @@
             grid.innerHTML = '';
             state.body.items.forEach(item => {
                 const el = document.createElement('div');
-                el.className = "bg-white rounded p-1 shadow-sm flex flex-col";
-                el.innerHTML = `<div class="relative w-full aspect-square rounded-sm overflow-hidden mb-1"><img src="${item.img}" class="w-full h-full object-cover"></div><div style="background-color: ${state.body.tagBgColor}; color: ${state.body.tagTextColor};" class="text-[8px] font-black text-center py-1 rounded-sm truncate px-1">${item.title}</div>`;
+                el.className = "bg-white rounded-[10px] p-1 shadow-sm flex flex-col";
+                el.innerHTML = `<div class="relative w-full aspect-square rounded-sm overflow-hidden mb-1"><img src="${item.img}" class="w-full h-full object-cover"></div><div style="background-color: ${state.body.tagBgColor}; color: ${state.body.tagTextColor};" class="text-[8px] font-bold text-center py-1 rounded-sm truncate px-1">${item.title}</div>`;
                 grid.appendChild(el);
             });
             const fText = document.getElementById('view-footer-text');
@@ -407,6 +407,8 @@
                 type: "box", layout: "horizontal", margin: idx === 0 ? "none" : "md",
                 contents: row.map((item, cidx) => ({
                     type: "box", layout: "vertical", width: width, margin: cidx === 0 ? "none" : "md",
+                    backgroundColor: "#FFFFFF",
+                    cornerRadius: "10px",
                     contents: [
                         { type: "image", url: item.img, aspectRatio: "1:1", size: "full", aspectMode: "cover" },
                         { type: "box", layout: "vertical", backgroundColor: state.body.tagBgColor, cornerRadius: "sm", paddingAll: "xs", margin: "xs", contents: [{ type: "text", text: item.title, size: "xxs", color: state.body.tagTextColor, align: "center", weight: "bold", wrap: true }] }
