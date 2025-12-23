@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sequential Pro - 業務終極修正版 v3.0.8</title>
+    <title>Sequential Pro - 業務終極修正版 v3.1.0</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -56,14 +56,15 @@
                 badgeText: "HOT ITEM", badgeBg: "#FF0000", badgeRadius: "15px", badgeTop: 20, badgePos: "offsetEnd",
                 avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
                 avatarTop: 60,
+                // 修正預設位移順序: 姓名(155) -> 社群(215) -> 簡介(275)
                 name: "張志明", nameTop: 155, nameColor: "#000000", nameWeight: "bold", nameAlign: "center",
-                desc: "致力於協助企業品牌數位轉型\n擁有超過 15 年的跨國行銷經驗",
-                descTop: 215, descColor: "#000000", descWeight: "regular", descAlign: "center",
-                socialTop: 275,
+                socialTop: 215,
                 icons: [
                     { type: "PHONE", uri: "tel:0912345678" },
                     { type: "LINE", uri: "https://line.me" }
                 ],
+                desc: "致力於協助企業品牌數位轉型\n擁有超過 15 年的跨國行銷經驗",
+                descTop: 275, descColor: "#000000", descWeight: "regular", descAlign: "center",
                 footerBg: "#111111", footerLabel: "聯繫我了解更多", footerUri: "https://line.me",
                 footerThemeColor: "#D4AF37", footerTextColor: "#000000", footerWeight: "bold"
             }
@@ -82,7 +83,10 @@
                 <div className="flex justify-center p-4 min-h-full">
                     <div className="rounded-[45px] shadow-2xl overflow-hidden relative border-[10px] border-black bg-white w-[300px]">
                         <div className="relative h-[450px] overflow-hidden">
+                            {/* 背景底圖 (animated=true) */}
                             <img src={d.url} className="w-full h-full object-cover" alt="背景" />
+                            
+                            {/* 標籤 Box (高度25px, 圓角15px) */}
                             <div className="absolute px-3 text-white font-bold shadow-sm text-[10px] flex items-center justify-center whitespace-nowrap overflow-hidden" style={{ 
                                 top: '15px', 
                                 [d.badgePos === 'offsetStart' ? 'left' : 'right']: '15px', 
@@ -92,14 +96,18 @@
                                 minWidth: '50px'
                             }}>{d.badgeText}</div>
                             
+                            {/* 個人頭像 (預設垂直居中) */}
                             <div className="absolute w-full flex justify-center" style={{ top: (d.avatarTop * scale) + 'px' }}>
                                 <img src={d.avatar} className="w-16 h-16 rounded-full border-2 border-white shadow-xl" alt="頭像" />
                             </div>
+
+                            {/* 順序 1: 姓名 */}
                             <div className="absolute w-full px-4" style={{ 
                                 top: (d.nameTop * scale) + 'px', color: d.nameColor, textAlign: d.nameAlign,
                                 fontWeight: d.nameWeight === 'bold' ? 900 : 400, fontSize: '18px' 
                             }}>{d.name}</div>
                             
+                            {/* 順序 2: 社群圖示 (由位移決定視覺位置) */}
                             <div className="absolute w-full flex justify-center gap-3" style={{ top: (d.socialTop * scale) + 'px' }}>
                                 {d.icons.map((icon, i) => (
                                     <div key={i} className="w-10 h-10 p-2 bg-white/25 rounded-full border border-white/40 flex items-center justify-center shadow-md backdrop-blur-sm">
@@ -107,12 +115,16 @@
                                     </div>
                                 ))}
                             </div>
+
+                            {/* 順序 3: 簡介內容 */}
                             <div className="absolute w-full px-5" style={{ 
                                 top: (d.descTop * scale) + 'px', textAlign: d.descAlign, color: d.descColor, fontSize: '12px'
                             }}>
                                 <p className="preview-text-multiline leading-relaxed" style={{ fontWeight: d.descWeight === 'bold' ? 900 : 400 }}>{d.desc}</p>
                             </div>
                         </div>
+
+                        {/* 底部 Footer */}
                         <div className="p-4" style={{ backgroundColor: d.footerBg }}>
                             <div className="py-3 text-center rounded-xl text-[13px] font-black shadow-md" style={{ 
                                 backgroundColor: d.footerThemeColor, color: d.footerTextColor 
@@ -138,6 +150,7 @@
             const [activeTab, setActiveTab] = useState('editor');
             const [copyStatus, setCopyStatus] = useState("複製 JSON");
 
+            // --- 產生符合 LINE 規格與您指定排序的 JSON ---
             const buildJson = useCallback((d = data) => {
                 const SOCIAL = CONSTANTS.SOCIAL_DATA;
                 return {
@@ -163,10 +176,12 @@
                                     contents: [{ type: "image", url: d.avatar, size: "full", aspectMode: "cover", animated: true }]
                                 }]
                             },
+                            // 1. 姓名
                             {
                                 type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.nameTop), offsetStart: "0px", offsetEnd: "0px",
                                 contents: [{ type: "text", text: d.name, weight: d.nameWeight, size: "lg", color: d.nameColor, align: d.nameAlign }]
                             },
+                            // 2. 社群按鈕
                             {
                                 type: "box", layout: "horizontal", position: "absolute", offsetTop: Utils.toPx(d.socialTop), offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md",
                                 contents: (d.icons || []).map(icon => ({
@@ -175,6 +190,7 @@
                                     contents: [{ type: "image", url: SOCIAL[icon.type]?.url || SOCIAL.NONE.url, size: "full", animated: true }]
                                 }))
                             },
+                            // 3. 簡介內容
                             {
                                 type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.descTop), offsetStart: "15px", offsetEnd: "15px",
                                 contents: [{ type: "text", text: d.desc, wrap: true, size: "xs", color: d.descColor, align: d.descAlign, weight: d.descWeight }]
@@ -212,7 +228,8 @@
                     return {
                         ...prev, avatarTop: newAvatarTop,
                         nameTop: prev.nameTop + diff,
-                        socialTop: prev.socialTop + diff, descTop: prev.descTop + diff
+                        socialTop: prev.socialTop + diff, 
+                        descTop: prev.descTop + diff
                     };
                 });
             }, []);
@@ -224,7 +241,7 @@
                     <div className="w-1/2 bg-white border-r flex flex-col shadow-xl z-10">
                         <div className="sticky-section flex items-center gap-3">
                             <i data-lucide="award" className="w-8 h-8 text-green-600"></i>
-                            <h1 className="text-xl tracking-tighter uppercase">業務版終極修正 v3.0.8</h1>
+                            <h1 className="text-xl tracking-tighter uppercase">業務版終極修正 v3.1.0</h1>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                             <ControlPanel title="1. 媒體層設定 (標籤限10字)" icon="image">
@@ -263,30 +280,7 @@
                                 </div>
                             </ControlPanel>
 
-                            <ControlPanel title="4. 簡介內容排版" icon="align-left">
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="control-label text-xs uppercase tracking-wider">簡介內容與樣式</label>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[10px] text-slate-400">文字顏色</span>
-                                        <input type="color" value={data.descColor} onChange={e => updateField('descColor', e.target.value)} className="w-10 h-10 p-1 border rounded-lg bg-white cursor-pointer shadow-sm" />
-                                    </div>
-                                </div>
-                                <textarea 
-                                    value={data.desc} 
-                                    onChange={e => updateField('desc', e.target.value)} 
-                                    className="w-full p-3 border rounded-xl h-32 resize-none leading-relaxed bg-white shadow-inner focus:ring-2 ring-green-500 ring-opacity-10 outline-none transition-all" 
-                                    placeholder="輸入簡介內容..." 
-                                />
-                                <div className="flex bg-slate-100 p-1 rounded-lg border mt-2">
-                                    {['start', 'center', 'end'].map(a => (
-                                        <button key={a} onClick={() => updateField('descAlign', a)} className={`flex-1 py-2 rounded-md ${data.descAlign === a ? 'bg-white shadow text-green-600' : 'text-slate-400'}`}>
-                                            <i data-lucide={a==='start'?'align-left':a==='center'?'align-center':'align-right'} className="w-4 h-4 mx-auto"></i>
-                                        </button>
-                                    ))}
-                                </div>
-                            </ControlPanel>
-
-                            <ControlPanel title="5. 社群連結管理" icon="share-2">
+                            <ControlPanel title="4. 社群連結管理" icon="share-2">
                                 <div className="flex justify-between items-center mb-4">
                                     <label className="control-label font-black text-xs uppercase tracking-widest">聯絡管道設定</label>
                                     <button 
@@ -334,6 +328,29 @@
                                         </div>
                                     </div>
                                 ))}
+                            </ControlPanel>
+
+                            <ControlPanel title="5. 簡介內容排版" icon="align-left">
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="control-label text-xs uppercase tracking-wider">簡介內容與樣式</label>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-slate-400">文字顏色</span>
+                                        <input type="color" value={data.descColor} onChange={e => updateField('descColor', e.target.value)} className="w-10 h-10 p-1 border rounded-lg bg-white cursor-pointer shadow-sm" />
+                                    </div>
+                                </div>
+                                <textarea 
+                                    value={data.desc} 
+                                    onChange={e => updateField('desc', e.target.value)} 
+                                    className="w-full p-3 border rounded-xl h-32 resize-none leading-relaxed bg-white shadow-inner focus:ring-2 ring-green-500 ring-opacity-10 outline-none transition-all" 
+                                    placeholder="輸入簡介內容..." 
+                                />
+                                <div className="flex bg-slate-100 p-1 rounded-lg border mt-2">
+                                    {['start', 'center', 'end'].map(a => (
+                                        <button key={a} onClick={() => updateField('descAlign', a)} className={`flex-1 py-2 rounded-md ${data.descAlign === a ? 'bg-white shadow text-green-600' : 'text-slate-400'}`}>
+                                            <i data-lucide={a==='start'?'align-left':a==='center'?'align-center':'align-right'} className="w-4 h-4 mx-auto"></i>
+                                        </button>
+                                    ))}
+                                </div>
                             </ControlPanel>
 
                             <ControlPanel title="6. 底部行為按鈕" icon="external-link">
