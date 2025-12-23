@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Carousel Pro - 旗艦核心全移植版 v5.0.4</title>
+    <title>FLEX Carousel Pro - 旗艦核心全移植版 v5.0.5</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -55,10 +55,26 @@
             deepCopy: (o) => JSON.parse(JSON.stringify(o))
         };
 
-        // --- 核心初始模板 (100% 原始參數) ---
+        const ControlPanel = ({ title, icon, children, headerClass = "" }) => (
+            <div className="control-panel shadow-sm">
+                <div className={`panel-header ${headerClass}`}><i data-lucide={icon} className="w-4 h-4"></i><span>{title}</span></div>
+                <div className="panel-content">{children}</div>
+            </div>
+        );
+
+        const AlignButtons = ({ value, onChange }) => (
+            <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                {['start', 'center', 'end'].map(id => (
+                    <button key={id} onClick={() => onChange(id)} className={`flex-1 flex justify-center py-1.5 rounded-md transition-all ${value === id ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-400'}`}>
+                        <i data-lucide={id === 'start' ? 'align-left' : id === 'center' ? 'align-center' : 'align-right'} className="w-4 h-4"></i>
+                    </button>
+                ))}
+            </div>
+        );
+
+        // --- 三大核心原始模板 ---
         const TEMPLATE_P1 = {
-            model: "BUSINESS_CORE",
-            url: "https://aiwe.cc/wp-content/uploads/2025/12/cf75e54791dd1f49f918345fdfe2430b.png",
+            model: "BUSINESS_CORE", url: "https://aiwe.cc/wp-content/uploads/2025/12/cf75e54791dd1f49f918345fdfe2430b.png",
             badgeText: "HOT ITEM", badgeBg: "#FF0000", badgeTop: 20, badgePos: "offsetEnd",
             avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200", avatarTop: 60,
             name: "張志明", nameTop: 155, nameColor: "#000000", nameWeight: "bold", nameAlign: "center",
@@ -82,24 +98,6 @@
             body: { columns: 3, bubbleSize: "mega", bgColor: "#F8F8F8", tagBgColor: "#0D0D0D", tagTextColor: "#FFFFFF", items: [{ title: "商品 A", img: "https://lihi.cc/mwMvo", url: "https://line.me" }, { title: "商品 B", img: "https://lihi.cc/2Nu8G", url: "https://line.me" }, { title: "商品 C", img: "https://lihi.cc/yRfpn", url: "https://line.me" }] },
             footer: { bg: "#ffffff", textEnabled: false, text: "", textColor: "#666666", textAlign: "center", btn1: { label: "品牌故事", color: "#000000", textColor: "#FFFFFF", uri: "https://line.me" }, btn2: { label: "好友分享", color: "#000000", textColor: "#FFFFFF", uri: "line://nv/recommendOA/@754tjssx" } }
         };
-
-        // --- 共用組件 ---
-        const ControlPanel = ({ title, icon, children, headerClass = "" }) => (
-            <div className="control-panel shadow-sm">
-                <div className={`panel-header ${headerClass}`}><i data-lucide={icon} className="w-4 h-4"></i><span>{title}</span></div>
-                <div className="panel-content">{children}</div>
-            </div>
-        );
-
-        const AlignButtons = ({ value, onChange }) => (
-            <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-                {['start', 'center', 'end'].map(id => (
-                    <button key={id} onClick={() => onChange(id)} className={`flex-1 flex justify-center py-1.5 rounded-md transition-all ${value === id ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-400'}`}>
-                        <i data-lucide={id === 'start' ? 'align-left' : id === 'center' ? 'align-center' : 'align-right'} className="w-4 h-4"></i>
-                    </button>
-                ))}
-            </div>
-        );
 
         // --- 視覺渲染引擎 ---
         const FlexPreview = memo(({ data }) => {
@@ -154,7 +152,7 @@
             }
         });
 
-        // --- App 主體 ---
+        // --- App 主應用 ---
         const App = () => {
             const [pages, setPages] = useState([TEMPLATE_P1, Utils.deepCopy(TEMPLATE_P2), Utils.deepCopy(TEMPLATE_P3)]);
             const [activeIdx, setActiveIdx] = useState(0);
@@ -189,8 +187,9 @@
                         bubble.footer = { type: "box", layout: "vertical", spacing: "md", paddingAll: "10px", contents: d.footer.longBtns.map(b => ({ type: "box", layout: "vertical", contents: [{ type: "text", text: b.label, align: "center", color: b.textColor, size: "sm", weight: "bold" }], paddingAll: "10px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "md", action: { type: "uri", uri: b.uri } })) };
                         if (d.footer.shortBtns && d.footer.shortBtns.length > 0) bubble.footer.contents.push({ type: "box", layout: "horizontal", spacing: "md", contents: d.footer.shortBtns.map(b => ({ type: "box", layout: "vertical", spacing: "xs", paddingAll: "8px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "sm", action: { type: "uri", uri: b.uri }, contents: [{ type: "image", url: SOCIAL_DATA[b.type]?.url || SOCIAL_DATA.WEB.url, size: "xxs", aspectRatio: "1:1" }, { type: "text", text: b.label, align: "center", color: b.textColor, size: "xxs" }] })) });
                         return bubble;
-                    } else if (d.model === 'ECOMMERCE_CORE') {
-                        const chunk = (a, size) => Array.from({ length: Math.ceil(a.length / size) }, (v, i) => a.slice(i * size, i * size + size));
+                    }
+                    if (d.model === 'ECOMMERCE_CORE') {
+                        const chunk = (a, s) => Array.from({ length: Math.ceil(a.length / s) }, (v, i) => a.slice(i * s, i * s + s));
                         const items = chunk(d.body.items || [], d.body.columns).map((row, idx) => ({ type: "box", layout: "horizontal", margin: idx === 0 ? "none" : "md", contents: row.map((item, cidx) => ({ type: "box", layout: "vertical", width: d.body.columns === 3 ? "32%" : "23%", margin: cidx === 0 ? "none" : "md", backgroundColor: "#FFFFFF", cornerRadius: "10px", action: { type: "uri", uri: item.url }, contents: [{ type: "image", url: item.img, aspectRatio: "1:1", size: "full", aspectMode: "cover" }, { type: "box", layout: "vertical", backgroundColor: d.body.tagBgColor, cornerRadius: "sm", paddingAll: "xs", margin: "xs", contents: [{ type: "text", text: item.title, size: "xxs", color: d.body.tagTextColor, align: "center", weight: "bold", wrap: true }] }] })) }));
                         const bubble = { type: "bubble", size: d.body.bubbleSize, body: { type: "box", layout: "vertical", paddingAll: "md", backgroundColor: d.body.bgColor, contents: items }, footer: { type: "box", layout: "vertical", spacing: "sm", backgroundColor: d.footer.bg, paddingAll: "md", contents: [] } };
                         if (d.footer.textEnabled) bubble.footer.contents.push({ type: "text", text: d.footer.text, wrap: true, size: "xs", color: d.footer.textColor, align: d.footer.textAlign });
@@ -221,7 +220,7 @@
                 <div className="flex h-screen bg-slate-100 font-black overflow-hidden text-slate-900">
                     <div className="w-[480px] bg-white border-r flex flex-col shadow-2xl z-10">
                         <div className="sticky-section flex flex-col gap-4 bg-white shadow-sm shrink-0">
-                            <h1 className="text-xl flex items-center gap-2 text-green-600 uppercase tracking-tighter italic font-black"><i data-lucide="layers"></i> Carousel Pro v5.0.4</h1>
+                            <h1 className="text-xl flex items-center gap-2 text-green-600 uppercase tracking-tighter italic font-black"><i data-lucide="layers"></i> Carousel Pro v5.0.5</h1>
                             <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
                                 {pages.map((p, i) => (
                                     <div key={i} className="relative group shrink-0">
@@ -241,7 +240,10 @@
                                         <input type="text" value={activePage.url} onChange={e => updateActivePage('url', e.target.value)} placeholder="背景網址" />
                                         <div className="grid grid-cols-2 gap-3 mt-2"><input type="text" maxLength={10} value={activePage.badgeText} onChange={e => updateActivePage('badgeText', e.target.value)} placeholder="標籤內容" /><input type="color" value={activePage.badgeBg} onChange={e => updateActivePage('badgeBg', e.target.value)} /></div>
                                     </ControlPanel>
-                                    <ControlPanel title="2. 垂直位置調整" icon="move-vertical" headerClass="amber-header">
+                                    <ControlPanel title="2. 個人頭像" icon="user-circle">
+                                        <input type="text" value={activePage.avatar} onChange={e => updateActivePage('avatar', e.target.value)} placeholder="頭像網址 (Image URL)" />
+                                    </ControlPanel>
+                                    <ControlPanel title="3. 垂直位置調整" icon="move-vertical" headerClass="amber-header">
                                         <div className="flex justify-between text-xs mb-1 font-bold">連動高度 <span>{activePage.avatarTop}px</span></div>
                                         <input type="range" min="0" max="600" value={activePage.avatarTop} onChange={e => {
                                             const v = parseInt(e.target.value); const diff = v - activePage.avatarTop;
@@ -252,11 +254,11 @@
                                             });
                                         }} className="w-full accent-amber-500 h-2 cursor-pointer" />
                                     </ControlPanel>
-                                    <ControlPanel title="3. 姓名設定" icon="user">
+                                    <ControlPanel title="4. 姓名設定" icon="user">
                                         <div className="flex gap-2 mb-3"><input type="text" value={activePage.name} onChange={e => updateActivePage('name', e.target.value)} className="flex-1 font-bold" /><input type="color" value={activePage.nameColor} onChange={e => updateActivePage('nameColor', e.target.value)} className="w-12 h-10 shadow-sm" /></div>
                                         <AlignButtons value={activePage.nameAlign} onChange={v => updateActivePage('nameAlign', v)} />
                                     </ControlPanel>
-                                    <ControlPanel title="4. 社群按鈕" icon="share-2">
+                                    <ControlPanel title="5. 社群按鈕" icon="share-2">
                                         <button onClick={() => updateActivePage('icons', [...activePage.icons, {type:'LINE', uri:'https://line.me'}])} className="w-full bg-[#06C755] text-white py-2 rounded-xl mb-4 font-black text-xs shadow-md">+ 新增按鈕</button>
                                         {(activePage.icons || []).map((icon, idx) => (
                                             <div key={idx} className="bg-slate-50 p-4 border border-slate-200 rounded-xl mb-3 relative group">
@@ -266,10 +268,10 @@
                                             </div>
                                         ))}
                                     </ControlPanel>
-                                    <ControlPanel title="5. 簡介內容" icon="align-left"><textarea value={activePage.desc} onChange={e => updateActivePage('desc', e.target.value)} className="w-full p-3 h-24 text-xs leading-relaxed mb-2" />
+                                    <ControlPanel title="6. 簡介內容" icon="align-left"><textarea value={activePage.desc} onChange={e => updateActivePage('desc', e.target.value)} className="w-full p-3 h-24 text-xs leading-relaxed mb-2" />
                                         <div className="grid grid-cols-2 gap-3"><AlignButtons value={activePage.descAlign} onChange={v => updateActivePage('descAlign', v)} /><input type="color" value={activePage.descColor} onChange={e => updateActivePage('descColor', e.target.value)} /></div>
                                     </ControlPanel>
-                                    <ControlPanel title="6. 底部行為按鈕" icon="external-link">
+                                    <ControlPanel title="7. 底部行為按鈕" icon="external-link">
                                         <input type="text" value={activePage.footerLabel} onChange={e => updateActivePage('footerLabel', e.target.value)} className="mb-2 font-bold" />
                                         <div className="grid grid-cols-3 gap-3"><div><label className="text-[9px] text-slate-400 block mb-1">區域背景</label><input type="color" value={activePage.footerBg} onChange={e => updateActivePage('footerBg', e.target.value)} /></div><div><label className="text-[9px] text-slate-400 block mb-1">按鈕背景</label><input type="color" value={activePage.footerThemeColor} onChange={e => updateActivePage('footerThemeColor', e.target.value)} /></div><div><label className="text-[9px] text-slate-400 block mb-1">文字顏色</label><input type="color" value={activePage.footerTextColor} onChange={e => updateActivePage('footerTextColor', e.target.value)} /></div></div>
                                     </ControlPanel>
@@ -363,7 +365,7 @@
                         </div>
                     </div>
 
-                    {/* 右側預覽區 */}
+                    {/* --- 右側預覽區 --- */}
                     <div className="flex-1 flex flex-col chat-room-bg overflow-y-auto font-black">
                         <div className="h-[70px] bg-white border-b flex items-center px-10 gap-10 shrink-0 z-30 font-black shadow-sm sticky top-0">
                             <button onClick={() => setActiveTab('editor')} className={`text-sm tracking-widest ${activeTab === 'editor' ? 'text-green-600 border-b-4 border-green-600' : 'text-slate-400'}`}>視覺預覽 (P{activeIdx+1})</button>
