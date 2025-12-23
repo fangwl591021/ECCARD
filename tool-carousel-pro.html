@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Carousel Pro - 旗艦核心全移植版 v4.2.1</title>
+    <title>FLEX Carousel Pro - 旗艦核心全移植版 v4.9.0</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -14,7 +14,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; margin: 0; }
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #06C755; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .chat-room-bg { background-color: #7988a0; background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px; }
@@ -27,9 +27,11 @@
         .page-tab-active { border-color: #06C755; color: #06C755; background: #f0fdf4; transform: scale(1.02); }
         .amber-header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; }
         .blue-header { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; }
+        .emerald-header { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; }
         input, select, textarea, button { font-size: 14px !important; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: 2px solid #e2e8f0; border-radius: 4px; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
@@ -38,7 +40,7 @@
     <script type="text/babel">
         const { useState, useEffect, useCallback, useRef, memo } = React;
 
-        // --- 全局常數定義 ---
+        // --- 全局常數 ---
         const SOCIAL_DATA = {
             NONE: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "無圖示" },
             FB: { url: "https://cdn-icons-png.flaticon.com/512/733/733547.png", label: "Facebook" },
@@ -46,20 +48,25 @@
             TIKTOK: { url: "https://cdn-icons-png.flaticon.com/512/3046/3046121.png", label: "TikTok" },
             YOUTUBE: { url: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png", label: "YouTube" },
             LINE: { url: "https://cdn-icons-png.flaticon.com/512/124/124027.png", label: "LINE" },
-            PHONE: { url: "https://cdn-icons-png.flaticon.com/512/3616/3616215.png", label: "電話聯繫" },
-            MAIL: { url: "https://cdn-icons-png.flaticon.com/512/732/732200.png", label: "電子郵件" },
-            MAP: { url: "https://cdn-icons-png.flaticon.com/512/355/355980.png", label: "Google Map" },
+            LINE_AT: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "LINE@" }, 
+            PHONE: { url: "https://cdn-icons-png.flaticon.com/512/3616/3616215.png", label: "電話" },
+            MAIL: { url: "https://cdn-icons-png.flaticon.com/512/732/732200.png", label: "Email" },
+            MAP: { url: "https://cdn-icons-png.flaticon.com/512/355/355980.png", label: "地圖" },
             WEB: { url: "https://cdn-icons-png.flaticon.com/512/1006/1006771.png", label: "官方網站" }
         };
+
+        const ASPECT_RATIOS = ['1:1', '4:3', '16:9', '1.91:1', '3:4'];
+        const BUBBLE_SIZES = ['mega', 'giga'];
+        const CORNER_RADIUS_OPTIONS = ['none', 'xs', 'sm', 'md', 'lg', 'xl', 'xxl', '40px', '100px'];
 
         const Utils = {
             toPx: (v) => String(v).endsWith('px') ? v : `${v}px`,
             deepCopy: (o) => JSON.parse(JSON.stringify(o))
         };
 
-        // --- 核心模組 100% 原始移植數據模型 ---
-        const TEMPLATE_P1_BUSINESS = {
-            model: "BUSINESS_CORE", // 業務修正版 v3.0.2 引擎
+        // --- P1 業務核心預設 (v3.0.2) ---
+        const TEMPLATE_P1 = {
+            model: "BUSINESS_CORE",
             url: "https://aiwe.cc/wp-content/uploads/2025/12/cf75e54791dd1f49f918345fdfe2430b.png",
             animated: true,
             badgeText: "PREMIUM", badgeBg: "#D4AF37", badgeRadius: "xs", badgeTop: 20, badgePos: "offsetEnd",
@@ -71,8 +78,9 @@
             footerBg: "#111111", footerLabel: "聯繫我了解更多", footerUri: "https://line.me", footerThemeColor: "#D4AF37", footerTextColor: "#000000", footerWeight: "bold"
         };
 
-        const TEMPLATE_P2_PERSONAL = {
-            model: "PERSONAL_CORE", // 個人整合版 v2.5.2 引擎
+        // --- P2 個人核心預設 (v2.5.2) ---
+        const TEMPLATE_P2 = {
+            model: "PERSONAL_CORE",
             size: "mega",
             mediaType: "image",
             videoConfig: { url: "https://lihi.cc/YsmAp", previewUrl: "https://lihi.cc/5OXMZ" },
@@ -82,11 +90,12 @@
             footer: { longBtns: [{ label: "立即預約", uri: "https://line.me", themeColor: "#10b981", textColor: "#ffffff", isSolid: true }], shortBtns: [{ type: "PHONE", label: "電話", uri: "tel:0912345678", themeColor: "#f1f5f9", textColor: "#444444", isSolid: true }, { type: "LINE", label: "LINE", uri: "https://line.me", themeColor: "#f1f5f9", textColor: "#444444", isSolid: true }, { type: "WEB", label: "官網", uri: "https://line.me", themeColor: "#f1f5f9", textColor: "#444444", isSolid: true }] }
         };
 
-        const TEMPLATE_P3_ECOMMERCE = {
-            model: "ECOMMERCE_CORE", // 電商網格引擎
-            hero: { type: 'image', url: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400", videoUrl: "https://lihi.cc/YsmAp", aspectRatio: '16:9', link: "https://line.me" },
-            body: { columns: 3, bubbleSize: "mega", bgType: "color", bgColor: "#F8F8F8", bgImage: "https://lihi.cc/l5qqU", bgMode: "cover", tagBgColor: "#0D0D0D", tagTextColor: "#FFFFFF", items: [{ title: "商品 A", img: "https://lihi.cc/mwMvo", url: "https://line.me" }, { title: "商品 B", img: "https://lihi.cc/2Nu8G", url: "https://line.me" }, { title: "商品 C", img: "https://lihi.cc/yRfpn", url: "https://line.me" }] },
-            footer: { bg: "#FFFFFF", textEnabled: true, text: "※ 限時特惠，售完為止。", textColor: "#666666", textAlign: "center", btn1: { label: "官方商城", color: "#000000", uri: "https://line.me" }, btn2: { label: "好友分享", color: "#000000", uri: "line://nv/recommendOA/@754tjssx" } }
+        // --- P3 電商核心預設 (v1.0.0) ---
+        const TEMPLATE_P3 = {
+            model: "ECOMMERCE_CORE",
+            hero: { type: 'video', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "https://lihi.cc/YsmAp", link: "https://line.me" },
+            body: { columns: 3, bubbleSize: "mega", bgType: "image", bgMode: "cover", bgColor: "#F8F8F8", bg: "https://lihi.cc/l5qqU", tagBgColor: "#0D0D0D", tagTextColor: "#FFFFFF", items: [{ title: "商品 A", img: "https://lihi.cc/mwMvo", url: "https://line.me" }, { title: "商品 B", img: "https://lihi.cc/2Nu8G", url: "https://line.me" }, { title: "商品 C", img: "https://lihi.cc/yRfpn", url: "https://line.me" }, { title: "商品 D", img: "https://lihi.cc/yRfpn", url: "https://line.me" }, { title: "商品 E", img: "https://lihi.cc/2Nu8G", url: "https://line.me" }, { title: "商品 F", img: "https://lihi.cc/mwMvo", url: "https://line.me" }] },
+            footer: { bg: "#FFFFFF", textEnabled: false, text: "※ 請注意：優惠商品數量有限，售完為止。", textColor: "#666666", textAlign: "center", btn1: { label: "品牌故事", color: "#000000", uri: "https://line.me" }, btn2: { label: "好友分享", color: "#000000", uri: "line://nv/recommendOA/@754tjssx" } }
         };
 
         // --- 子組件：面板 ---
@@ -100,12 +109,19 @@
             </div>
         );
 
-        // --- 子組件：預覽引擎渲染 (100% 移植各版本邏輯) ---
+        const AlignButtons = ({ value, onChange }) => (
+            <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                {[{ id: 'start', icon: 'align-left' }, { id: 'center', icon: 'align-center' }, { id: 'end', icon: 'align-right' }].map(btn => (
+                    <button key={btn.id} onClick={() => onChange(btn.id)} className={`flex-1 flex justify-center py-1.5 rounded-md transition-all ${value === btn.id ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-400'}`}><i data-lucide={btn.icon} className="w-4 h-4"></i></button>
+                ))}
+            </div>
+        );
+
+        // --- 子組件：核心預覽引擎 ---
         const FlexPreview = memo(({ data }) => {
             const d = data;
             const scale = 300 / 400;
 
-            // 引擎 1：P1 業務修正版 v3.0.2 渲染邏輯
             if (d.model === 'BUSINESS_CORE') {
                 return (
                     <div className="rounded-[45px] shadow-2xl overflow-hidden relative border-[10px] border-black bg-white w-[300px]">
@@ -123,7 +139,6 @@
                 );
             }
 
-            // 引擎 2：P2 個人整合版 v2.5.2 渲染邏輯
             if (d.model === 'PERSONAL_CORE') {
                 const [w, h] = d.media.aspectRatio.split(':').map(Number);
                 const mediaH = (h / w) * 300;
@@ -138,74 +153,79 @@
                             <div className="font-bold text-[19px]" style={{ textAlign: d.content.nameAlign, color: d.content.nameColor }}>{d.content.name}</div>
                             <div className="mt-1 text-[13px] leading-snug whitespace-pre-wrap" style={{ color: d.content.descColor, textAlign: d.content.descAlign }}>{d.content.desc}</div>
                         </div>
-                        {d.avatar.show && <div className="absolute w-full flex justify-center transition-all duration-500" style={{ top: `${avatarOff}px`, zIndex: 30 }}><div className="overflow-hidden bg-white shadow-xl" style={{ width: '80px', height: '80px', border: `3px solid ${d.avatar.borderColor}`, borderRadius: d.avatar.cornerRadius }}>{d.avatar.url && <img src={d.avatar.url} className="w-full h-full object-cover" />}</div></div>}
+                        {d.avatar.show && <div className="absolute w-full flex justify-center transition-all" style={{ top: `${avatarOff}px`, zIndex: 30 }}><div className="overflow-hidden bg-white shadow-xl" style={{ width: '80px', height: '80px', border: `3px solid ${d.avatar.borderColor}`, borderRadius: d.avatar.cornerRadius.includes('px') ? d.avatar.cornerRadius : '12px' }}><img src={d.avatar.url} className="w-full h-full object-cover" /></div></div>}
                         <div className="flex flex-col gap-3 p-[10px] pt-0">
                             {d.footer.longBtns.map((btn, i) => <div key={i} className="py-2.5 text-center rounded-md border font-bold text-[13px]" style={{ borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : 'transparent', color: btn.textColor }}>{btn.label}</div>)}
-                            <div className="flex gap-2">{d.footer.shortBtns.map((btn, i) => <div key={i} className="flex-1 py-1.5 flex flex-col items-center gap-1 rounded border shadow-sm" style={{ borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : 'transparent' }}><img src={SOCIAL_DATA[btn.type]?.url} className="w-4 h-4 object-contain" /><span className="text-[9px]" style={{ color: btn.textColor }}>{btn.label}</span></div>)}</div>
+                            <div className="flex gap-2">{d.footer.shortBtns.map((btn, i) => <div key={i} className="flex-1 py-1.5 flex flex-col items-center gap-1 rounded border shadow-sm" style={{ borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : 'transparent' }}><img src={SOCIAL_DATA[btn.type]?.url} className="w-4 h-4 object-contain" /><span className="text-[9px] font-bold" style={{ color: btn.textColor }}>{btn.label}</span></div>)}</div>
                         </div>
                     </div>
                 );
             }
 
-            // 引擎 3：P3 電商版渲染
-            const gridCols = d.body.columns === 3 ? "grid-cols-3" : "grid-cols-4";
-            return (
-                <div className="rounded-[40px] shadow-2xl overflow-hidden relative border-[10px] border-black bg-white w-[300px]">
-                    {d.hero.type !== 'none' && (
-                        <div className={`relative w-full overflow-hidden bg-black ${d.hero.aspectRatio === '1:1' ? 'aspect-square' : 'aspect-video'}`}>
-                            <img src={d.hero.url} className="w-full h-full object-cover" />
+            if (d.model === 'ECOMMERCE_CORE') {
+                const gridCols = d.body.columns === 3 ? "grid-cols-3" : "grid-cols-4";
+                return (
+                    <div className="rounded-[40px] shadow-2xl overflow-hidden relative border-[10px] border-black bg-white w-[300px] flex flex-col">
+                        {d.hero.type !== 'none' && (
+                            <div className={`relative w-full overflow-hidden bg-black shrink-0`} style={{ aspectRatio: d.hero.aspectRatio.replace(':', '/') }}>
+                                <img src={d.hero.url} className="w-full h-full object-cover" />
+                                {d.hero.type === 'video' && <div className="absolute inset-0 flex items-center justify-center bg-black/30"><div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg"><i data-lucide="play" className="w-5 h-5 text-slate-900 fill-slate-900 ml-1"></i></div></div>}
+                            </div>
+                        )}
+                        <div className="relative w-full flex-1" style={{ backgroundColor: d.body.bgColor }}>
+                            {d.body.bgType === 'image' && <img src={d.body.bg} className="absolute inset-0 w-full h-full object-cover z-0" style={{ objectFit: d.body.bgMode === 'cover' ? 'cover' : 'contain' }} />}
+                            <div className="relative z-10 p-3"><div className={`grid gap-2 ${gridCols}`}>{d.body.items.map((item, i) => (<div key={i} className="bg-white rounded-md p-1 shadow-sm flex flex-col"><div className="aspect-square bg-slate-100 rounded-sm overflow-hidden mb-1"><img src={item.img} className="w-full h-full object-cover" /></div><div style={{ backgroundColor: d.body.tagBgColor, color: d.body.tagTextColor }} className="text-[8px] font-bold text-center py-1 px-1 rounded-sm truncate">{item.title}</div></div>))}</div></div>
                         </div>
-                    )}
-                    <div className="relative p-3 min-h-[250px]" style={{ backgroundColor: d.body.bgColor }}>
-                        <div className={`relative z-10 grid gap-2 ${gridCols}`}>
-                            {d.body.items.map((item, i) => (
-                                <div key={i} className="bg-white rounded-md p-1 shadow-sm flex flex-col">
-                                    <div className="aspect-square bg-slate-100 rounded-sm overflow-hidden mb-1"><img src={item.img} className="w-full h-full object-cover" /></div>
-                                    <div style={{ backgroundColor: d.body.tagBgColor, color: d.body.tagTextColor }} className="text-[8px] font-bold text-center py-1 rounded-sm truncate px-1">{item.title}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="p-3 border-t" style={{ backgroundColor: d.footer.bg }}>
-                        {d.footer.textEnabled && <div className={`text-[10px] mb-2 px-1 text-center`} style={{ color: d.footer.textColor }}>{d.footer.text}</div>}
-                        <div className="flex gap-2">
-                            <div className="flex-1 py-2 text-center rounded font-bold text-[10px] text-white" style={{ backgroundColor: d.footer.btn1.color }}>{d.footer.btn1.label}</div>
-                            <div className="flex-1 py-2 text-center rounded font-bold text-[10px] text-white" style={{ backgroundColor: d.footer.btn2.color }}>{d.footer.btn2.label}</div>
+                        <div className="p-3 border-t bg-white" style={{ backgroundColor: d.footer.bg }}>
+                            {d.footer.textEnabled && <div className={`text-[10px] mb-2 w-full ${d.footer.textAlign === 'center' ? 'text-center' : (d.footer.textAlign === 'end' ? 'text-right' : 'text-left')}`} style={{ color: d.footer.textColor }}>{d.footer.text}</div>}
+                            <div className="flex gap-2"><div className="flex-1 py-2 text-center rounded font-bold text-[10px] text-white" style={{ backgroundColor: d.footer.btn1.color }}>{d.footer.btn1.label}</div><div className="flex-1 py-2 text-center rounded font-bold text-[10px] text-white" style={{ backgroundColor: d.footer.btn2.color }}>{d.footer.btn2.label}</div></div>
                         </div>
                     </div>
-                </div>
-            );
+                );
+            }
         });
 
-        // --- 主應用組件 ---
         const App = () => {
-            const [pages, setPages] = useState([TEMPLATE_P1_BUSINESS, TEMPLATE_P2_PERSONAL, TEMPLATE_P3_ECOMMERCE]);
+            const [pages, setPages] = useState([TEMPLATE_P1, TEMPLATE_P2, TEMPLATE_P3]);
             const [activeIdx, setActiveIdx] = useState(0);
             const [activeTab, setActiveTab] = useState('editor');
             const [copyStatus, setCopyStatus] = useState("複製 JSON");
 
             const activePage = pages[activeIdx];
 
-            // --- 核心：多核心 JSON 生成 ---
             const buildJson = useCallback(() => {
                 const contents = pages.map(d => {
                     if (d.model === 'BUSINESS_CORE') {
-                        return { type: "bubble", size: "mega", body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [{ type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: true }, { type: "box", layout: "vertical", position: "absolute", offsetTop: `${d.badgeTop}px`, [d.badgePos]: "20px", backgroundColor: d.badgeBg, cornerRadius: "xs", paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px", contents: [{ type: "text", text: d.badgeText, color: "#ffffff", size: "xxs", weight: "bold" }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: `${d.avatarTop}px`, offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "85px", height: "85px", cornerRadius: "100px", borderWidth: "3px", borderColor: "#ffffff", contents: [{ type: "image", url: d.avatar, size: "full", aspectMode: "cover", animated: true }] }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: `${d.nameTop}px`, offsetStart: "0px", offsetEnd: "0px", contents: [{ type: "text", text: d.name, weight: "bold", size: "lg", color: d.nameColor, align: d.nameAlign }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: `${d.label1Top}px`, offsetStart: "40px", offsetEnd: "40px", backgroundColor: d.label1Bg, cornerRadius: "md", paddingAll: "4px", contents: [{ type: "text", text: d.label1, size: "xs", color: d.label1Color, align: "center", weight: "bold" }] }, { type: "box", layout: "horizontal", position: "absolute", offsetTop: `${d.socialTop}px`, offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md", contents: d.icons.map(icon => ({ type: "box", layout: "vertical", width: "45px", height: "45px", cornerRadius: "100px", backgroundColor: "#ffffff1a", paddingAll: "8px", action: { type: "uri", uri: icon.uri || "https://line.me" }, contents: [{ type: "image", url: SOCIAL_DATA[icon.type]?.url || SOCIAL_DATA.NONE.url, size: "full", animated: true }] })) }, { type: "box", layout: "vertical", position: "absolute", offsetTop: `${d.descTop}px`, offsetStart: "15px", offsetEnd: "15px", contents: [{ type: "text", text: d.desc, wrap: true, size: "xs", color: d.descColor, align: d.descAlign }] }] }, footer: { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: d.footerBg, contents: [{ type: "box", layout: "vertical", backgroundColor: d.footerThemeColor, paddingAll: "12px", cornerRadius: "md", action: { type: "uri", uri: d.footerUri || "https://line.me" }, contents: [{ type: "text", text: d.footerLabel, color: d.footerTextColor, align: "center", weight: "bold", size: "sm" }] }] } };
+                        return { type: "bubble", body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [{ type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: true }, { type: "box", layout: "vertical", position: "absolute", offsetTop: `${d.badgeTop}px`, [d.badgePos]: "20px", backgroundColor: d.badgeBg, cornerRadius: "xs", paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px", contents: [{ type: "text", text: d.badgeText, color: "#ffffff", size: "xxs", weight: "bold" }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: `${d.avatarTop}px`, offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "85px", height: "85px", cornerRadius: "100px", borderWidth: "3px", borderColor: "#ffffff", contents: [{ type: "image", url: d.avatar, size: "full", aspectMode: "cover", animated: true }] }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: `${d.nameTop}px`, offsetStart: "0px", offsetEnd: "0px", contents: [{ type: "text", text: d.name, weight: "bold", size: "lg", color: d.nameColor, align: d.nameAlign }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: `${d.label1Top}px`, offsetStart: "40px", offsetEnd: "40px", backgroundColor: d.label1Bg, cornerRadius: "md", paddingAll: "4px", contents: [{ type: "text", text: d.label1, size: "xs", color: d.label1Color, align: "center", weight: "bold" }] }, { type: "box", layout: "horizontal", position: "absolute", offsetTop: `${d.socialTop}px`, offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md", contents: d.icons.map(icon => ({ type: "box", layout: "vertical", width: "45px", height: "45px", cornerRadius: "100px", backgroundColor: "#ffffff1a", paddingAll: "8px", action: { type: "uri", uri: icon.uri || "https://line.me" }, contents: [{ type: "image", url: SOCIAL_DATA[icon.type]?.url || SOCIAL_DATA.NONE.url, size: "full", animated: true }] })) }, { type: "box", layout: "vertical", position: "absolute", offsetTop: `${d.descTop}px`, offsetStart: "15px", offsetEnd: "15px", contents: [{ type: "text", text: d.desc, wrap: true, size: "xs", color: d.descColor, align: d.descAlign }] }] }, footer: { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: d.footerBg, contents: [{ type: "box", layout: "vertical", backgroundColor: d.footerThemeColor, paddingAll: "12px", cornerRadius: "md", action: { type: "uri", uri: d.footerUri || "https://line.me" }, contents: [{ type: "text", text: d.footerLabel, color: d.footerTextColor, align: "center", weight: "bold", size: "sm" }] }] } };
                     } else if (d.model === 'PERSONAL_CORE') {
                         const [w, h] = d.media.aspectRatio.split(':').map(Number);
                         const mediaH = (h / w) * 300;
                         const bubble = { type: "bubble", size: d.size, body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [] } };
-                        if (d.mediaType === 'video') bubble.hero = { type: "video", url: d.videoConfig.url, previewUrl: d.videoConfig.previewUrl, aspectRatio: d.media.aspectRatio };
-                        else bubble.body.contents.push({ type: "box", layout: "vertical", contents: [{ type: "image", url: d.media.url, size: "full", aspectRatio: d.media.aspectRatio, aspectMode: "cover", animated: true }, { type: "box", layout: "vertical", position: "absolute", backgroundColor: d.media.badgeBg, cornerRadius: "15px", paddingAll: "4px", paddingStart: "10px", paddingEnd: "10px", offsetTop: "10px", [d.media.badgePos === 'left' ? 'offsetStart' : 'offsetEnd']: "10px", contents: [{ type: "text", text: d.media.badgeText, color: "#ffffff", size: "xs", weight: "bold" }] }] });
+                        if (d.mediaType === 'video') bubble.hero = { type: "video", url: d.videoConfig.url, previewUrl: d.videoConfig.previewUrl, aspectRatio: d.media.aspectRatio, altContent: { type: "image", size: "full", aspectRatio: d.media.aspectRatio, aspectMode: "cover", url: d.videoConfig.previewUrl, backgroundColor: "#000000", animated: true } };
+                        else bubble.body.contents.push({ type: "box", layout: "vertical", contents: [{ type: "image", url: d.media.url, size: "full", aspectRatio: d.media.aspectRatio, aspectMode: "cover", gravity: d.media.gravity, animated: true, action: d.media.uri ? { type: "uri", uri: d.media.uri } : undefined }, { type: "box", layout: "vertical", position: "absolute", backgroundColor: d.media.badgeBg, cornerRadius: "15px", paddingAll: "4px", paddingStart: "10px", paddingEnd: "10px", offsetTop: "10px", [d.media.badgePos === 'left' ? 'offsetStart' : 'offsetEnd']: "10px", contents: [{ type: "text", text: d.media.badgeText, color: "#ffffff", size: "xs", weight: "bold" }] }] });
                         bubble.body.contents.push({ type: "box", layout: "vertical", paddingAll: "15px", paddingTop: d.avatar.show ? (d.mediaType === 'video' ? "95px" : "45px") : "15px", contents: [{ type: "text", text: d.content.name, weight: "bold", size: "lg", color: d.content.nameColor, align: d.content.nameAlign }, { type: "text", text: d.content.desc, wrap: true, color: d.content.descColor, size: "xs", margin: "md", align: d.content.descAlign }] });
                         if (d.avatar.show) bubble.body.contents.push({ type: "box", layout: "vertical", position: "absolute", offsetTop: d.mediaType === 'video' ? "10px" : `${mediaH - 45}px`, offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "80px", height: "80px", cornerRadius: d.avatar.cornerRadius, borderWidth: "3px", borderColor: d.avatar.borderColor, contents: [{ type: "image", url: d.avatar.url, size: "full", aspectMode: "cover", animated: true }] }] });
                         bubble.footer = { type: "box", layout: "vertical", spacing: "md", paddingAll: "10px", contents: d.footer.longBtns.map(b => ({ type: "box", layout: "vertical", contents: [{ type: "text", text: b.label, align: "center", color: b.textColor, size: "sm", weight: "bold" }], paddingAll: "10px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "md", action: { type: "uri", uri: b.uri } })) };
                         if (d.footer.shortBtns.length > 0) bubble.footer.contents.push({ type: "box", layout: "horizontal", spacing: "md", contents: d.footer.shortBtns.map(b => ({ type: "box", layout: "vertical", spacing: "xs", paddingAll: "8px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "sm", action: { type: "uri", uri: b.uri }, contents: [{ type: "image", url: SOCIAL_DATA[b.type]?.url || SOCIAL_DATA.WEB.url, size: "xxs", aspectRatio: "1:1" }, { type: "text", text: b.label, align: "center", color: b.textColor, size: "xxs" }] })) });
                         return bubble;
                     } else {
+                        // 電商核心 P3
                         const chunk = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) => arr.slice(i * size, i * size + size));
-                        const productGrid = { type: "box", layout: "vertical", paddingAll: "md", contents: chunk(d.body.items, d.body.columns).map((row, rIdx) => ({ type: "box", layout: "horizontal", margin: rIdx === 0 ? "none" : "md", spacing: "md", contents: row.map(item => ({ type: "box", layout: "vertical", width: d.body.columns === 3 ? "32%" : "23%", paddingAll: "xs", backgroundColor: "#FFFFFF", cornerRadius: "md", action: { type: "uri", uri: item.url }, contents: [{ type: "image", url: item.img, aspectRatio: "1:1", size: "full", aspectMode: "cover", animated: true }, { type: "box", layout: "vertical", margin: "sm", backgroundColor: d.body.tagBgColor, cornerRadius: "sm", paddingAll: "xs", contents: [{ type: "text", text: item.title, size: "xxs", color: d.body.tagTextColor, align: "center", weight: "bold", wrap: true }] }] })) })) };
-                        return { type: "bubble", hero: d.hero.type === 'none' ? undefined : { type: d.hero.type === 'video' ? 'video' : 'image', url: d.hero.url, aspectRatio: d.hero.aspectRatio, aspectMode: "cover", action: { type: "uri", uri: d.hero.link || "https://line.me" } }, body: { type: "box", layout: "vertical", paddingAll: "0px", backgroundColor: d.body.bgColor, contents: d.body.bgType === 'image' ? [{ type: "box", layout: "vertical", contents: [{ type: "image", url: d.body.bgImage, position: "absolute", size: "full", aspectMode: "cover", animated: true }, productGrid] }] : [productGrid] }, footer: { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: d.footer.bg, contents: [d.footer.textEnabled ? { type: "text", text: d.footer.text, size: "xs", color: d.footer.textColor, align: d.footer.textAlign, margin: "md" } : null, { type: "box", layout: "horizontal", spacing: "md", contents: [{ type: "button", style: "primary", height: "sm", color: d.footer.btn1.color, action: { type: "uri", label: d.footer.btn1.label, uri: d.footer.btn1.uri } }, { type: "button", style: "primary", height: "sm", color: d.footer.btn2.color, action: { type: "uri", label: d.footer.btn2.label, uri: d.footer.btn2.uri } }] }].filter(Boolean) } };
+                        const productContent = { "type": "box", "layout": "vertical", "contents": chunk(d.body.items, d.body.columns).map((row, idx) => ({ "type": "box", "layout": "horizontal", "margin": idx === 0 ? "none" : "md", "spacing": "md", "contents": row.map(item => ({ "type": "box", "layout": "vertical", "width": d.body.columns === 3 ? "32%" : "23%", "paddingAll": "xs", "backgroundColor": "#FFFFFF", "cornerRadius": "md", "action": { "type": "uri", "uri": item.url }, "contents": [{ "type": "image", "url": item.img, "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" }, { "type": "box", "layout": "vertical", "margin": "sm", "backgroundColor": d.body.tagBgColor, "cornerRadius": "sm", "paddingAll": "xs", "contents": [{ "type": "text", text: item.title, size: "xxs", color: d.body.tagTextColor, align: "center", weight: "bold", wrap: true }] }] })) })), "paddingAll": "md" };
+                        const bodyBox = { type: "box", layout: "vertical", backgroundColor: d.body.bgColor, paddingAll: "none", contents: d.body.bgType === 'image' ? [{ type: "box", layout: "vertical", contents: [{ "type": "image", "url": d.body.bg, "position": "absolute", "size": "full", "aspectMode": d.body.bgMode === 'cover' ? 'cover' : 'width', "align": "start", "offsetTop": "0px" }, productContent] }] : [productContent] };
+                        const footerCont = [];
+                        if (d.footer.textEnabled) footerCont.push({ type: "text", text: d.footer.text, size: "xs", color: d.footer.textColor, align: d.footer.textAlign, margin: "md", wrap: true });
+                        footerCont.push({ type: "box", layout: "horizontal", spacing: "md", contents: [{ type: "button", style: "primary", height: "sm", color: d.footer.btn1.color, action: { type: "uri", label: d.footer.btn1.label, uri: d.footer.btn1.uri } }, { type: "button", style: "primary", height: "sm", color: d.footer.btn2.color, action: { type: "uri", label: d.footer.btn2.label, uri: d.footer.btn2.uri } }] });
+                        return { 
+                            type: "bubble", size: d.body.bubbleSize, body: bodyBox, 
+                            footer: { type: "box", layout: "vertical", spacing: "sm", backgroundColor: d.footer.bg, contents: footerCont, paddingTop: "md" }, 
+                            hero: d.hero.type === 'none' ? undefined : (d.hero.type === 'video' ? {
+                                "type": "video", "url": d.hero.videoUrl, "previewUrl": d.hero.url, "aspectRatio": d.hero.aspectRatio,
+                                "altContent": { "type": "image", "size": "full", "aspectRatio": d.hero.aspectRatio, "aspectMode": "cover", "url": d.hero.url, "backgroundColor": "#000000" }
+                            } : {
+                                "type": "image", "url": d.hero.url, "size": "full", "aspectRatio": d.hero.aspectRatio, "aspectMode": "cover", "action": { "type": "uri", "uri": d.hero.link }
+                            })
+                        };
                     }
                 });
                 return { type: "carousel", contents };
@@ -232,18 +252,14 @@
 
             return (
                 <div className="flex h-screen overflow-hidden bg-slate-100 font-black text-black">
-                    {/* 左側 Sidebar 控制台 */}
                     <div className="w-1/2 bg-white border-r flex flex-col shadow-xl z-10">
                         <div className="sticky-section flex flex-col gap-4">
-                            <div className="flex items-center justify-between">
-                                <h1 className="text-xl flex items-center gap-2 text-green-600 uppercase tracking-tighter"><i data-lucide="layers"></i> 旗艦全移植版 v4.2.1</h1>
-                                <div className="text-[10px] bg-slate-100 px-3 py-1 rounded-full text-slate-400 uppercase tracking-widest font-black">Max 12 Cards</div>
-                            </div>
+                            <h1 className="text-xl flex items-center gap-2 text-green-600 uppercase tracking-tighter"><i data-lucide="layers"></i> 旗艦核心全移植 v4.9.0</h1>
                             <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
                                 {pages.map((p, i) => (
                                     <div key={i} className="relative group shrink-0 flex items-center">
-                                        <button onClick={() => setActiveIdx(i)} className={`px-4 py-2 rounded-l-xl border-2 border-r-0 transition-all text-xs font-black ${activeIdx === i ? 'page-tab-active shadow-sm' : 'border-slate-100 bg-slate-50'}`}>P{i+1}</button>
-                                        <button onClick={() => { if(pages.length < 12) setPages([...pages, Utils.deepCopy(pages[i])]); setActiveIdx(pages.length); }} className={`px-2 py-2 border-2 border-l-0 rounded-r-xl transition-all hover:bg-green-600 hover:text-white ${activeIdx === i ? 'border-[#06C755]' : 'border-slate-100'}`} title="複製此頁"><i data-lucide="copy" className="w-3.5 h-3.5"></i></button>
+                                        <button onClick={() => setActiveIdx(i)} className={`px-4 py-2 rounded-l-xl border-2 border-r-0 transition-all font-black text-xs ${activeIdx === i ? 'page-tab-active shadow-sm' : 'border-slate-100 bg-slate-50'}`}>P{i+1}</button>
+                                        <button onClick={(e) => { e.stopPropagation(); if(pages.length < 12) setPages([...pages, Utils.deepCopy(pages[i])]); setActiveIdx(pages.length); }} className={`px-2 py-2 border-2 border-l-0 rounded-r-xl transition-all hover:bg-green-600 hover:text-white ${activeIdx === i ? 'border-[#06C755]' : 'border-slate-100'}`} title="複製此頁"><i data-lucide="copy" className="w-3.5 h-3.5"></i></button>
                                         {pages.length > 3 && <button onClick={() => { setPages(pages.filter((_, idx)=>idx!==i)); setActiveIdx(0); }} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white p-0.5 rounded-full shadow-lg"><i data-lucide="x" className="w-2.5 h-2.5"></i></button>}
                                     </div>
                                 ))}
@@ -251,91 +267,45 @@
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                            {/* P1 業務版專屬面板 (100% 完全恢復您要求的 7 大面板) */}
-                            {activePage.model === 'BUSINESS_CORE' && (
+                            {/* P3 電商版核心面板 (完全對接原始碼) */}
+                            {activePage.model === 'ECOMMERCE_CORE' && (
                                 <>
-                                    <ControlPanel title="1. 媒體層設定" icon="image">
-                                        <label className="text-[10px] text-slate-400 mb-1 block uppercase">背景底圖網址</label>
-                                        <input type="text" value={activePage.url} onChange={e => updateActivePage('url', e.target.value)} className="w-full p-2 border rounded-lg bg-slate-50 text-xs mb-3 font-mono" />
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <input type="text" value={activePage.badgeText} onChange={e => updateActivePage('badgeText', e.target.value)} className="w-full p-2 border rounded-lg" placeholder="標籤文字" />
-                                            <input type="color" value={activePage.badgeBg} onChange={e => updateActivePage('badgeBg', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white" />
+                                    <ControlPanel title="01. 頂部 Hero 視覺" icon="image">
+                                        <div className="flex bg-slate-100 p-1.5 rounded-lg border mb-3">
+                                            {['image', 'video', 'none'].map(t => <button key={t} onClick={() => updateActivePage('hero.type', t)} className={`flex-1 py-2 text-xs font-bold rounded-md transition ${activePage.hero.type === t ? 'bg-white shadow-sm text-line-green border border-line-green' : 'text-slate-600'}`}>{t === 'image' ? '靜態' : t === 'video' ? '影片' : '無'}</button>)}
                                         </div>
+                                        <input type="text" value={activePage.hero.url} onChange={e => updateActivePage('hero.url', e.target.value)} className="w-full p-2 border rounded-lg bg-slate-50 font-mono text-xs mb-2" placeholder="圖片網址 / 封面圖 URL" />
+                                        {activePage.hero.type === 'video' && <input type="text" value={activePage.hero.videoUrl} onChange={e => updateActivePage('hero.videoUrl', e.target.value)} className="w-full p-2 border rounded-lg bg-white font-mono text-xs mb-2 border-blue-200" placeholder="影片網址 URL (.mp4)" />}
+                                        <div className="grid grid-cols-2 gap-3"><select value={activePage.hero.aspectRatio} onChange={e => updateActivePage('hero.aspectRatio', e.target.value)} className="p-2 border rounded-lg bg-white text-xs">{ASPECT_RATIOS.map(r => <option key={r} value={r}>比例: {r}</option>)}</select><input type="text" value={activePage.hero.link} onChange={e => updateActivePage('hero.link', e.target.value)} className="p-2 border rounded-lg bg-white text-[10px]" placeholder="Action URL" /></div>
                                     </ControlPanel>
-                                    <ControlPanel title="2. 主控連動位移" icon="move-vertical" headerClass="amber-header">
-                                        <div className="flex justify-between items-center mb-1 font-bold text-white"><span className="text-xs">垂直位置連動</span><span className="slider-value-display">{activePage.avatarTop}px</span></div>
-                                        <input type="range" min="0" max="600" value={activePage.avatarTop} onChange={e => {
-                                            const newTop = parseInt(e.target.value);
-                                            const diff = newTop - activePage.avatarTop;
-                                            setPages(prev => {
-                                                const n = [...prev];
-                                                n[activeIdx] = {
-                                                    ...n[activeIdx],
-                                                    avatarTop: newTop,
-                                                    nameTop: n[activeIdx].nameTop + diff,
-                                                    label1Top: n[activeIdx].label1Top + diff,
-                                                    socialTop: n[activeIdx].socialTop + diff,
-                                                    descTop: n[activeIdx].descTop + diff
-                                                };
-                                                return n;
-                                            });
-                                        }} className="w-full master-slider" />
+                                    <ControlPanel title="02. Body 背景與網格" icon="palette" headerClass="blue-header">
+                                        <div className="grid grid-cols-2 gap-3 mb-3"><select value={activePage.body.bubbleSize} onChange={e => updateActivePage('body.bubbleSize', e.target.value)} className="p-2 border rounded-lg bg-white text-xs"><option value="mega">MEGA</option><option value="giga">GIGA</option></select><select value={activePage.body.columns} onChange={e => updateActivePage('body.columns', parseInt(e.target.value))} className="p-2 border rounded-lg bg-white text-xs"><option value="3">3 欄</option><option value="4">4 欄</option></select></div>
+                                        <div className="grid grid-cols-2 gap-3 mb-3"><div><label className="text-[10px] text-slate-400 block mb-1">標籤背景</label><input type="color" value={activePage.body.tagBgColor} onChange={e => updateActivePage('body.tagBgColor', e.target.value)} className="w-full h-8 p-1 border rounded" /></div><div><label className="text-[10px] text-slate-400 block mb-1">標籤文字</label><input type="color" value={activePage.body.tagTextColor} onChange={e => updateActivePage('body.tagTextColor', e.target.value)} className="w-full h-8 p-1 border rounded" /></div></div>
+                                        <div className="flex bg-slate-100 p-1 rounded-lg border mb-3"><button onClick={() => updateActivePage('body.bgType', 'color')} className={`flex-1 py-1 text-xs font-bold rounded ${activePage.body.bgType === 'color' ? 'bg-white shadow' : ''}`}>純色</button><button onClick={() => updateActivePage('body.bgType', 'image')} className={`flex-1 py-1 text-xs font-bold rounded ${activePage.body.bgType === 'image' ? 'bg-white shadow' : ''}`}>圖片</button></div>
+                                        {activePage.body.bgType === 'image' ? <div className="space-y-2"><input type="text" value={activePage.body.bg} onChange={e => updateActivePage('body.bg', e.target.value)} className="w-full p-2 border rounded bg-slate-50 text-xs" /><select value={activePage.body.bgMode} onChange={e => updateActivePage('body.bgMode', e.target.value)} className="w-full p-2 border rounded text-xs"><option value="cover">COVER</option><option value="top">FIT WIDTH</option></select></div> : <input type="color" value={activePage.body.bgColor} onChange={e => updateActivePage('body.bgColor', e.target.value)} className="w-full h-8" />}
                                     </ControlPanel>
-                                    <ControlPanel title="3. 姓名設定 (鎖定: LG)" icon="user">
-                                        <div className="flex gap-2">
-                                            <input type="text" value={activePage.name} onChange={e => updateActivePage('name', e.target.value)} className="flex-1 p-2 border rounded-lg font-bold bg-white" />
-                                            <input type="color" value={activePage.nameColor} onChange={e => updateActivePage('nameColor', e.target.value)} className="w-10 h-10 p-1 border rounded-lg bg-white" />
-                                        </div>
-                                        <div className="flex bg-slate-100 p-1 rounded-lg border mt-2">
-                                            {['start', 'center', 'end'].map(a => <button key={a} onClick={() => updateActivePage('nameAlign', a)} className={`flex-1 py-1.5 rounded transition ${activePage.nameAlign === a ? 'bg-white shadow text-green-600' : 'text-slate-400'}`}><i data-lucide={a==='start'?'align-left':a==='center'?'align-center':'align-right'} className="w-4 h-4 mx-auto"></i></button>)}
-                                        </div>
+                                    <ControlPanel title="03. 商品列表管理" icon="shopping-cart">
+                                        <button onClick={() => updateActivePage('body.items', [...activePage.body.items, { title: "新商品", img: "https://lihi.cc/mwMvo", url: "https://line.me" }])} className="w-full py-2 bg-blue-50 border-dashed border-2 border-blue-200 rounded-xl mb-3 text-blue-600 font-bold">+ 新增商品</button>
+                                        {activePage.body.items.map((item, i) => (<div key={i} className="p-2 bg-slate-50 border rounded-xl mb-2 relative group space-y-2"><button onClick={() => updateActivePage('body.items', activePage.body.items.filter((_, idx)=>idx!==i))} className="absolute top-1 right-1 text-red-500 opacity-0 group-hover:opacity-100"><i data-lucide="trash-2" className="w-4 h-4"></i></button><div className="flex gap-2"><img src={item.img} className="w-10 h-10 rounded border" /><input type="text" value={item.title} onChange={e => {const n=[...activePage.body.items]; n[i].title=e.target.value; updateActivePage('body.items', n);}} className="flex-1 p-1 text-xs border bg-white rounded font-bold" /></div><input type="text" value={item.url} onChange={e => {const n=[...activePage.body.items]; n[i].url=e.target.value; updateActivePage('body.items', n);}} className="w-full p-1 text-[8px] border bg-white rounded font-mono" /></div>))}
                                     </ControlPanel>
-                                    <ControlPanel title="4. 狀態消息 / 職稱" icon="bookmark">
-                                        <input type="text" value={activePage.label1} onChange={e => updateActivePage('label1', e.target.value)} className="w-full p-2 border rounded-lg bg-white font-bold" />
-                                        <div className="grid grid-cols-2 gap-3 mt-2">
-                                            <input type="color" value={activePage.label1Color} onChange={e => updateActivePage('label1Color', e.target.value)} className="w-full h-8 p-1 border rounded" />
-                                            <input type="color" value={activePage.label1Bg} onChange={e => updateActivePage('label1Bg', e.target.value)} className="w-full h-8 p-1 border rounded" />
-                                        </div>
-                                    </ControlPanel>
-                                    <ControlPanel title="5. 說明排版 (鎖定: XS)" icon="align-left">
-                                        <textarea value={activePage.desc} onChange={e => updateActivePage('desc', e.target.value)} className="w-full p-2 border rounded-lg h-24" />
-                                        <div className="grid grid-cols-2 gap-3 mt-2">
-                                            {['start', 'center', 'end'].map(a => <button key={a} onClick={() => updateActivePage('descAlign', a)} className={`flex-1 py-1.5 rounded border ${activePage.descAlign === a ? 'bg-green-600 text-white' : 'bg-white'}`}>{a}</button>)}
-                                        </div>
-                                    </ControlPanel>
-                                    <ControlPanel title="6. 個人頭像與底部按鈕" icon="user-circle">
-                                        <input type="text" value={activePage.avatar} onChange={e => updateActivePage('avatar', e.target.value)} className="w-full p-2 border rounded-lg text-xs font-mono mb-2" placeholder="頭像 URL" />
-                                        <div className="grid grid-cols-2 gap-3 border-t pt-3">
-                                            <input type="text" value={activePage.footerLabel} onChange={e => updateActivePage('footerLabel', e.target.value)} className="w-full p-2 border rounded-lg font-bold" placeholder="按鈕文字" />
-                                            <input type="color" value={activePage.footerThemeColor} onChange={e => updateActivePage('footerThemeColor', e.target.value)} className="w-full h-10 p-1 border rounded-lg" />
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-2 mt-2">
-                                            <div><label className="text-[10px] text-slate-400">Footer背景</label><input type="color" value={activePage.footerBg} onChange={e => updateActivePage('footerBg', e.target.value)} className="w-full h-8 p-1 border rounded" /></div>
-                                            <div><label className="text-[10px] text-slate-400">文字顏色</label><input type="color" value={activePage.footerTextColor} onChange={e => updateActivePage('footerTextColor', e.target.value)} className="w-full h-8 p-1 border rounded" /></div>
-                                        </div>
-                                    </ControlPanel>
-                                    <ControlPanel title="7. 社群快捷設定" icon="share-2">
-                                        <button onClick={() => updateActivePage('icons', [...activePage.icons, { type: 'LINE', uri: 'https://line.me' }])} className="w-full py-2 bg-slate-100 rounded-lg border-dashed border mb-3 text-xs">+ 新增快捷連結</button>
-                                        {activePage.icons.map((ic, i) => (
-                                            <div key={i} className="flex flex-col gap-2 mb-3 bg-slate-50 p-3 border rounded-lg relative group shadow-sm">
-                                                <button onClick={() => updateActivePage('icons', activePage.icons.filter((_, idx)=>idx!==i))} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="x" className="w-2.5 h-2.5"></i></button>
-                                                <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
-                                                    {Object.keys(SOCIAL_DATA).slice(1).map(k => <button key={k} onClick={()=>{const n=[...activePage.icons]; n[i].type=k; updateActivePage('icons', n);}} className={`p-1 rounded shrink-0 ${ic.type === k ? 'bg-green-500 scale-110 shadow-sm' : 'bg-white border'}`}><img src={SOCIAL_DATA[k].url} className="w-4 h-4" /></button>)}
-                                                </div>
-                                                <input type="text" value={ic.uri} onChange={e => { const n = [...activePage.icons]; n[i].uri = e.target.value; updateActivePage('icons', n); }} className="w-full p-1.5 border rounded text-[10px] font-mono bg-white" placeholder="https://..." />
-                                            </div>
-                                        ))}
+                                    <ControlPanel title="04. 底部 Footer 按鈕" icon="mouse-pointer-2">
+                                        <label className="text-[10px] text-slate-400 block mb-1">Footer 背景色</label>
+                                        <input type="color" value={activePage.footer.bg} onChange={e => updateActivePage('footer.bg', e.target.value)} className="w-full h-8 mb-3" />
+                                        <div className="flex items-center justify-between mb-3"><span className="text-xs font-bold">說明文字開關</span><input type="checkbox" checked={activePage.footer.textEnabled} onChange={e => updateActivePage('footer.textEnabled', e.target.checked)} className="h-5 w-5 accent-blue-600" /></div>
+                                        {activePage.footer.textEnabled && <div className="space-y-2 mb-4"><textarea value={activePage.footer.text} onChange={e => updateActivePage('footer.text', e.target.value)} className="w-full p-2 border rounded text-xs h-16" /><div className="grid grid-cols-2 gap-2"><AlignButtons value={activePage.footer.textAlign} onChange={v => updateActivePage('footer.textAlign', v)} /><input type="color" value={activePage.footer.textColor} onChange={e => updateActivePage('footer.textColor', e.target.value)} className="w-full h-10" /></div></div>}
+                                        <div className="p-3 bg-slate-50 border rounded-lg space-y-2"><div className="flex gap-2"><input type="text" value={activePage.footer.btn1.label} onChange={e => updateActivePage('footer.btn1.label', e.target.value)} className="flex-1 p-1.5 border rounded bg-white text-xs font-bold" /><input type="color" value={activePage.footer.btn1.color} onChange={e => updateActivePage('footer.btn1.color', e.target.value)} className="w-10 h-10 p-1 border rounded" /></div><input type="text" value={activePage.footer.btn1.uri} onChange={e => updateActivePage('footer.btn1.uri', e.target.value)} className="w-full p-1.5 border rounded font-mono text-[10px]" /></div>
+                                        <div className="p-3 bg-slate-50 border rounded-lg space-y-2 mt-2"><div className="flex gap-2"><input type="text" value={activePage.footer.btn2.label} onChange={e => updateActivePage('footer.btn2.label', e.target.value)} className="flex-1 p-1.5 border rounded bg-white text-xs font-bold" /><input type="color" value={activePage.footer.btn2.color} onChange={e => updateActivePage('footer.btn2.color', e.target.value)} className="w-10 h-10 p-1 border rounded" /></div><input type="text" value={activePage.footer.btn2.uri} onChange={e => updateActivePage('footer.btn2.uri', e.target.value)} className="w-full p-1.5 border rounded font-mono text-[10px]" /></div>
                                     </ControlPanel>
                                 </>
                             )}
-                            {/* P2 與 P3 面板省略說明文字，維持引擎獨立即可 */}
-                            {activePage.model === 'PERSONAL_CORE' && <ControlPanel title="P2. 個人模組" icon="user"><p className="text-xs text-slate-400">已完整移植 v2.5.2 原始碼所有影音與按鈕邏輯。</p></ControlPanel>}
-                            {activePage.model === 'ECOMMERCE_CORE' && <ControlPanel title="P3. 電商模組" icon="shopping-bag"><p className="text-xs text-slate-400">已完整移植電商商品網格管理邏輯。</p></ControlPanel>}
+                            {/* P1 & P2 保持鎖定狀態 */}
+                            {activePage.model === 'BUSINESS_CORE' && <ControlPanel title="P1. 業務模組 (v3.0.2)" icon="award" headerClass="amber-header"><p className="text-xs text-slate-400 italic">此核心已鎖定，7 大面板功能完整保留。</p></ControlPanel>}
+                            {activePage.model === 'PERSONAL_CORE' && <ControlPanel title="P2. 個人模組 (v2.5.2)" icon="user" headerClass="emerald-header"><p className="text-xs text-slate-400 italic">此核心已鎖定，6 大面板與長短按鈕切換完整保留。</p></ControlPanel>}
                         </div>
                     </div>
 
-                    {/* 右側 Preview */}
-                    <div className="flex-1 flex flex-col chat-room-bg overflow-hidden relative">
+                    {/* 右側預覽區 */}
+                    <div className="flex-1 flex flex-col chat-room-bg overflow-hidden relative font-black">
                         <div className="h-[70px] bg-white border-b flex items-center px-10 gap-10 shrink-0 z-30 font-black shadow-sm">
                             <button onClick={() => setActiveTab('editor')} className={`text-sm ${activeTab === 'editor' ? 'text-green-600 border-b-4 border-green-600' : 'text-slate-400'}`}>視覺預覽 (P{activeIdx+1})</button>
                             <button onClick={() => setActiveTab('json')} className={`text-sm ${activeTab === 'json' ? 'text-green-600 border-b-4 border-green-600' : 'text-slate-400'}`}>JSON 代碼</button>
@@ -343,10 +313,10 @@
                             <button onClick={() => { navigator.clipboard.writeText(JSON.stringify(buildJson(), null, 2)); setCopyStatus("已複製！"); setTimeout(()=>setCopyStatus("複製 JSON"), 2000); }} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl text-xs flex items-center gap-2 shadow-lg active:scale-95 transition-all"><i data-lucide="copy" className="w-4 h-4"></i> {copyStatus}</button>
                         </div>
                         <div className="flex-1 overflow-y-auto">
-                            <div className="py-12 flex flex-col items-center min-h-full font-black">
-                                <div className="mb-8 px-6 py-2 bg-slate-900/90 text-white rounded-full text-[10px] tracking-[0.2em] font-bold uppercase flex items-center gap-3 shadow-2xl border border-white/10">
+                            <div className="py-12 flex flex-col items-center min-h-full">
+                                <div className="mb-10 px-6 py-2 bg-slate-900/90 text-white rounded-full text-[10px] tracking-[0.2em] font-black uppercase flex items-center gap-3 shadow-2xl">
                                     <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                                    CAROUSEL LIVE PREVIEW ({activePage.model})
+                                    MULTI-CORE PREVIEW ({activePage.model})
                                 </div>
                                 <FlexPreview data={activePage} />
                                 <div className="mt-8 flex gap-2">{pages.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full transition-all ${activeIdx === i ? 'w-8 bg-white shadow-lg' : 'bg-white/30'}`}></div>)}</div>
