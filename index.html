@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 旗艦分類聚合版 (v2.7.2)</title>
+    <title>FLEX Hub Pro - 旗艦分類聚合版 (v2.7.3)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -42,7 +42,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, Fragment, useCallback } = React;
 
-        const APP_VERSION = "v2.7.2";
+        const APP_VERSION = "v2.7.3";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
@@ -94,6 +94,7 @@
             const [toast, setToast] = useState(null);
             const [collapsedGroups, setCollapsedGroups] = useState({ CARDS: false, TOOLS: false });
 
+            // 此變數儲存「當前編輯中」的 Flex JSON
             const [currentJson, setCurrentJson] = useState("");
             const iframeRef = useRef(null);
 
@@ -112,32 +113,23 @@
                 const init = async () => {
                     try {
                         const url = window.location.href;
-                        // 加強開發環境判定 (Canvas 預覽、GAS 編輯器預覽、或本地測試)
                         const isDev = url.includes('usercontent.goog') || url.includes('localhost') || url.includes('127.0.0.1');
                         
                         if (isDev) {
-                            console.log("偵測到開發環境，繞過 LIFF 登入");
                             setUser({ uid: 'DEBUG_USER', displayName: '管理員' });
                             await refreshFiles('DEBUG_USER', false); 
                             setViewState('MAIN'); 
                             return;
                         }
 
-                        console.log("初始化 LIFF...");
                         await liff.init({ liffId: LIFF_ID });
-                        
-                        if (!liff.isLoggedIn()) { 
-                            console.log("未登入，顯示登入畫面");
-                            setViewState('LOGIN'); 
-                            return; 
-                        }
+                        if (!liff.isLoggedIn()) { setViewState('LOGIN'); return; }
 
                         const lp = await liff.getProfile();
                         setUser({ uid: lp.userId, displayName: lp.displayName });
                         await refreshFiles(lp.userId, false); 
                         setViewState('MAIN');
                     } catch (e) { 
-                        console.error("LIFF 初始化錯誤:", e);
                         setInitError(e.message);
                         setViewState('LOGIN'); 
                     }
@@ -145,9 +137,21 @@
                 init();
             }, [refreshFiles]);
 
+            // 當開啟檔案或切換專案時的邏輯
             useEffect(() => {
+                // 【關鍵修復】: 當開啟檔案時，立即將暫存區同步為該專案的內容，避免抓到上一個專案的數據
+                if (activeFile) {
+                    setCurrentJson(activeFile.content || "");
+                } else {
+                    setCurrentJson("");
+                }
+
                 const handleMessage = (event) => {
-                    if (event.data?.type === 'SYNC_FLEX_DATA') setCurrentJson(event.data.json);
+                    // 接收編輯器傳回的最新 JSON
+                    if (event.data?.type === 'SYNC_FLEX_DATA') {
+                        setCurrentJson(event.data.json);
+                    }
+                    // 當編輯器準備好時，將舊數據塞進去
                     if (event.data?.type === 'CHILD_READY' && activeFile && iframeRef.current) {
                         iframeRef.current.contentWindow.postMessage({ type: 'LOAD_FLEX_DATA', json: activeFile.content }, '*');
                     }
@@ -171,6 +175,7 @@
                     const result = await res.json();
                     if (result.success) { 
                         showMsg("✅ 儲存成功！"); 
+                        // 更新本地快照，確保內容一致
                         setActiveFile(prev => ({ ...prev, content: currentJson }));
                         await refreshFiles(user.uid, true); 
                     }
@@ -183,6 +188,7 @@
                 try {
                     const content = typeof currentJson === 'string' ? JSON.parse(currentJson) : currentJson;
                     const clean = JSON.parse(JSON.stringify(content));
+                    // 確保發送純粹的 Flex 內容，移除輔助欄位
                     ["altText", "_pages", "pages", "isVisible", "template"].forEach(k => delete clean[k]);
                     
                     const result = await liff.shareTargetPicker([{
@@ -223,7 +229,7 @@
                         showMsg("🗑️ 已刪除");
                         await refreshFiles(user.uid, true);
                     } else {
-                        showMsg("❌ 刪除失敗: " + (result.message || "未知錯誤"));
+                        showMsg("❌ 刪除失敗");
                     }
                 } catch (e) { showMsg("❌ 通訊失敗"); }
                 setIsLoading(false);
@@ -231,9 +237,9 @@
 
             if (viewState === 'LOADING') return (
                 <div className="h-screen w-screen flex flex-col items-center justify-center bg-white font-black italic">
-                    <div className="animate-pulse flex flex-col items-center">
+                    <div className="animate-pulse flex flex-col items-center text-[#06C755]">
                         <div className="w-16 h-16 border-4 border-[#06C755] border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <span>系統初始化中...</span>
+                        <span>系統載入中...</span>
                     </div>
                 </div>
             );
@@ -244,23 +250,10 @@
                         <div className="w-20 h-20 bg-[#06C755] rounded-3xl flex items-center justify-center text-white mb-8 shadow-lg">
                             <Icon name="menu" className="w-10 h-10" />
                         </div>
-                        <h1 className="text-2xl mb-2 italic">FLEX HUB PRO</h1>
+                        <h1 className="text-2xl mb-2 italic uppercase">Flex Hub Pro</h1>
                         <p className="text-slate-400 text-sm mb-10 font-bold">請先完成 LINE 身份驗證</p>
-                        
-                        <button onClick={()=>liff.login()} className="w-full bg-[#06C755] text-white py-5 rounded-2xl font-black shadow-xl active:scale-95 transition-all text-lg hover:bg-[#05b34c]">
-                            登入系統
-                        </button>
-
-                        {initError && (
-                            <div className="mt-8 p-4 bg-red-50 text-red-500 rounded-xl text-xs w-full overflow-hidden">
-                                <p className="font-bold mb-1">診斷資訊：</p>
-                                <p className="opacity-70 break-all">{initError}</p>
-                            </div>
-                        )}
-                        
-                        <button onClick={() => { setUser({ uid: 'DEBUG_USER', displayName: '開發者' }); setViewState('MAIN'); refreshFiles('DEBUG_USER', false); }} className="mt-6 text-slate-300 hover:text-slate-500 text-xs underline">
-                            開發者跳過登入 (僅供測試)
-                        </button>
+                        <button onClick={()=>liff.login()} className="w-full bg-[#06C755] text-white py-5 rounded-2xl font-black shadow-xl active:scale-95 transition-all text-lg hover:bg-[#05b34c]">登入系統</button>
+                        <button onClick={() => { setUser({ uid: 'DEBUG_USER', displayName: '開發者' }); setViewState('MAIN'); refreshFiles('DEBUG_USER', false); }} className="mt-6 text-slate-300 hover:text-slate-500 text-xs underline">跳過登入 (測試用)</button>
                     </div>
                 </div>
             );
@@ -302,11 +295,11 @@
                             ))}
                         </nav>
                         
-                        <div className="p-4 border-t border-slate-100 flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-400">UID</div>
+                        <div className="p-4 border-t border-slate-100 flex items-center gap-3 bg-slate-50">
+                            <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] text-slate-400">UID</div>
                             <div className="flex flex-col overflow-hidden">
-                                <span className="text-[10px] text-slate-300 truncate">使用者 ID</span>
-                                <span className="text-[10px] text-slate-500 truncate">{user?.uid}</span>
+                                <span className="text-[10px] text-slate-300 truncate uppercase">User Profile</span>
+                                <span className="text-[10px] text-slate-500 truncate">{user?.displayName || "管理者"}</span>
                             </div>
                         </div>
                     </aside>
@@ -315,8 +308,10 @@
                         {activeFile ? (
                             <div className="h-full flex flex-col animate-in fade-in duration-500">
                                 <div className="h-24 border-b flex items-center px-10 justify-between bg-white shadow-md z-10">
-                                    <button onClick={()=>setActiveFile(null)} className="font-black text-black flex items-center gap-3 hover:text-[#06C755] transition-colors shrink-0 text-lg"><span>← 返回</span></button>
-                                    <input type="text" value={activeFile.name} onChange={e=>setActiveFile({...activeFile, name: e.target.value})} className="bg-slate-100 border-2 border-black rounded-2xl px-6 py-3 font-black text-center max-w-xl mx-8 outline-none text-xl focus:bg-white transition-all shadow-inner" />
+                                    <button onClick={()=>setActiveFile(null)} className="font-black text-black flex items-center gap-3 hover:text-[#06C755] transition-colors shrink-0 text-lg"><span>← 返回清單</span></button>
+                                    <div className="flex-1 flex justify-center px-4">
+                                        <input type="text" value={activeFile.name} onChange={e=>setActiveFile({...activeFile, name: e.target.value})} className="bg-slate-100 border-2 border-black rounded-2xl px-6 py-3 font-black text-center w-full max-w-lg outline-none text-xl focus:bg-white transition-all shadow-inner" placeholder="請輸入專案名稱..." />
+                                    </div>
                                     <div className="flex items-center gap-4 shrink-0">
                                         <button onClick={handleTestSend} className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-blue-700">
                                             <Icon name="send" /> <span>測試發送</span>
@@ -324,6 +319,7 @@
                                         <button onClick={handleSave} className="bg-black text-white px-10 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-slate-800"><Icon name="save" /> <span>儲存專案</span></button>
                                     </div>
                                 </div>
+                                {/* 重要：iframe 的 src 會根據 activeModuleId 決定載入哪個編輯器 */}
                                 <iframe ref={iframeRef} src={currentProject.url} className="flex-1 border-none shadow-inner"></iframe>
                             </div>
                         ) : (
@@ -333,10 +329,13 @@
                                     <div className="flex gap-4">
                                         {selectedIds.size > 0 && (
                                             <button onClick={handleSendSelected} className="bg-blue-600 text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl active:scale-95 transition-all hover:bg-blue-700 animate-bounce">
-                                                <Icon name="send" /> 發送已選 ({selectedIds.size})
+                                                <Icon name="send" /> 批次發送 ({selectedIds.size})
                                             </button>
                                         )}
-                                        <button onClick={()=>setActiveFile({id: String(Date.now()), name:"新專案", content: null})} className="bg-[#06C755] text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl active:scale-95 transition-all hover:-translate-y-1">＋ 建立新設計</button>
+                                        <button onClick={()=>{
+                                            // 建立新專案時，強制重置數據狀態
+                                            setActiveFile({id: String(Date.now()), name:"新專案", content: null});
+                                        }} className="bg-[#06C755] text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl active:scale-95 transition-all hover:-translate-y-1">＋ 建立新設計</button>
                                     </div>
                                 </div>
                                 <div className="bg-white border-2 border-slate-100 rounded-[40px] overflow-hidden shadow-2xl">
@@ -366,7 +365,7 @@
                                                     <td className="p-8 text-xl font-black text-black cursor-pointer" onClick={()=>setActiveFile(f)}>{f.name || "未命名設計"}</td>
                                                     <td className="p-8 text-center">
                                                         <div className="flex justify-center items-center gap-10">
-                                                            <button onClick={()=>setActiveFile(f)} className="text-[#06C755] hover:underline font-black text-lg uppercase italic tracking-tighter">編輯</button>
+                                                            <button onClick={()=>setActiveFile(f)} className="text-[#06C755] hover:underline font-black text-lg uppercase italic tracking-tighter">編輯內容</button>
                                                             <button onClick={() => handleDelete(f.id)} className="text-red-500 transition-all hover:scale-110"><Icon name="trash" className="w-8 h-8" /></button>
                                                         </div>
                                                     </td>
