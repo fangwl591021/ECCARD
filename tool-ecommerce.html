@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人電商版 LINE Flex Message Editor - 旗艦修正版</title>
+    <title>個人電商版 LINE Flex Message Editor</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; margin: 0; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
         
         .chat-room-bg {
             background-color: #7988a0;
@@ -42,8 +42,8 @@
         .aspect-1_91-1 { aspect-ratio: 1.91 / 1; }
         .aspect-3-4 { aspect-ratio: 3 / 4; }
 
-        /* 按鈕選中樣式 */
-        .btn-align-active { background-color: white !important; color: #06C755 !important; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: 1px solid #e2e8f0; border-radius: 4px; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-slate-900 font-black">
@@ -54,11 +54,14 @@
             <div class="bg-line-green p-2 rounded-lg text-white">
                 <i data-lucide="layout-grid" class="w-6 h-6"></i>
             </div>
-            <h1 class="font-bold text-xl text-slate-800 italic uppercase tracking-tighter">個人電商版產生器 <span class="text-xs opacity-40">v1.1.2</span></h1>
+            <h1 class="font-bold text-xl text-slate-800">個人電商版 Flex 產生器</h1>
         </div>
         <div class="flex gap-2">
             <button onclick="undo()" id="btn-undo" disabled class="px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition disabled:opacity-30 flex items-center gap-1">
                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i> 復原
+            </button>
+            <button onclick="exportJSON()" class="px-4 py-2 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition shadow-lg flex items-center gap-2">
+                <i data-lucide="copy" class="w-4 h-4"></i> 複製 JSON
             </button>
         </div>
     </header>
@@ -68,184 +71,194 @@
         <!-- 左側編輯區 -->
         <aside class="w-full md:w-[500px] bg-white border-r border-slate-300 overflow-y-auto p-6 space-y-8 custom-scrollbar z-10 flex-shrink-0">
             
-            <!-- 1. Hero 設定 -->
+            <!-- Hero 設定 -->
             <div class="border-2 border-line-green rounded-xl bg-white overflow-hidden shadow-sm">
-                <div class="p-4 bg-line-green border-b border-line-green flex items-center gap-2 font-bold text-white text-lg">
-                    <i data-lucide="image" class="w-5 h-5 text-white"></i> 頂部 Hero 視覺
+                <div class="p-4 bg-line-green border-b border-line-green flex items-center gap-2 font-bold text-white text-lg italic">
+                    <i data-lucide="image" class="w-5 h-5 text-white"></i> 1. 頂部 Hero 視覺
                 </div>
                 <div class="p-5 space-y-5">
-                    <div class="flex bg-slate-100 p-1 rounded-lg border">
-                        <button onclick="updateHeroType('image')" id="btn-type-image" class="flex-1 py-2 text-xs font-black rounded-md transition">圖片</button>
-                        <button onclick="updateHeroType('video')" id="btn-type-video" class="flex-1 py-2 text-xs font-black rounded-md transition">影片</button>
-                        <button onclick="updateHeroType('none')" id="btn-type-none" class="flex-1 py-2 text-xs font-black rounded-md transition">隱藏</button>
+                    <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-300">
+                        <button onclick="updateHeroType('image')" id="btn-type-image" class="flex-1 py-2 text-sm font-bold rounded-md transition text-slate-600">靜態圖片</button>
+                        <button onclick="updateHeroType('video')" id="btn-type-video" class="flex-1 py-2 text-sm font-bold rounded-md transition text-slate-600">影片播放</button>
+                        <button onclick="updateHeroType('none')" id="btn-type-none" class="flex-1 py-2 text-sm font-bold rounded-md transition text-slate-600">無</button>
                     </div>
 
                     <div id="hero-settings-container">
-                        <div class="mb-4">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">顯示比例</label>
-                            <select id="hero-aspect" onchange="updateConfig('heroAspect', this.value)" class="w-full text-sm p-3 border rounded-xl font-black bg-white">
-                                <option value="16:9">16:9 (橫式)</option>
-                                <option value="1:1">1:1 (正方)</option>
+                        <div class="mb-5">
+                            <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">顯示比例</label>
+                            <select id="hero-aspect" onchange="updateConfig('heroAspect', this.value)" class="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white text-slate-800 focus:ring-2 focus:ring-line-green outline-none">
+                                <option value="16:9">16:9 (寬螢幕)</option>
+                                <option value="1:1">1:1 (正方形)</option>
                                 <option value="4:3">4:3 (矩形)</option>
-                                <option value="1.91:1">1.91:1 (長橫)</option>
+                                <option value="1.91:1">1.91:1 (橫幅)</option>
                                 <option value="3:4">3:4 (直式)</option>
                             </select>
                         </div>
 
-                        <div id="hero-inputs" class="space-y-4">
+                        <div id="hero-inputs" class="space-y-5">
                             <div>
-                                <label class="text-[10px] font-black text-slate-400 uppercase mb-1 block" id="label-hero-url">預覽封面/圖片網址</label>
-                                <input type="text" id="input-hero-url" oninput="updateConfig('heroUrl', this.value)" class="w-full text-xs p-3 bg-slate-50 border rounded-xl font-mono">
+                                <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block" id="label-hero-url">圖片網址</label>
+                                <input type="text" id="input-hero-url" oninput="updateConfig('heroUrl', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg text-slate-800 focus:border-line-green focus:ring-1 focus:ring-line-green outline-none">
                             </div>
                             <div id="field-video-url" class="hidden">
-                                <label class="text-[10px] font-black text-slate-400 uppercase mb-1 block">影片連結 (.mp4)</label>
-                                <input type="text" id="input-video-url" oninput="updateConfig('videoUrl', this.value)" class="w-full text-xs p-3 bg-slate-50 border rounded-xl font-mono">
+                                <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">影片網址 (.mp4)</label>
+                                <input type="text" id="input-video-url" oninput="updateConfig('videoUrl', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg text-slate-800 focus:border-line-green focus:ring-1 focus:ring-line-green outline-none" placeholder="https://...mp4">
                             </div>
                             <div>
-                                <label class="text-[10px] font-black text-slate-400 uppercase mb-1 block">點擊跳轉網址</label>
-                                <input type="text" id="input-hero-link" oninput="updateConfig('heroLink', this.value)" class="w-full text-xs p-3 bg-slate-50 border rounded-xl font-mono">
+                                <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">點擊連結</label>
+                                <input type="text" id="input-hero-link" oninput="updateConfig('heroLink', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg text-slate-800 focus:border-line-green focus:ring-1 focus:ring-line-green outline-none">
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Body 設定 -->
+            <!-- Body 設定 -->
             <div class="border-2 border-line-green rounded-xl bg-white overflow-hidden shadow-sm">
-                <div class="p-4 bg-line-green border-b border-line-green flex items-center justify-between font-bold text-white text-lg">
-                    <div class="flex items-center gap-2"><i data-lucide="palette" class="w-5 h-5 text-white"></i> Body 內容與尺寸</div>
+                <div class="p-4 bg-line-green border-b border-line-green flex items-center justify-between font-bold text-white text-lg italic">
+                    <div class="flex items-center gap-2"><i data-lucide="palette" class="w-5 h-5 text-white"></i> 2. Body 內容與尺寸</div>
                 </div>
-                <div class="p-5 space-y-6">
+                <div class="p-5 space-y-5">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="text-[10px] font-black text-slate-400 uppercase mb-1 block">卡片尺寸</label>
-                            <select id="bubble-size" onchange="updateConfig('bubbleSize', this.value)" class="w-full text-xs p-3 border rounded-xl font-black">
+                            <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">卡片尺寸</label>
+                            <select id="bubble-size" onchange="updateConfig('bubbleSize', this.value)" class="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white focus:ring-1 focus:ring-line-green outline-none">
                                 <option value="mega">MEGA (標準)</option>
                                 <option value="giga">GIGA (寬版)</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-[10px] font-black text-slate-400 uppercase mb-1 block">每列欄位</label>
-                            <select id="body-columns" onchange="updateConfig('columns', parseInt(this.value))" class="w-full text-xs p-3 border rounded-xl font-black">
+                            <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">每行欄數</label>
+                            <select id="body-columns" onchange="updateConfig('columns', parseInt(this.value))" class="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white focus:ring-1 focus:ring-line-green outline-none">
                                 <option value="3">3 欄位</option>
                                 <option value="4">4 欄位</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-2">
-                        <div><label class="text-[10px] text-slate-400 block mb-1">底色</label><input type="color" id="input-body-color" onchange="updateConfig('bodyColor', this.value)" class="w-full h-10 p-1 border rounded-lg bg-white"></div>
-                        <div><label class="text-[10px] text-slate-400 block mb-1">標籤背景</label><input type="color" id="input-tag-bg-color" onchange="updateConfig('tagBgColor', this.value)" class="w-full h-10 p-1 border rounded-lg bg-white"></div>
-                        <div><label class="text-[10px] text-slate-400 block mb-1">標籤字色</label><input type="color" id="input-tag-text-color" onchange="updateConfig('tagTextColor', this.value)" class="w-full h-10 p-1 border rounded-lg bg-white"></div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">卡片底色</label>
+                            <input type="color" id="input-body-color" onchange="updateConfig('bodyColor', this.value)" class="w-full h-10 rounded border cursor-pointer bg-white">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">標籤底色</label>
+                            <input type="color" id="input-tag-bg-color" onchange="updateConfig('tagBgColor', this.value)" class="w-full h-10 rounded border cursor-pointer bg-white">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">標籤字色</label>
+                            <input type="color" id="input-tag-text-color" onchange="updateConfig('tagTextColor', this.value)" class="w-full h-10 rounded border cursor-pointer bg-white">
+                        </div>
                     </div>
 
                     <div id="items-container" class="space-y-4"></div>
 
-                    <button onclick="addItem()" class="w-full py-4 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 text-sm font-black hover:border-line-green hover:text-line-green hover:bg-green-50 transition-all flex items-center justify-center gap-2">
-                        <i data-lucide="plus" class="w-5 h-5"></i> 新增商品
+                    <button onclick="addItem()" class="w-full py-3 border-2 border-dashed border-slate-400 rounded-xl text-slate-600 text-sm font-bold hover:border-line-green hover:text-line-green hover:bg-emerald-50 transition flex items-center justify-center gap-2">
+                        <i data-lucide="plus" class="w-5 h-5"></i> 新增商品項目
                     </button>
                 </div>
             </div>
 
-            <!-- 3. Footer 設定 -->
+            <!-- Footer 設定 -->
             <div class="border-2 border-line-green rounded-xl bg-white overflow-hidden shadow-sm">
-                <div class="p-4 bg-line-green border-b border-line-green flex items-center gap-2 font-bold text-white text-lg">
-                    <i data-lucide="mouse-pointer-click" class="w-5 h-5 text-white"></i> 底部行為按鈕
+                <div class="p-4 bg-line-green border-b border-line-green flex items-center gap-2 font-bold text-white text-lg italic">
+                    <i data-lucide="mouse-pointer-click" class="w-5 h-5 text-white"></i> 3. 底部按鈕
                 </div>
-                <div class="p-5 space-y-6">
-                    <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
-                        <label class="text-xs font-black text-slate-600 uppercase">啟用說明文字</label>
-                        <input type="checkbox" id="input-footer-text-enabled" onchange="updateConfig('footerTextEnabled', this.checked)" class="w-5 h-5 accent-[#06C755]">
+                <div class="p-5 space-y-5">
+                    <div>
+                        <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">底部背景顏色</label>
+                        <input type="color" id="input-footer-bg" onchange="updateConfig('footerBg', this.value)" class="w-full h-10 rounded border cursor-pointer bg-white">
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-bold text-slate-700 uppercase">啟用說明文字</label>
+                        <input type="checkbox" id="input-footer-text-enabled" onchange="updateConfig('footerTextEnabled', this.checked)" class="w-5 h-5 accent-line-green">
                     </div>
 
                     <div id="footer-text-input-area" class="hidden space-y-3">
-                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-[-8px]">說明內容與樣式</label>
-                        <textarea id="input-footer-text" rows="2" oninput="updateConfig('footerText', this.value)" class="w-full text-xs p-3 bg-slate-50 border rounded-xl font-black outline-none" placeholder="輸入備註內容..."></textarea>
-                        <div class="flex gap-2">
-                            <div class="w-10">
-                                <label class="text-[9px] text-slate-400 block text-center mb-1">文字色</label>
-                                <input type="color" id="input-footer-text-color" onchange="updateConfig('footerTextColor', this.value)" class="w-full h-10 rounded border p-0 cursor-pointer">
-                            </div>
-                            <div class="flex-1">
-                                <label class="text-[9px] text-slate-400 block text-center mb-1">文字對齊</label>
-                                <div id="footer-align-group" class="flex bg-slate-100 p-1 rounded-lg border h-10">
-                                    <!-- 動態生成對齊按鈕 -->
-                                </div>
+                        <textarea id="input-footer-text" rows="3" oninput="updateConfig('footerText', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg text-slate-800 focus:border-line-green focus:ring-1 focus:ring-line-green outline-none" placeholder="請輸入說明文字..."></textarea>
+                        <div class="flex gap-2 items-center">
+                            <input type="color" id="input-footer-text-color" onchange="updateConfig('footerTextColor', this.value)" class="w-10 h-10 rounded border p-0">
+                            <div class="flex-1 flex bg-slate-200 rounded p-1">
+                                {['start', 'center', 'end'].map(a => `<button onclick="updateConfig('footerTextAlign', '${a}')" class="flex-1 py-1 text-xs uppercase font-black">${a}</button>`).join('')}
                             </div>
                         </div>
                     </div>
 
-                    <!-- 按鈕 1 -->
-                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                        <div class="flex justify-between items-center"><span class="text-[10px] font-black text-slate-400 uppercase">按鈕 1 設定</span></div>
+                    <div class="p-4 bg-slate-50 border border-slate-300 rounded-xl space-y-3">
+                        <div class="text-sm font-bold text-slate-700">按鈕 1 設定</div>
                         <div class="grid grid-cols-2 gap-2">
-                            <input type="text" id="input-f1-label" oninput="updateConfig('f1L', this.value)" class="p-2.5 border rounded-lg text-xs font-black" placeholder="名稱">
+                            <input type="text" id="input-f1-label" oninput="updateConfig('f1L', this.value)" class="p-2 border rounded text-xs font-black" placeholder="名稱">
                             <div class="flex gap-1">
-                                <div class="flex-1"><label class="text-[8px] text-slate-400 block text-center">背景色</label><input type="color" id="input-f1-color" onchange="updateConfig('f1C', this.value)" class="w-full h-8 rounded border p-0"></div>
-                                <div class="flex-1"><label class="text-[8px] text-slate-400 block text-center">文字色</label><input type="color" id="input-f1-text-color" onchange="updateConfig('f1TC', this.value)" class="w-full h-8 rounded border p-0"></div>
+                                <input type="color" id="input-f1-color" onchange="updateConfig('f1C', this.value)" class="flex-1 h-8 rounded border p-0" title="背景色">
+                                <input type="color" id="input-f1-text-color" onchange="updateConfig('f1TC', this.value)" class="flex-1 h-8 rounded border p-0" title="文字色">
                             </div>
                         </div>
-                        <input type="text" id="input-f1-uri" oninput="updateConfig('f1U', this.value)" class="w-full p-2.5 border rounded-lg text-[10px] font-mono" placeholder="跳轉連結">
+                        <input type="text" id="input-f1-uri" oninput="updateConfig('f1U', this.value)" class="w-full p-2 border rounded text-[10px] font-mono" placeholder="連結">
                     </div>
 
-                    <!-- 按鈕 2 -->
-                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                        <div class="flex justify-between items-center"><span class="text-[10px] font-black text-slate-400 uppercase">按鈕 2 設定</span></div>
+                    <div class="p-4 bg-slate-50 border border-slate-300 rounded-xl space-y-3">
+                        <div class="text-sm font-bold text-slate-700">按鈕 2 設定</div>
                         <div class="grid grid-cols-2 gap-2">
-                            <input type="text" id="input-f2-label" oninput="updateConfig('f2L', this.value)" class="p-2.5 border rounded-lg text-xs font-black" placeholder="名稱">
+                            <input type="text" id="input-f2-label" oninput="updateConfig('f2L', this.value)" class="p-2 border rounded text-xs font-black" placeholder="名稱">
                             <div class="flex gap-1">
-                                <div class="flex-1"><label class="text-[8px] text-slate-400 block text-center">背景色</label><input type="color" id="input-f2-color" onchange="updateConfig('f2C', this.value)" class="w-full h-8 rounded border p-0"></div>
-                                <div class="flex-1"><label class="text-[8px] text-slate-400 block text-center">文字色</label><input type="color" id="input-f2-text-color" onchange="updateConfig('f2TC', this.value)" class="w-full h-8 rounded border p-0"></div>
+                                <input type="color" id="input-f2-color" onchange="updateConfig('f2C', this.value)" class="flex-1 h-8 rounded border p-0" title="背景色">
+                                <input type="color" id="input-f2-text-color" onchange="updateConfig('f2TC', this.value)" class="flex-1 h-8 rounded border p-0" title="文字色">
                             </div>
                         </div>
-                        <input type="text" id="input-f2-uri" oninput="updateConfig('f2U', this.value)" class="w-full p-2.5 border rounded-lg text-[10px] font-mono" placeholder="跳轉連結">
+                        <input type="text" id="input-f2-uri" oninput="updateConfig('f2U', this.value)" class="w-full p-2 border rounded text-[10px] font-mono" placeholder="連結">
                     </div>
                 </div>
             </div>
+
         </aside>
 
         <!-- 右側預覽區 -->
         <main class="flex-1 bg-slate-100 relative overflow-hidden flex flex-col">
             <div class="chat-room-bg custom-scrollbar">
-                <div class="text-center my-6"><span class="bg-black/20 text-white text-[10px] px-3 py-1 rounded-full uppercase tracking-widest font-black">Live Preview</span></div>
+                <div class="text-center my-4"><span class="bg-black/20 text-white text-[10px] px-2 py-1 rounded-full">Today</span></div>
 
                 <div class="flex items-start gap-2 mb-8 w-full justify-center">
-                    <div class="w-9 h-9 rounded-xl bg-slate-400 shrink-0 self-start mt-1"></div>
-                    <div class="bg-white rounded-3xl overflow-hidden flex-bubble-container flex flex-col shadow-2xl border-2 border-white/50">
-                        <div id="view-hero-container" class="relative w-full bg-black overflow-hidden group cursor-pointer shrink-0">
+                    <div class="w-8 h-8 rounded-full bg-slate-400 shrink-0 self-start mt-1"></div>
+                    <div class="bg-white rounded-xl overflow-hidden flex-bubble-container flex flex-col">
+                        <!-- Hero -->
+                        <div id="view-hero-container" class="relative w-full bg-black overflow-hidden shrink-0">
                             <img id="view-hero-img" src="" class="w-full h-full object-cover hidden">
                             <div id="view-video-ui" class="absolute inset-0 flex items-center justify-center hidden">
-                                <img id="view-video-poster" src="" class="absolute inset-0 w-full h-full object-cover opacity-60">
-                                <div class="relative z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-2xl">
+                                <img id="view-video-poster" src="" class="absolute inset-0 w-full h-full object-cover opacity-70">
+                                <div class="relative z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
                                     <i data-lucide="play" class="w-5 h-5 text-slate-900 fill-slate-900 ml-1"></i>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Body -->
                         <div class="relative w-full p-4" id="view-body-container"><div class="grid gap-2" id="view-grid"></div></div>
-                        <div class="p-4 border-t border-slate-100 flex flex-col gap-3 shrink-0 relative z-10" id="view-footer">
-                            <div id="view-footer-text" class="text-[10px] whitespace-pre-wrap mb-1 hidden w-full font-black"></div>
+
+                        <!-- Footer -->
+                        <div class="p-3 border-t border-slate-100 flex flex-col gap-2 shrink-0 relative z-10" id="view-footer">
+                            <div id="view-footer-text" class="text-xs whitespace-pre-wrap mb-1 hidden w-full"></div>
                             <div class="flex gap-2 w-full">
-                                <button id="view-btn-1" class="flex-1 py-3 rounded-xl text-[11px] font-black text-white text-center shadow-lg"></button>
-                                <button id="view-btn-2" class="flex-1 py-3 rounded-xl text-[11px] font-black text-white text-center shadow-lg"></button>
+                                <button id="view-btn-1" class="flex-1 py-2 rounded text-[10px] font-bold text-center"></button>
+                                <button id="view-btn-2" class="flex-1 py-2 rounded text-[10px] font-bold text-center"></button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="h-20 w-full shrink-0"></div>
+                <div class="h-10 w-full shrink-0"></div>
             </div>
+            <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-xl text-sm font-medium transform translate-y-24 opacity-0 transition-all duration-300 z-50">JSON 已複製</div>
         </main>
     </div>
 
     <script>
         lucide.createIcons();
 
-        // 核心狀態設定 - 保留範例參數並新增文字顏色屬性
+        // 保留您的範例網址
         let state = {
             hero: {
                 type: 'video', aspectRatio: '16:9',
-                url: "https://lihi.cc/5OXMZ", 
-                videoUrl: "https://lihi.cc/YsmAp", 
-                link: "https://line.me"
+                url: "https://lihi.cc/5OXMZ", videoUrl: "https://lihi.cc/YsmAp", link: "https://line.me"
             },
             body: {
                 columns: 3, bubbleSize: "mega", bgColor: "#F8F8F8", 
@@ -260,11 +273,9 @@
                 ]
             },
             footer: {
-                bg: "#ffffff", textEnabled: false, 
-                text: "※ 請注意：優惠商品數量有限，售完為止。",
-                textColor: "#666666", textAlign: "center",
-                btn1: { label: "品牌故事", color: "#000000", textColor: "#FFFFFF", uri: "https://liff.line.me/2008704329-cTkwlRHm" },
-                btn2: { label: "好友分享", color: "#000000", textColor: "#FFFFFF", uri: "line://nv/recommendOA/@754tjssx" }
+                bg: "#ffffff", textEnabled: false, text: "※ 請注意：優惠商品數量有限，售完為止。", textColor: "#666666", textAlign: "center",
+                btn1: { label: "品牌故事", color: "#000000", textColor: "#FFFFFF", uri: "https://line.me" },
+                btn2: { label: "好友分享", color: "#000000", textColor: "#FFFFFF", uri: "https://line.me" }
             }
         };
 
@@ -285,21 +296,19 @@
             if(path === 'tagTextColor') state.body.tagTextColor = value.toUpperCase();
             if(path === 'columns') state.body.columns = value;
             if(path === 'bubbleSize') state.body.bubbleSize = value;
+            if(path === 'footerBg') state.footer.bg = value.toUpperCase();
             if(path === 'footerTextEnabled') state.footer.textEnabled = value;
             if(path === 'footerText') state.footer.text = value;
             if(path === 'footerTextColor') state.footer.textColor = value.toUpperCase();
             if(path === 'footerTextAlign') state.footer.textAlign = value;
-            
             if(path === 'f1L') state.footer.btn1.label = value;
             if(path === 'f1C') state.footer.btn1.color = value.toUpperCase();
             if(path === 'f1TC') state.footer.btn1.textColor = value.toUpperCase();
             if(path === 'f1U') state.footer.btn1.uri = value;
-            
             if(path === 'f2L') state.footer.btn2.label = value;
             if(path === 'f2C') state.footer.btn2.color = value.toUpperCase();
             if(path === 'f2TC') state.footer.btn2.textColor = value.toUpperCase();
             if(path === 'f2U') state.footer.btn2.uri = value;
-            
             syncUI(); render(); syncToParent();
         }
 
@@ -307,38 +316,20 @@
         function addItem() { saveState(); state.body.items.push({ title: "新商品", img: "https://lihi.cc/mwMvo", url: "https://line.me" }); syncUI(); render(); syncToParent(); }
         function deleteItem(i) { saveState(); state.body.items.splice(i, 1); syncUI(); render(); syncToParent(); }
 
-        function syncToParent() {
-            const jsonStr = JSON.stringify(generateFlexJSON());
-            window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: jsonStr }, '*');
-        }
+        function syncToParent() { window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify(generateFlexJSON()) }, '*'); }
 
         function syncUI() {
-            // 基礎控制同步
             document.getElementById('input-hero-url').value = state.hero.url;
             document.getElementById('input-video-url').value = state.hero.videoUrl;
             document.getElementById('hero-aspect').value = state.hero.aspectRatio;
             document.getElementById('input-body-color').value = state.body.bgColor;
             document.getElementById('input-tag-bg-color').value = state.body.tagBgColor;
             document.getElementById('input-tag-text-color').value = state.body.tagTextColor;
-            document.getElementById('body-columns').value = state.body.columns;
-            document.getElementById('bubble-size').value = state.body.bubbleSize;
-            
-            // Footer 控制同步
+            document.getElementById('input-footer-bg').value = state.footer.bg;
             document.getElementById('input-footer-text-enabled').checked = state.footer.textEnabled;
             document.getElementById('footer-text-input-area').className = state.footer.textEnabled ? 'block space-y-3' : 'hidden';
             document.getElementById('input-footer-text').value = state.footer.text;
             document.getElementById('input-footer-text-color').value = state.footer.textColor;
-            
-            // 對齊按鈕動態生成 (修正原本的奇怪錯誤)
-            const alignGroup = document.getElementById('footer-align-group');
-            const aligns = ['start', 'center', 'end'];
-            alignGroup.innerHTML = aligns.map(a => `
-                <button onclick="updateConfig('footerTextAlign', '${a}')" class="flex-1 py-1 text-[10px] font-black uppercase rounded-md transition ${state.footer.textAlign === a ? 'btn-align-active' : 'text-slate-400'}">
-                    ${a}
-                </button>
-            `).join('');
-
-            // 按鈕 1 & 2
             document.getElementById('input-f1-label').value = state.footer.btn1.label;
             document.getElementById('input-f1-color').value = state.footer.btn1.color;
             document.getElementById('input-f1-text-color').value = state.footer.btn1.textColor;
@@ -346,35 +337,34 @@
             document.getElementById('input-f2-color').value = state.footer.btn2.color;
             document.getElementById('input-f2-text-color').value = state.footer.btn2.textColor;
 
-            // 商品清單渲染
             const cont = document.getElementById('items-container');
             cont.innerHTML = '';
             state.body.items.forEach((item, i) => {
                 const d = document.createElement('div');
-                d.className = "p-4 bg-slate-50 border rounded-2xl relative group border-slate-200";
-                d.innerHTML = `
-                    <button onclick="deleteItem(${i})" class="absolute top-2 right-2 text-slate-300 hover:text-red-500">×</button>
-                    <div class="flex gap-3 mb-2">
-                        <img src="${item.img}" class="w-10 h-10 rounded-lg object-cover bg-white border">
-                        <input type="text" value="${item.title}" oninput="updateItem(${i}, 'title', this.value)" class="flex-1 p-2 text-xs font-black rounded-lg border outline-none focus:border-line-green">
-                    </div>
-                    <input type="text" value="${item.img}" oninput="updateItem(${i}, 'img', this.value)" class="w-full p-2 text-[10px] font-mono rounded-lg border mb-1 bg-white" placeholder="圖片連結">
-                    <input type="text" value="${item.url}" oninput="updateItem(${i}, 'url', this.value)" class="w-full p-2 text-[10px] font-mono rounded-lg border bg-white" placeholder="商品跳轉連結">
-                `;
+                d.className = "p-3 bg-slate-50 border rounded-xl relative group shadow-sm";
+                d.innerHTML = `<button onclick="deleteItem(${i})" class="absolute top-1 right-2 text-red-400">×</button>
+                    <div class="flex gap-2 mb-2"><img src="${item.img}" class="w-8 h-8 rounded border bg-white object-cover">
+                    <input type="text" value="${item.title}" oninput="updateItem(${i}, 'title', this.value)" class="flex-1 p-1 text-xs font-black rounded border"></div>
+                    <input type="text" value="${item.img}" oninput="updateItem(${i}, 'img', this.value)" class="w-full p-1 text-[10px] font-mono rounded border mb-1" placeholder="圖片URL">
+                    <input type="text" value="${item.url}" oninput="updateItem(${i}, 'url', this.value)" class="w-full p-1 text-[10px] font-mono rounded border" placeholder="跳轉連結">`;
                 cont.appendChild(d);
             });
-
             document.getElementById('hero-settings-container').className = state.hero.type === 'none' ? 'hidden' : 'block';
             document.getElementById('field-video-url').className = state.hero.type === 'video' ? 'block' : 'hidden';
+            
+            const btnActive = "flex-1 py-2 text-sm font-bold rounded-md bg-white shadow-sm text-line-green border border-line-green";
+            const btnInactive = "flex-1 py-2 text-sm font-bold rounded-md transition text-slate-600 hover:bg-slate-200";
+            document.getElementById('btn-type-image').className = state.hero.type === 'image' ? btnActive : btnInactive;
+            document.getElementById('btn-type-video').className = state.hero.type === 'video' ? btnActive : btnInactive;
+            document.getElementById('btn-type-none').className = state.hero.type === 'none' ? btnActive : btnInactive;
             lucide.createIcons();
         }
 
         function render() {
             const ratioMap = { '1:1': 'aspect-1-1', '16:9': 'aspect-16-9', '4:3': 'aspect-4-3', '1.91:1': 'aspect-1_91-1', '3:4': 'aspect-3-4' };
             const hero = document.getElementById('view-hero-container');
-            hero.className = `relative w-full bg-black overflow-hidden group cursor-pointer shrink-0 ${ratioMap[state.hero.aspectRatio]}`;
+            hero.className = `relative w-full bg-black overflow-hidden shrink-0 ${ratioMap[state.hero.aspectRatio]}`;
             hero.style.display = state.hero.type === 'none' ? 'none' : 'block';
-            
             if(state.hero.type === 'image') {
                 document.getElementById('view-hero-img').src = state.hero.url;
                 document.getElementById('view-hero-img').classList.remove('hidden');
@@ -384,102 +374,72 @@
                 document.getElementById('view-video-poster').src = state.hero.url;
                 document.getElementById('view-video-ui').classList.remove('hidden');
             }
-
             document.getElementById('view-body-container').style.backgroundColor = state.body.bgColor;
             const grid = document.getElementById('view-grid');
             grid.className = `grid gap-2 ${state.body.columns === 3 ? 'grid-cols-3' : 'grid-cols-4'}`;
             grid.innerHTML = '';
             state.body.items.forEach(item => {
                 const el = document.createElement('div');
-                el.className = "bg-white rounded-xl p-1 shadow-sm flex flex-col border border-black/5";
-                el.innerHTML = `
-                    <div class="relative w-full aspect-square rounded-lg overflow-hidden mb-1"><img src="${item.img}" class="w-full h-full object-cover"></div>
-                    <div style="background-color: ${state.body.tagBgColor}; color: ${state.body.tagTextColor};" class="text-[8px] font-black text-center py-1 rounded-md truncate px-1">${item.title}</div>
-                `;
+                el.className = "bg-white rounded p-1 shadow-sm flex flex-col";
+                el.innerHTML = `<div class="relative w-full aspect-square rounded-sm overflow-hidden mb-1"><img src="${item.img}" class="w-full h-full object-cover"></div><div style="background-color: ${state.body.tagBgColor}; color: ${state.body.tagTextColor};" class="text-[8px] font-black text-center py-1 rounded-sm truncate px-1">${item.title}</div>`;
                 grid.appendChild(el);
             });
-
             const fText = document.getElementById('view-footer-text');
             if(state.footer.textEnabled) {
                 fText.innerText = state.footer.text;
                 fText.style.color = state.footer.textColor;
-                const alignClass = state.footer.textAlign === 'center' ? 'text-center' : (state.footer.textAlign === 'end' ? 'text-right' : 'text-left');
-                fText.className = `text-[10px] whitespace-pre-wrap mb-2 w-full font-black ${alignClass}`;
+                fText.className = `text-[10px] whitespace-pre-wrap mb-2 w-full font-black text-${state.footer.textAlign}`;
                 fText.classList.remove('hidden');
             } else fText.classList.add('hidden');
-
-            const v1 = document.getElementById('view-btn-1');
-            v1.innerText = state.footer.btn1.label;
-            v1.style.backgroundColor = state.footer.btn1.color;
-            v1.style.color = state.footer.btn1.textColor;
-
-            const v2 = document.getElementById('view-btn-2');
-            v2.innerText = state.footer.btn2.label;
-            v2.style.backgroundColor = state.footer.btn2.color;
-            v2.style.color = state.footer.btn2.textColor;
+            document.getElementById('view-footer').style.backgroundColor = state.footer.bg;
+            document.getElementById('view-btn-1').innerText = state.footer.btn1.label;
+            document.getElementById('view-btn-1').style.backgroundColor = state.footer.btn1.color;
+            document.getElementById('view-btn-1').style.color = state.footer.btn1.textColor;
+            document.getElementById('view-btn-2').innerText = state.footer.btn2.label;
+            document.getElementById('view-btn-2').style.backgroundColor = state.footer.btn2.color;
+            document.getElementById('view-btn-2').style.color = state.footer.btn2.textColor;
         }
 
         function generateFlexJSON() {
             const width = state.body.columns === 3 ? "32%" : "23%";
             const chunk = (a, s) => Array.from({ length: Math.ceil(a.length / s) }, (v, i) => a.slice(i * s, i * s + s));
-            
             const contents = chunk(state.body.items, state.body.columns).map((row, idx) => ({
                 type: "box", layout: "horizontal", margin: idx === 0 ? "none" : "md",
                 contents: row.map((item, cidx) => ({
                     type: "box", layout: "vertical", width: width, margin: cidx === 0 ? "none" : "md",
                     contents: [
                         { type: "image", url: item.img, aspectRatio: "1:1", size: "full", aspectMode: "cover" },
-                        {
-                            type: "box", layout: "vertical", backgroundColor: state.body.tagBgColor, cornerRadius: "sm", paddingAll: "xs", margin: "xs",
-                            contents: [{ type: "text", text: item.title, size: "xxs", color: state.body.tagTextColor, align: "center", weight: "bold", wrap: true }]
-                        }
+                        { type: "box", layout: "vertical", backgroundColor: state.body.tagBgColor, cornerRadius: "sm", paddingAll: "xs", margin: "xs", contents: [{ type: "text", text: item.title, size: "xxs", color: state.body.tagTextColor, align: "center", weight: "bold", wrap: true }] }
                     ],
                     action: { type: "uri", uri: item.url }
                 }))
             }));
-
-            const flex = {
-                type: "bubble", size: state.body.bubbleSize,
-                body: { type: "box", layout: "vertical", paddingAll: "md", backgroundColor: state.body.bgColor, contents: contents },
-                footer: { type: "box", layout: "vertical", spacing: "sm", backgroundColor: state.footer.bg, paddingAll: "md", contents: [] }
-            };
-
-            if(state.footer.textEnabled) {
-                flex.footer.contents.push({ type: "text", text: state.footer.text, wrap: true, size: "xs", color: state.footer.textColor, align: state.footer.textAlign });
-            }
-            flex.footer.contents.push({
-                type: "box", layout: "horizontal", spacing: "md",
-                contents: [
-                    { type: "button", style: "primary", height: "sm", color: state.footer.btn1.color, action: { type: "uri", label: state.footer.btn1.label, uri: state.footer.btn1.uri } },
-                    { type: "button", style: "primary", height: "sm", color: state.footer.btn2.color, action: { type: "uri", label: state.footer.btn2.label, uri: state.footer.btn2.uri } }
-                ]
-            });
-
-            // 處理自定義文字顏色 (LINE 原生 button 僅支援 background color，若需文字顏色需改用 text component 模擬，此處維持標準 button 邏輯)
-            if(state.hero.type !== 'none') {
-                flex.hero = state.hero.type === 'video' ? {
-                    type: "video", url: state.hero.videoUrl, previewUrl: state.hero.url, aspectRatio: state.hero.aspectRatio,
-                    altContent: { type: "image", size: "full", aspectRatio: state.hero.aspectRatio, aspectMode: "cover", url: state.hero.url }
-                } : {
-                    type: "image", url: state.hero.url, size: "full", aspectRatio: state.hero.aspectRatio, aspectMode: "cover", action: { type: "uri", uri: state.hero.link }
-                };
+            const flex = { type: "bubble", size: state.body.bubbleSize, body: { type: "box", layout: "vertical", paddingAll: "md", backgroundColor: state.body.bgColor, contents: contents }, footer: { type: "box", layout: "vertical", spacing: "sm", backgroundColor: state.footer.bg, paddingAll: "md", contents: [] } };
+            if(state.footer.textEnabled) flex.footer.contents.push({ type: "text", text: state.footer.text, wrap: true, size: "xs", color: state.footer.textColor, align: state.footer.textAlign });
+            flex.footer.contents.push({ type: "box", layout: "horizontal", spacing: "md", contents: [
+                { type: "button", style: "primary", height: "sm", color: state.footer.btn1.color, action: { type: "uri", label: state.footer.btn1.label, uri: state.footer.btn1.uri } },
+                { type: "button", style: "primary", height: "sm", color: state.footer.btn2.color, action: { type: "uri", label: state.footer.btn2.label, uri: state.footer.btn2.uri } }
+            ]});
+            if(state.hero.type === 'video') {
+                flex.hero = { type: "video", url: state.hero.videoUrl, previewUrl: state.hero.url, aspectRatio: state.hero.aspectRatio, altContent: { type: "image", size: "full", aspectRatio: state.hero.aspectRatio, aspectMode: "cover", url: state.hero.url } };
+            } else if (state.hero.type === 'image') {
+                flex.hero = { type: "image", url: state.hero.url, size: "full", aspectRatio: state.hero.aspectRatio, aspectMode: "cover", action: { type: "uri", uri: state.hero.link } };
             }
             return flex;
         }
 
+        function exportJSON() {
+            const json = JSON.stringify(generateFlexJSON(), null, 2);
+            const el = document.createElement('textarea'); el.value = json; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+            const toast = document.getElementById('toast'); toast.classList.remove('translate-y-24', 'opacity-0'); setTimeout(() => toast.classList.add('translate-y-24', 'opacity-0'), 2500);
+        }
+
         window.addEventListener('message', (e) => {
-            if (e.data.type === 'LOAD_FLEX_DATA' && e.data.json) {
-                console.log("已接收載入指令");
-            }
-            if (e.data.type === 'GET_FLEX_DATA_REQUEST') {
-                syncToParent();
-            }
+            if (e.data.type === 'LOAD_FLEX_DATA' && e.data.json) { console.log("載入完成"); }
+            if (e.data.type === 'GET_FLEX_DATA_REQUEST') syncToParent();
         });
 
-        window.onload = () => {
-            window.parent.postMessage({ type: 'CHILD_READY' }, '*');
-            syncUI(); render(); syncToParent();
-        };
+        window.onload = () => { window.parent.postMessage({ type: 'CHILD_READY' }, '*'); syncUI(); render(); syncToParent(); };
     </script>
 </body>
 </html>
