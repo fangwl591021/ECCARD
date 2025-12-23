@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Carousel Pro - 旗艦核心全移植版 v5.0.3</title>
+    <title>FLEX Carousel Pro - 旗艦核心全移植版 v5.0.4</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -25,6 +25,7 @@
         .page-tab-active { border-color: #06C755 !important; color: #06C755 !important; background: #f0fdf4 !important; transform: scale(1.05); z-index: 10; }
         .amber-header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; }
         .blue-header { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; }
+        .emerald-header { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; }
         input, select, textarea { font-size: 13px !important; border-radius: 8px; border: 1px solid #e2e8f0; padding: 8px; width: 100%; outline: none; transition: border 0.2s; }
         input:focus { border-color: #06C755; }
         input[type="color"] { height: 38px; padding: 2px; cursor: pointer; }
@@ -38,7 +39,7 @@
     <script type="text/babel">
         const { useState, useEffect, useCallback, useRef, memo } = React;
 
-        // --- 全局常數與功能組件 ---
+        // --- 全局資料定義 ---
         const SOCIAL_DATA = {
             NONE: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "無圖示", defaultUri: "https://" },
             FB: { url: "https://cdn-icons-png.flaticon.com/512/733/733547.png", label: "Facebook", defaultUri: "https://facebook.com/" },
@@ -53,23 +54,6 @@
             toPx: (v) => String(v).endsWith('px') ? v : `${v}px`,
             deepCopy: (o) => JSON.parse(JSON.stringify(o))
         };
-
-        const ControlPanel = ({ title, icon, children, headerClass = "" }) => (
-            <div className="control-panel shadow-sm">
-                <div className={`panel-header ${headerClass}`}><i data-lucide={icon} className="w-4 h-4"></i><span>{title}</span></div>
-                <div className="panel-content">{children}</div>
-            </div>
-        );
-
-        const AlignButtons = ({ value, onChange }) => (
-            <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-                {['start', 'center', 'end'].map(id => (
-                    <button key={id} onClick={() => onChange(id)} className={`flex-1 flex justify-center py-1.5 rounded-md transition-all ${value === id ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-400'}`}>
-                        <i data-lucide={id === 'start' ? 'align-left' : id === 'center' ? 'align-center' : 'align-right'} className="w-4 h-4"></i>
-                    </button>
-                ))}
-            </div>
-        );
 
         // --- 核心初始模板 (100% 原始參數) ---
         const TEMPLATE_P1 = {
@@ -96,8 +80,26 @@
             model: "ECOMMERCE_CORE",
             hero: { type: 'video', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "https://lihi.cc/YsmAp", link: "https://line.me" },
             body: { columns: 3, bubbleSize: "mega", bgColor: "#F8F8F8", tagBgColor: "#0D0D0D", tagTextColor: "#FFFFFF", items: [{ title: "商品 A", img: "https://lihi.cc/mwMvo", url: "https://line.me" }, { title: "商品 B", img: "https://lihi.cc/2Nu8G", url: "https://line.me" }, { title: "商品 C", img: "https://lihi.cc/yRfpn", url: "https://line.me" }] },
-            footer: { bg: "#ffffff", textEnabled: false, text: "", textColor: "#666666", textAlign: "center", btn1: { label: "品牌故事", color: "#000000", textColor: "#FFFFFF" }, btn2: { label: "好友分享", color: "#000000", textColor: "#FFFFFF" } }
+            footer: { bg: "#ffffff", textEnabled: false, text: "", textColor: "#666666", textAlign: "center", btn1: { label: "品牌故事", color: "#000000", textColor: "#FFFFFF", uri: "https://line.me" }, btn2: { label: "好友分享", color: "#000000", textColor: "#FFFFFF", uri: "line://nv/recommendOA/@754tjssx" } }
         };
+
+        // --- 共用組件 ---
+        const ControlPanel = ({ title, icon, children, headerClass = "" }) => (
+            <div className="control-panel shadow-sm">
+                <div className={`panel-header ${headerClass}`}><i data-lucide={icon} className="w-4 h-4"></i><span>{title}</span></div>
+                <div className="panel-content">{children}</div>
+            </div>
+        );
+
+        const AlignButtons = ({ value, onChange }) => (
+            <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                {['start', 'center', 'end'].map(id => (
+                    <button key={id} onClick={() => onChange(id)} className={`flex-1 flex justify-center py-1.5 rounded-md transition-all ${value === id ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-400'}`}>
+                        <i data-lucide={id === 'start' ? 'align-left' : id === 'center' ? 'align-center' : 'align-right'} className="w-4 h-4"></i>
+                    </button>
+                ))}
+            </div>
+        );
 
         // --- 視覺渲染引擎 ---
         const FlexPreview = memo(({ data }) => {
@@ -152,6 +154,7 @@
             }
         });
 
+        // --- App 主體 ---
         const App = () => {
             const [pages, setPages] = useState([TEMPLATE_P1, Utils.deepCopy(TEMPLATE_P2), Utils.deepCopy(TEMPLATE_P3)]);
             const [activeIdx, setActiveIdx] = useState(0);
@@ -172,12 +175,10 @@
                 });
             };
 
-            // --- 核心修復：精準產生符合 LINE 規範的 JSON ---
             const buildJson = useCallback(() => {
                 const contents = pages.map(d => {
-                    if (d.model === 'BUSINESS_CORE') {
-                        return { type: "bubble", body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [{ type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: true }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.badgeTop), [d.badgePos]: "20px", backgroundColor: d.badgeBg, cornerRadius: "15px", paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px", contents: [{ type: "text", text: d.badgeText, color: "#ffffff", size: "xxs", weight: "bold" }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.avatarTop), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "85px", height: "85px", cornerRadius: "100px", borderWidth: "3px", borderColor: "#ffffff", contents: [{ type: "image", url: d.avatar, size: "full", aspectMode: "cover", animated: true }] }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.nameTop), offsetStart: "0px", offsetEnd: "0px", contents: [{ type: "text", text: d.name, weight: "bold", size: "lg", color: d.nameColor, align: d.nameAlign }] }, { type: "box", layout: "horizontal", position: "absolute", offsetTop: Utils.toPx(d.socialTop), offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md", contents: (d.icons || []).map(icon => ({ type: "box", layout: "vertical", width: "45px", height: "45px", cornerRadius: "100px", backgroundColor: "#ffffff1a", paddingAll: "8px", action: { type: "uri", uri: icon.uri || "https://line.me" }, contents: [{ type: "image", url: SOCIAL_DATA[icon.type]?.url || SOCIAL_DATA.NONE.url, size: "full", animated: true }] })) }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.descTop), offsetStart: "15px", offsetEnd: "15px", contents: [{ type: "text", text: d.desc, wrap: true, size: "xs", color: d.descColor, align: d.descAlign }] }] }, footer: { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: d.footerBg, contents: [{ type: "box", layout: "vertical", backgroundColor: d.footerThemeColor, paddingAll: "12px", cornerRadius: "md", action: { type: "uri", uri: d.footerUri || "https://line.me" }, contents: [{ type: "text", text: d.footerLabel, color: d.footerTextColor, align: "center", weight: "bold", size: "sm" }] }] } };
-                    } else if (d.model === 'PERSONAL_CORE') {
+                    if (d.model === 'BUSINESS_CORE') return { type: "bubble", body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [{ type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: true }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.badgeTop), [d.badgePos]: "20px", backgroundColor: d.badgeBg, cornerRadius: "15px", paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px", contents: [{ type: "text", text: d.badgeText, color: "#ffffff", size: "xxs", weight: "bold" }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.avatarTop), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "85px", height: "85px", cornerRadius: "100px", borderWidth: "3px", borderColor: "#ffffff", contents: [{ type: "image", url: d.avatar, size: "full", aspectMode: "cover", animated: true }] }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.nameTop), offsetStart: "0px", offsetEnd: "0px", contents: [{ type: "text", text: d.name, weight: "bold", size: "lg", color: d.nameColor, align: d.nameAlign }] }, { type: "box", layout: "horizontal", position: "absolute", offsetTop: Utils.toPx(d.socialTop), offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md", contents: (d.icons || []).map(icon => ({ type: "box", layout: "vertical", width: "45px", height: "45px", cornerRadius: "100px", backgroundColor: "#ffffff1a", paddingAll: "8px", action: { type: "uri", uri: icon.uri || "https://line.me" }, contents: [{ type: "image", url: SOCIAL_DATA[icon.type]?.url || SOCIAL_DATA.NONE.url, size: "full", animated: true }] })) }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.descTop), offsetStart: "15px", offsetEnd: "15px", contents: [{ type: "text", text: d.desc, wrap: true, size: "xs", color: d.descColor, align: d.descAlign }] }] }, footer: { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: d.footerBg, contents: [{ type: "box", layout: "vertical", backgroundColor: d.footerThemeColor, paddingAll: "12px", cornerRadius: "md", action: { type: "uri", uri: d.footerUri || "https://line.me" }, contents: [{ type: "text", text: d.footerLabel, color: d.footerTextColor, align: "center", weight: "bold", size: "sm" }] }] } };
+                    if (d.model === 'PERSONAL_CORE') {
                         const [w, h] = d.media.aspectRatio.split(':').map(Number);
                         const mediaH = (h / w) * 300;
                         const bubble = { type: "bubble", size: d.size, body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [] } };
@@ -185,7 +186,7 @@
                         else bubble.body.contents.push({ type: "box", layout: "vertical", contents: [{ type: "image", url: d.media.url, size: "full", aspectRatio: d.media.aspectRatio, aspectMode: "cover", animated: true, action: d.media.uri ? { type: "uri", uri: d.media.uri } : undefined }, { type: "box", layout: "vertical", position: "absolute", backgroundColor: d.media.badgeBg, cornerRadius: "15px", paddingAll: "4px", paddingStart: "10px", paddingEnd: "10px", offsetTop: "10px", [d.media.badgePos === 'left' ? 'offsetStart' : 'offsetEnd']: "10px", contents: [{ type: "text", text: d.media.badgeText, color: "#ffffff", size: "xs", weight: "bold" }] }] });
                         bubble.body.contents.push({ type: "box", layout: "vertical", paddingAll: "15px", paddingTop: d.avatar.show ? (d.mediaType === 'video' ? "95px" : "45px") : "15px", contents: [{ type: "text", text: d.content.name, weight: "bold", size: "lg", color: d.content.nameColor, align: d.content.nameAlign }, { type: "text", text: d.content.desc, wrap: true, color: d.content.descColor, size: "xs", margin: "md", align: d.content.descAlign }] });
                         if (d.avatar.show) bubble.body.contents.push({ type: "box", layout: "vertical", position: "absolute", offsetTop: d.mediaType === 'video' ? "10px" : Utils.toPx(mediaH - 45), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "80px", height: "80px", cornerRadius: d.avatar.cornerRadius, borderWidth: "3px", borderColor: d.avatar.borderColor, contents: [{ type: "image", url: d.avatar.url, size: "full", aspectMode: "cover", animated: true }] }] });
-                        bubble.footer = { type: "box", layout: "vertical", spacing: "md", paddingAll: "10px", contents: (d.footer.longBtns || []).map(b => ({ type: "box", layout: "vertical", contents: [{ type: "text", text: b.label, align: "center", color: b.textColor, size: "sm", weight: "bold" }], paddingAll: "10px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "md", action: { type: "uri", uri: b.uri } })) };
+                        bubble.footer = { type: "box", layout: "vertical", spacing: "md", paddingAll: "10px", contents: d.footer.longBtns.map(b => ({ type: "box", layout: "vertical", contents: [{ type: "text", text: b.label, align: "center", color: b.textColor, size: "sm", weight: "bold" }], paddingAll: "10px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "md", action: { type: "uri", uri: b.uri } })) };
                         if (d.footer.shortBtns && d.footer.shortBtns.length > 0) bubble.footer.contents.push({ type: "box", layout: "horizontal", spacing: "md", contents: d.footer.shortBtns.map(b => ({ type: "box", layout: "vertical", spacing: "xs", paddingAll: "8px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "sm", action: { type: "uri", uri: b.uri }, contents: [{ type: "image", url: SOCIAL_DATA[b.type]?.url || SOCIAL_DATA.WEB.url, size: "xxs", aspectRatio: "1:1" }, { type: "text", text: b.label, align: "center", color: b.textColor, size: "xxs" }] })) });
                         return bubble;
                     } else if (d.model === 'ECOMMERCE_CORE') {
@@ -220,7 +221,7 @@
                 <div className="flex h-screen bg-slate-100 font-black overflow-hidden text-slate-900">
                     <div className="w-[480px] bg-white border-r flex flex-col shadow-2xl z-10">
                         <div className="sticky-section flex flex-col gap-4 bg-white shadow-sm shrink-0">
-                            <h1 className="text-xl flex items-center gap-2 text-green-600 uppercase tracking-tighter italic font-black"><i data-lucide="layers"></i> Carousel Pro v5.0.3</h1>
+                            <h1 className="text-xl flex items-center gap-2 text-green-600 uppercase tracking-tighter italic font-black"><i data-lucide="layers"></i> Carousel Pro v5.0.4</h1>
                             <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
                                 {pages.map((p, i) => (
                                     <div key={i} className="relative group shrink-0">
@@ -353,6 +354,7 @@
                                             <div key={k} className="p-3 bg-slate-50 rounded-xl border border-slate-100 mb-2 space-y-2">
                                                 <input type="text" value={activePage.footer[k].label} onChange={e => updateActivePage(`footer.${k}.label`, e.target.value)} className="p-2 font-bold text-xs" placeholder="按鈕文字" />
                                                 <div className="grid grid-cols-2 gap-2"><div><label className="text-[8px] text-slate-400">背景</label><input type="color" value={activePage.footer[k].color} onChange={e => updateActivePage(`footer.${k}.color`, e.target.value)} className="h-7" /></div><div><label className="text-[8px] text-slate-400">文字</label><input type="color" value={activePage.footer[k].textColor} onChange={e => updateActivePage(`footer.${k}.textColor`, e.target.value)} className="h-7" /></div></div>
+                                                <input type="text" value={activePage.footer[k].uri} onChange={e => updateActivePage(`footer.${k}.uri`, e.target.value)} className="p-2 text-[10px] font-mono border rounded w-full" placeholder="跳轉網址" />
                                             </div>
                                         ))}
                                     </ControlPanel>
