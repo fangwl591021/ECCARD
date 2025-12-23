@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 旗艦分類聚合版 (v2.6.6)</title>
+    <title>FLEX Hub Pro - 旗艦分類聚合版 (v2.6.8)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -33,8 +33,7 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #000; border-radius: 10px; }
         .chevron-rotate { transition: transform 0.3s ease; }
-        .chevron-up { transform: rotate(180deg); }
-        .checkbox-custom { width: 24px; height: 24px; accent-color: #06C755; cursor: pointer; }
+        .checkbox-custom { width: 22px; height: 22px; accent-color: #06C755; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -43,7 +42,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, Fragment, useCallback } = React;
 
-        const APP_VERSION = "v2.6.6";
+        const APP_VERSION = "v2.6.8";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
@@ -54,8 +53,7 @@
                 items: [
                     { id: 'CAROUSEL_PRO', name: "專業多頁型卡片", url: "./tool-carousel-pro.html", icon: 'layers' },
                     { id: 'SEQUENTIAL_PRO', name: "單頁業務名片", url: "./tool-sequential-pro.html", icon: 'award' },
-                    { id: 'PERSONAL', name: "單頁個人名片", url: "./tool-personal.html", icon: 'user' },
-                    { id: 'ECOMMERCE', name: "單頁電商名片", url: "./tool-ecommerce.html", icon: 'shopping' }
+                    { id: 'PERSONAL', name: "單頁個人名片", url: "./tool-personal.html", icon: 'user' }
                 ]
             },
             {
@@ -74,12 +72,10 @@
                 layers: <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />,
                 user: <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />,
                 award: <circle cx="12" cy="8" r="7" />,
-                shopping: <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" />,
                 tool: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />,
-                copy: <Fragment><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></Fragment>,
                 trash: <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />,
                 send: <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />,
-                save: <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                save: <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
             };
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || null}</svg>;
         };
@@ -105,7 +101,7 @@
                     const res = await fetch(`${GAS_URL}?userId=${uid}&action=getFiles`);
                     const data = await res.json();
                     setUserFiles(data || []);
-                    setSelectedIds(new Set()); // 刷新後清除選取
+                    setSelectedIds(new Set());
                 } catch (e) { setUserFiles([]); }
             }, []);
 
@@ -129,9 +125,7 @@
 
             useEffect(() => {
                 const handleMessage = (event) => {
-                    if (event.data?.type === 'SYNC_FLEX_DATA') {
-                        setCurrentJson(event.data.json);
-                    }
+                    if (event.data?.type === 'SYNC_FLEX_DATA') setCurrentJson(event.data.json);
                     if (event.data?.type === 'CHILD_READY' && activeFile && iframeRef.current) {
                         iframeRef.current.contentWindow.postMessage({ type: 'LOAD_FLEX_DATA', json: activeFile.content }, '*');
                     }
@@ -154,24 +148,10 @@
                 setIsLoading(false);
             };
 
-            const handleSendSingle = async () => {
-                if (!currentJson) { alert("⚠️ 內容同步中，請稍候。"); return; }
-                try {
-                    const rawData = typeof currentJson === 'string' ? JSON.parse(currentJson) : currentJson;
-                    const cleanPayload = JSON.parse(JSON.stringify(rawData));
-                    // 淨化發送內容
-                    ["altText", "_pages", "pages", "isVisible", "template"].forEach(k => delete cleanPayload[k]);
-
-                    const result = await liff.shareTargetPicker([{ type: "flex", altText: "數位名片", contents: cleanPayload }]);
-                    if (result) showMsg("✅ 發送成功！");
-                } catch (e) { alert("❌ 發送失敗：" + e.message); }
-            };
-
             const handleSendSelected = async () => {
                 const selectedFiles = userFiles.filter(f => selectedIds.has(f.id));
                 if (selectedFiles.length === 0) return;
-                if (selectedFiles.length > 5) { alert("⚠️ LINE 批次發送上限為 5 則，請減少勾選數量。"); return; }
-
+                if (selectedFiles.length > 5) { alert("⚠️ LINE 批次發送上限為 5 則"); return; }
                 try {
                     const messages = selectedFiles.map(f => {
                         const content = typeof f.content === 'string' ? JSON.parse(f.content) : f.content;
@@ -179,53 +159,28 @@
                         ["altText", "_pages", "pages", "isVisible", "template"].forEach(k => delete clean[k]);
                         return { type: "flex", altText: f.name || "數位名片", contents: clean };
                     });
-
                     const result = await liff.shareTargetPicker(messages);
                     if (result) showMsg("✅ 批次發送成功！");
                 } catch (e) { alert("❌ 發送失敗：" + e.message); }
             };
 
             const handleDelete = async (id) => {
-                if(!confirm("確定要刪除？數據將無法還原。")) return;
+                if(!confirm("確定要刪除？此操作不可還原。")) return;
                 setIsLoading(true);
                 try {
-                    const res = await fetch(GAS_URL, { 
-                        method: 'POST', 
-                        body: JSON.stringify({ action: 'deleteFile', userId: user.uid, id: String(id) }) 
+                    const response = await fetch(GAS_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'deleteFile', userId: user.uid, id: String(id) })
                     });
-                    const result = await res.json();
+                    const result = await response.json();
                     if (result.success) {
-                        showMsg("🗑️ 已刪除專案");
+                        showMsg("🗑️ 已刪除");
                         await refreshFiles(user.uid);
                     } else {
                         showMsg("❌ 刪除失敗: " + (result.message || "未知錯誤"));
                     }
-                } catch (e) { showMsg("❌ 通訊錯誤"); }
+                } catch (e) { showMsg("❌ 通訊失敗"); }
                 setIsLoading(false);
-            };
-
-            const handleClone = async (file) => {
-                setIsLoading(true);
-                const newName = `${file.name} (複製)`;
-                await fetch(GAS_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ action: 'saveFile', userId: user.uid, id: String(Date.now()), name: newName, content: file.content }) 
-                });
-                await refreshFiles(user.uid);
-                setIsLoading(false);
-                showMsg("📋 已複製專案");
-            };
-
-            const toggleSelect = (id) => {
-                const next = new Set(selectedIds);
-                if (next.has(id)) next.delete(id);
-                else next.add(id);
-                setSelectedIds(next);
-            };
-
-            const toggleSelectAll = () => {
-                if (selectedIds.size === userFiles.length) setSelectedIds(new Set());
-                else setSelectedIds(new Set(userFiles.map(f => f.id)));
             };
 
             if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white font-black italic animate-pulse">數據載入中...</div>;
@@ -235,10 +190,10 @@
 
             return (
                 <div className="flex h-screen w-screen overflow-hidden text-black bg-[#f4f5f7] font-black">
-                    {isLoading && <div className="fixed inset-0 bg-white/80 z-[10001] flex items-center justify-center font-black text-xl italic animate-pulse">處理中...</div>}
+                    {isLoading && <div className="fixed inset-0 bg-white/80 z-[10001] flex items-center justify-center font-black animate-pulse">處理中...</div>}
                     {toast && <div className="toast">{toast}</div>}
                     
-                    <aside className="line-sidebar border-r border-slate-300 w-72 shrink-0 bg-white shadow-xl">
+                    <aside className="line-sidebar border-r border-slate-300 w-72 shrink-0 bg-white">
                         <div className="h-24 flex items-center px-8 border-b border-slate-300 bg-white shrink-0">
                             <span className="text-[#06C755] mr-4"><Icon name="menu" className="w-8 h-8" /></span>
                             <div className="flex flex-col"><span className="font-black text-[#06C755] text-2xl uppercase italic leading-none">FLEX HUB</span><span className="text-[10px] opacity-40 mt-1 tracking-widest">{APP_VERSION}</span></div>
@@ -249,12 +204,12 @@
                                 <div key={group.id} className="mb-4">
                                     <button onClick={() => setCollapsedGroups(p => ({...p, [group.id]: !p[group.id]}))} className="w-full flex items-center justify-between px-5 py-3 text-xs text-slate-400 uppercase tracking-[0.2em] font-black hover:text-black transition-colors">
                                         <span>{group.name}</span>
-                                        <span className={`chevron-rotate ${collapsedGroups[group.id] ? '' : 'chevron-up'}`}><Icon name="chevron" className="w-3 h-3" /></span>
+                                        <span className={`chevron-rotate ${collapsedGroups[group.id] ? 'rotate-180' : ''}`}><Icon name="chevron" className="w-3 h-3" /></span>
                                     </button>
                                     {!collapsedGroups[group.id] && (
                                         <div className="flex flex-col gap-1.5 mt-1">
                                             {group.items.map(item => (
-                                                <button key={item.id} onClick={()=>{setActiveModuleId(item.id); setActiveFile(null);}} className={`w-full flex items-center px-6 py-4 gap-4 rounded-2xl transition-all ${activeModuleId === item.id && !activeFile ? 'sidebar-item-active shadow-lg' : 'hover:bg-slate-50 text-slate-500'}`}>
+                                                <button key={item.id} onClick={()=>{setActiveModuleId(item.id); setActiveFile(null);}} className={`w-full flex items-center px-6 py-4 gap-4 rounded-2xl transition-all ${activeModuleId === item.id && !activeFile ? 'sidebar-item-active shadow-sm' : 'hover:bg-slate-50 text-slate-500'}`}>
                                                     <Icon name={item.icon} />
                                                     <span className="text-sm font-black truncate">{item.name}</span>
                                                 </button>
@@ -270,11 +225,10 @@
                         {activeFile ? (
                             <div className="h-full flex flex-col animate-in fade-in duration-500">
                                 <div className="h-24 border-b flex items-center px-10 justify-between bg-white shadow-md z-10">
-                                    <button onClick={()=>setActiveFile(null)} className="font-black text-black flex items-center gap-3 hover:text-[#06C755] transition-colors shrink-0 text-lg"><span>← Back</span></button>
+                                    <button onClick={()=>setActiveFile(null)} className="font-black text-black flex items-center gap-3 hover:text-[#06C755] transition-colors shrink-0 text-lg"><span>← 返回</span></button>
                                     <input type="text" value={activeFile.name} onChange={e=>setActiveFile({...activeFile, name: e.target.value})} className="bg-slate-100 border-2 border-black rounded-2xl px-6 py-3 font-black text-center max-w-xl mx-8 outline-none text-xl focus:bg-white transition-all shadow-inner" />
                                     <div className="flex items-center gap-4 shrink-0">
-                                        <button onClick={handleSendSingle} className="bg-[#06C755] text-white px-8 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-[#05b34c]"><Icon name="send" /> <span>發送</span></button>
-                                        <button onClick={handleSave} className="bg-black text-white px-8 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-slate-800"><Icon name="save" /> <span>儲存</span></button>
+                                        <button onClick={handleSave} className="bg-black text-white px-10 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-slate-800"><Icon name="save" /> <span>儲存</span></button>
                                     </div>
                                 </div>
                                 <iframe ref={iframeRef} src={currentProject.url} className="flex-1 border-none shadow-inner"></iframe>
@@ -289,15 +243,18 @@
                                                 <Icon name="send" /> 發送已選 ({selectedIds.size})
                                             </button>
                                         )}
-                                        <button onClick={()=>setActiveFile({id: String(Date.now()), name:"", content: null})} className="bg-[#06C755] text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl active:scale-95 transition-all hover:-translate-y-1">＋ 建立新設計</button>
+                                        <button onClick={()=>setActiveFile({id: String(Date.now()), name:"新專案", content: null})} className="bg-[#06C755] text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl active:scale-95 transition-all hover:-translate-y-1">＋ 建立新設計</button>
                                     </div>
                                 </div>
                                 <div className="bg-white border-2 border-slate-100 rounded-[40px] overflow-hidden shadow-2xl">
                                     <table className="w-full text-left">
                                         <thead className="bg-slate-50 border-b-2 border-slate-100 font-black text-slate-400 uppercase text-xs tracking-widest">
                                             <tr>
-                                                <th className="p-8 w-16">
-                                                    <input type="checkbox" checked={userFiles.length > 0 && selectedIds.size === userFiles.length} onChange={toggleSelectAll} className="checkbox-custom" />
+                                                <th className="p-8 w-16 text-center">
+                                                    <input type="checkbox" checked={userFiles.length > 0 && selectedIds.size === userFiles.length} onChange={()=>{
+                                                        if (selectedIds.size === userFiles.length) setSelectedIds(new Set());
+                                                        else setSelectedIds(new Set(userFiles.map(f => f.id)));
+                                                    }} className="checkbox-custom" />
                                                 </th>
                                                 <th className="p-8">專案名稱</th>
                                                 <th className="p-8 text-center">操作管理</th>
@@ -306,14 +263,17 @@
                                         <tbody className="divide-y-2 divide-slate-50">
                                             {userFiles.length === 0 ? <tr><td colSpan="3" className="p-32 text-center text-slate-200 italic text-2xl">目前尚無數據</td></tr> : userFiles.map(f => (
                                                 <tr key={String(f.id)} className={`transition-all ${selectedIds.has(f.id) ? 'bg-green-50' : 'hover:bg-slate-50/50'}`}>
-                                                    <td className="p-8">
-                                                        <input type="checkbox" checked={selectedIds.has(f.id)} onChange={()=>toggleSelect(f.id)} className="checkbox-custom" />
+                                                    <td className="p-8 text-center">
+                                                        <input type="checkbox" checked={selectedIds.has(f.id)} onChange={()=>{
+                                                            const n = new Set(selectedIds);
+                                                            if (n.has(f.id)) n.delete(f.id); else n.add(f.id);
+                                                            setSelectedIds(n);
+                                                        }} className="checkbox-custom" />
                                                     </td>
-                                                    <td className="p-8 text-xl font-black text-black cursor-pointer" onClick={()=>toggleSelect(f.id)}>{f.name || "未命名設計"}</td>
+                                                    <td className="p-8 text-xl font-black text-black cursor-pointer" onClick={()=>setActiveFile(f)}>{f.name || "未命名設計"}</td>
                                                     <td className="p-8 text-center">
                                                         <div className="flex justify-center items-center gap-10">
-                                                            <button onClick={()=>setActiveFile(f)} className="text-[#06C755] hover:underline font-black text-lg uppercase italic tracking-tighter">Edit</button>
-                                                            <button onClick={()=>handleClone(f)} className="text-amber-500 flex items-center gap-2 hover:underline font-black text-lg uppercase italic tracking-tighter"><Icon name="copy" /> Clone</button>
+                                                            <button onClick={()=>setActiveFile(f)} className="text-[#06C755] hover:underline font-black text-lg uppercase italic tracking-tighter">編輯</button>
                                                             <button onClick={() => handleDelete(f.id)} className="text-red-500 transition-all hover:scale-110"><Icon name="trash" className="w-8 h-8" /></button>
                                                         </div>
                                                     </td>
