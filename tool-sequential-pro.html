@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sequential Pro - 業務終極修正版 v3.1.1</title>
+    <title>Sequential Pro - 業務終極修正版 v3.1.2</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -195,22 +195,19 @@
                 return bubble;
             }, [data]);
 
-            // 【重點】與主介面同步的 Effect
+            // 與主介面同步的 Effect
             useEffect(() => {
                 const json = buildJson();
                 window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify(json) }, '*');
             }, [data, buildJson]);
 
-            // 【重點】接收主介面指令
+            // 接收主介面指令
             useEffect(() => {
                 const handleParentMsg = (event) => {
                     const { type, json } = event.data;
                     if (type === 'LOAD_FLEX_DATA' && json) {
                         try {
-                            // 這裡可以根據傳入的 JSON 反推 data 狀態，
-                            // 簡化起見，如果您的 GAS 會存原始 JSON，這裡需要一個 Parser。
-                            // 若存的是 JSON，這裡先嘗試解析
-                            console.log("收到舊資料載入請求");
+                            // 這裡可以加入 Parser 將載入的 JSON 還原回 Data 狀態
                         } catch(e) {}
                     }
                     if (type === 'GET_FLEX_DATA_REQUEST') {
@@ -218,7 +215,6 @@
                     }
                 };
                 window.addEventListener('message', handleParentMsg);
-                // 告知父層：我準備好了
                 window.parent.postMessage({ type: 'CHILD_READY' }, '*');
                 return () => window.removeEventListener('message', handleParentMsg);
             }, [buildJson]);
@@ -256,7 +252,7 @@
                     <div className="w-1/2 bg-white border-r flex flex-col shadow-xl z-10">
                         <div className="sticky-section flex items-center gap-3">
                             <i data-lucide="award" className="w-8 h-8 text-[#06C755]"></i>
-                            <h1 className="text-xl tracking-tighter uppercase">業務版編輯器 v3.1.1</h1>
+                            <h1 className="text-xl tracking-tighter uppercase">業務版編輯器 v3.1.2</h1>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                             <ControlPanel title="1. 背景與標籤" icon="image">
@@ -312,12 +308,13 @@
                                 </div>
                             </ControlPanel>
 
-                            <ControlPanel title="6. 底部按鈕" icon="external-link">
-                                <input type="text" value={data.footerLabel} onChange={e => updateField('footerLabel', e.target.value)} className="w-full p-3 border rounded-xl mb-2" />
-                                <input type="text" value={data.footerUri} onChange={e => updateField('footerUri', e.target.value)} className="w-full p-3 border rounded-xl mb-4 text-xs font-mono" />
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div><label className="text-[10px] block">按鈕色</label><input type="color" value={data.footerThemeColor} onChange={e => updateField('footerThemeColor', e.target.value)} className="w-full h-8 border rounded-lg" /></div>
-                                    <div><label className="text-[10px] block">文字色</label><input type="color" value={data.footerTextColor} onChange={e => updateField('footerTextColor', e.target.value)} className="w-full h-8 border rounded-lg" /></div>
+                            <ControlPanel title="6. 底部行為按鈕" icon="external-link">
+                                <input type="text" value={data.footerLabel} onChange={e => updateField('footerLabel', e.target.value)} className="w-full p-3 border rounded-xl mb-2" placeholder="按鈕文字" />
+                                <input type="text" value={data.footerUri} onChange={e => updateField('footerUri', e.target.value)} className="w-full p-3 border rounded-xl mb-4 text-xs font-mono" placeholder="按鈕連結" />
+                                <div className="grid grid-cols-3 gap-2 mt-3">
+                                    <div><label className="text-[10px] text-slate-400 block mb-1">區域背景</label><input type="color" value={data.footerBg} onChange={e => updateField('footerBg', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white cursor-pointer shadow-sm" /></div>
+                                    <div><label className="text-[10px] text-slate-400 block mb-1">按鈕背景</label><input type="color" value={data.footerThemeColor} onChange={e => updateField('footerThemeColor', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white cursor-pointer shadow-sm" /></div>
+                                    <div><label className="text-[10px] text-slate-400 block mb-1">文字顏色</label><input type="color" value={data.footerTextColor} onChange={e => updateField('footerTextColor', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white cursor-pointer shadow-sm" /></div>
                                 </div>
                             </ControlPanel>
                         </div>
