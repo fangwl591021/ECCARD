@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sequential Pro - 業務終極修正版 v3.0.2</title>
+    <title>Sequential Pro - 業務終極修正版 v3.0.8</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -26,12 +26,12 @@
         input, select, textarea, button { font-size: 14px !important; }
         .section-title { font-size: 15px; font-weight: 900; color: white; }
         .control-label { font-size: 13px; font-weight: 700; color: #475569; }
-        .color-preview { width: 36px; height: 36px; border-radius: 6px; border: 2px solid #e2e8f0; cursor: pointer; }
         .sticky-section { position: sticky; top: 0; background: white; z-index: 50; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; }
         .amber-header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; }
         .slider-value-display { font-size: 12px; font-weight: 900; background: #f59e0b; color: white; padding: 2px 8px; border-radius: 10px; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: 2px solid #e2e8f0; border-radius: 4px; }
+        select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
     </style>
 </head>
 <body>
@@ -42,30 +42,24 @@
 
         const CONSTANTS = {
             SOCIAL_DATA: {
-                NONE: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "無" },
-                FB: { url: "https://cdn-icons-png.flaticon.com/512/733/733547.png", label: "Facebook" },
-                IG: { url: "https://cdn-icons-png.flaticon.com/512/2111/2111463.png", label: "Instagram" },
-                TIKTOK: { url: "https://cdn-icons-png.flaticon.com/512/3046/3046121.png", label: "TikTok" },
-                LINE: { url: "https://cdn-icons-png.flaticon.com/512/124/124027.png", label: "LINE" },
-                PHONE: { url: "https://cdn-icons-png.flaticon.com/512/3616/3616215.png", label: "電話" },
-                MAIL: { url: "https://cdn-icons-png.flaticon.com/512/732/732200.png", label: "Email" },
-                MAP: { url: "https://cdn-icons-png.flaticon.com/512/355/355980.png", label: "地圖" }
+                NONE: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "請選擇類型", defaultUri: "https://" },
+                LINE: { url: "https://cdn-icons-png.flaticon.com/512/124/124027.png", label: "LINE", defaultUri: "https://line.me" },
+                PHONE: { url: "https://cdn-icons-png.flaticon.com/512/3616/3616215.png", label: "電話聯絡", defaultUri: "tel:0912345678" },
+                FB: { url: "https://cdn-icons-png.flaticon.com/512/733/733547.png", label: "Facebook", defaultUri: "https://facebook.com/" },
+                IG: { url: "https://cdn-icons-png.flaticon.com/512/2111/2111463.png", label: "Instagram", defaultUri: "https://instagram.com/" },
+                TIKTOK: { url: "https://cdn-icons-png.flaticon.com/512/3046/3046121.png", label: "TikTok", defaultUri: "https://tiktok.com/@" },
+                MAIL: { url: "https://cdn-icons-png.flaticon.com/512/732/732200.png", label: "Email 郵件", defaultUri: "mailto:yourname@email.com" },
+                MAP: { url: "https://cdn-icons-png.flaticon.com/512/355/355980.png", label: "Google 地圖", defaultUri: "https://www.google.com/maps/search/?api=1&query=" }
             },
-            RADIUS_OPTIONS: [
-                { value: "none", label: "無圓角" }, { value: "xs", label: "小圓角" }, { value: "sm", label: "中小圓角" },
-                { value: "md", label: "中圓角" }, { value: "lg", label: "大圓角" }, { value: "xl", label: "超大圓角" }, { value: "xxl", label: "最大圓角" }
-            ],
             DEFAULT_DATA: {
                 url: "https://aiwe.cc/wp-content/uploads/2025/12/cf75e54791dd1f49f918345fdfe2430b.png",
-                animated: true,
-                badgeText: "PREMIUM", badgeBg: "#D4AF37", badgeRadius: "xs", badgeTop: 20, badgePos: "offsetEnd",
+                badgeText: "HOT ITEM", badgeBg: "#FF0000", badgeRadius: "15px", badgeTop: 20, badgePos: "offsetEnd",
                 avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
                 avatarTop: 60,
                 name: "張志明", nameTop: 155, nameColor: "#000000", nameWeight: "bold", nameAlign: "center",
-                label1: "行銷總監 / 品牌顧問", label1Top: 190, label1Bg: "#FFFFFF33", label1Color: "#000000", label1Weight: "bold",
                 desc: "致力於協助企業品牌數位轉型\n擁有超過 15 年的跨國行銷經驗",
-                descTop: 275, descColor: "#000000", descWeight: "regular", descAlign: "center",
-                socialTop: 215,
+                descTop: 215, descColor: "#000000", descWeight: "regular", descAlign: "center",
+                socialTop: 275,
                 icons: [
                     { type: "PHONE", uri: "tel:0912345678" },
                     { type: "LINE", uri: "https://line.me" }
@@ -76,21 +70,9 @@
         };
 
         const Utils = {
-            toPx: (val) => String(val).endsWith('px') ? val : `${val}px`,
-            rgbaToHex: (rgba) => {
-                if (!rgba || rgba.startsWith('#')) return rgba || "#000000";
-                const match = rgba.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                if (match) {
-                    const r = parseInt(match[1]).toString(16).padStart(2, '0');
-                    const g = parseInt(match[2]).toString(16).padStart(2, '0');
-                    const b = parseInt(match[3]).toString(16).padStart(2, '0');
-                    return `#${r}${g}${b}`.toUpperCase();
-                }
-                return "#000000";
-            }
+            toPx: (val) => String(val).endsWith('px') ? val : `${val}px`
         };
 
-        // --- 抽離預覽組件以修復打字卡頓問題 ---
         const FlexPreview = memo(({ data }) => {
             const scale = 300 / 400;
             const SOCIAL = CONSTANTS.SOCIAL_DATA;
@@ -101,10 +83,15 @@
                     <div className="rounded-[45px] shadow-2xl overflow-hidden relative border-[10px] border-black bg-white w-[300px]">
                         <div className="relative h-[450px] overflow-hidden">
                             <img src={d.url} className="w-full h-full object-cover" alt="背景" />
-                            <div className="absolute px-3 py-1 text-white font-bold rounded shadow-sm text-[10px]" style={{ 
-                                top: '15px', [d.badgePos === 'offsetStart' ? 'left' : 'right']: '15px', 
-                                backgroundColor: d.badgeBg, borderRadius: '4px'
+                            <div className="absolute px-3 text-white font-bold shadow-sm text-[10px] flex items-center justify-center whitespace-nowrap overflow-hidden" style={{ 
+                                top: '15px', 
+                                [d.badgePos === 'offsetStart' ? 'left' : 'right']: '15px', 
+                                backgroundColor: d.badgeBg, 
+                                borderRadius: '15px',
+                                height: '25px',
+                                minWidth: '50px'
                             }}>{d.badgeText}</div>
+                            
                             <div className="absolute w-full flex justify-center" style={{ top: (d.avatarTop * scale) + 'px' }}>
                                 <img src={d.avatar} className="w-16 h-16 rounded-full border-2 border-white shadow-xl" alt="頭像" />
                             </div>
@@ -112,15 +99,11 @@
                                 top: (d.nameTop * scale) + 'px', color: d.nameColor, textAlign: d.nameAlign,
                                 fontWeight: d.nameWeight === 'bold' ? 900 : 400, fontSize: '18px' 
                             }}>{d.name}</div>
-                            <div className="absolute w-full px-10" style={{ top: (d.label1Top * scale) + 'px' }}>
-                                <div className="py-1.5 rounded text-[11px] text-center font-black shadow-sm" style={{ 
-                                    backgroundColor: d.label1Bg, color: d.label1Color 
-                                }}>{d.label1}</div>
-                            </div>
+                            
                             <div className="absolute w-full flex justify-center gap-3" style={{ top: (d.socialTop * scale) + 'px' }}>
                                 {d.icons.map((icon, i) => (
                                     <div key={i} className="w-10 h-10 p-2 bg-white/25 rounded-full border border-white/40 flex items-center justify-center shadow-md backdrop-blur-sm">
-                                        <img src={SOCIAL[icon.type]?.url} className="w-full h-full object-contain" alt="icon" />
+                                        <img src={SOCIAL[icon.type]?.url || SOCIAL.NONE.url} className="w-full h-full object-contain" alt="icon" />
                                     </div>
                                 ))}
                             </div>
@@ -155,7 +138,6 @@
             const [activeTab, setActiveTab] = useState('editor');
             const [copyStatus, setCopyStatus] = useState("複製 JSON");
 
-            // --- 生成 JSON 邏輯 ---
             const buildJson = useCallback((d = data) => {
                 const SOCIAL = CONSTANTS.SOCIAL_DATA;
                 return {
@@ -165,8 +147,13 @@
                         contents: [
                             { type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: true },
                             {
-                                type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.badgeTop), [d.badgePos]: "20px",
-                                backgroundColor: d.badgeBg, cornerRadius: d.badgeRadius, paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px",
+                                type: "box", layout: "vertical", position: "absolute", 
+                                offsetTop: Utils.toPx(d.badgeTop), [d.badgePos]: "20px",
+                                height: "25px", 
+                                backgroundColor: d.badgeBg, 
+                                cornerRadius: "15px", 
+                                paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px",
+                                justifyContent: "center", 
                                 contents: [{ type: "text", text: d.badgeText, color: "#ffffff", size: "xxs", weight: "bold" }]
                             },
                             {
@@ -179,10 +166,6 @@
                             {
                                 type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.nameTop), offsetStart: "0px", offsetEnd: "0px",
                                 contents: [{ type: "text", text: d.name, weight: d.nameWeight, size: "lg", color: d.nameColor, align: d.nameAlign }]
-                            },
-                            {
-                                type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.label1Top), offsetStart: "40px", offsetEnd: "40px", backgroundColor: d.label1Bg, cornerRadius: "md", paddingAll: "4px",
-                                contents: [{ type: "text", text: d.label1, size: "xs", color: d.label1Color, align: "center", weight: d.label1Weight }]
                             },
                             {
                                 type: "box", layout: "horizontal", position: "absolute", offsetTop: Utils.toPx(d.socialTop), offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md",
@@ -209,89 +192,6 @@
                 };
             }, [data]);
 
-            // --- 解析儲存內容 ---
-            const parseJsonToState = useCallback((json) => {
-                if (!json) return;
-                try {
-                    const b = typeof json === 'string' ? JSON.parse(json) : json;
-                    const ns = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_DATA));
-                    const body = b.body?.contents || [];
-
-                    const imgNode = body.find(c => c.type === 'image' && c.aspectRatio === '2:3');
-                    if (imgNode) ns.url = imgNode.url;
-
-                    const badgeBox = body.find(c => c.contents?.[0]?.size === 'xxs');
-                    if (badgeBox) {
-                        ns.badgeText = badgeBox.contents[0].text;
-                        ns.badgeBg = badgeBox.backgroundColor;
-                        ns.badgeTop = parseInt(badgeBox.offsetTop);
-                        ns.badgePos = badgeBox.offsetStart ? 'offsetStart' : 'offsetEnd';
-                    }
-
-                    const nameBox = body.find(c => c.contents?.[0]?.size === 'lg');
-                    if (nameBox) {
-                        ns.name = nameBox.contents[0].text;
-                        ns.nameColor = nameBox.contents[0].color;
-                        ns.nameAlign = nameBox.contents[0].align;
-                        ns.nameTop = parseInt(nameBox.offsetTop);
-                    }
-
-                    const label1Box = body.find(c => c.contents?.[0]?.size === 'xs' && c.backgroundColor && c.cornerRadius === 'md');
-                    if (label1Box) {
-                        ns.label1 = label1Box.contents[0].text;
-                        ns.label1Color = label1Box.contents[0].color;
-                        ns.label1Bg = label1Box.backgroundColor;
-                        ns.label1Top = parseInt(label1Box.offsetTop);
-                    }
-
-                    const descBox = body.find(c => c.contents?.[0]?.size === 'xs' && c.contents?.[0]?.wrap);
-                    if (descBox) {
-                        ns.desc = descBox.contents[0].text;
-                        ns.descColor = descBox.contents[0].color;
-                        ns.descAlign = descBox.contents[0].align;
-                        ns.descTop = parseInt(descBox.offsetTop);
-                    }
-
-                    const avBox = body.find(c => c.alignItems === 'center');
-                    if (avBox) {
-                        ns.avatarTop = parseInt(avBox.offsetTop);
-                        ns.avatar = avBox.contents[0].contents[0].url;
-                    }
-
-                    const socialBox = body.find(c => c.layout === 'horizontal');
-                    if (socialBox) {
-                        ns.icons = socialBox.contents.map(c => {
-                            let type = "WEB";
-                            Object.keys(CONSTANTS.SOCIAL_DATA).forEach(k => { if(CONSTANTS.SOCIAL_DATA[k].url === c.contents[0].url) type = k; });
-                            return { type, uri: c.action?.uri };
-                        });
-                        ns.socialTop = parseInt(socialBox.offsetTop);
-                    }
-
-                    if (b.footer) {
-                        const ft = b.footer.contents[0];
-                        ns.footerBg = b.footer.backgroundColor || ns.footerBg;
-                        ns.footerLabel = ft.contents[0].text;
-                        ns.footerThemeColor = ft.backgroundColor;
-                        ns.footerTextColor = ft.contents[0].color;
-                        ns.footerUri = ft.action?.uri;
-                    }
-                    setData(ns);
-                } catch (e) { console.error("解析失敗", e); }
-            }, []);
-
-            useEffect(() => {
-                const handleMessage = (e) => { if (e.data?.type === 'LOAD_FLEX_DATA') parseJsonToState(e.data.json); };
-                window.addEventListener('message', handleMessage);
-                window.parent.postMessage({ type: 'CHILD_READY' }, '*');
-                return () => window.removeEventListener('message', handleMessage);
-            }, [parseJsonToState]);
-
-            useEffect(() => {
-                const currentJson = buildJson();
-                window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify(currentJson, null, 2) }, '*');
-            }, [data, buildJson]);
-
             const updateField = useCallback((path, value) => {
                 setData(prev => {
                     const keys = path.split('.');
@@ -311,7 +211,7 @@
                     const diff = newAvatarTop - prev.avatarTop;
                     return {
                         ...prev, avatarTop: newAvatarTop,
-                        nameTop: prev.nameTop + diff, label1Top: prev.label1Top + diff,
+                        nameTop: prev.nameTop + diff,
                         socialTop: prev.socialTop + diff, descTop: prev.descTop + diff
                     };
                 });
@@ -324,14 +224,23 @@
                     <div className="w-1/2 bg-white border-r flex flex-col shadow-xl z-10">
                         <div className="sticky-section flex items-center gap-3">
                             <i data-lucide="award" className="w-8 h-8 text-green-600"></i>
-                            <h1 className="text-xl tracking-tighter uppercase">業務版終極修正 v3.0.2</h1>
+                            <h1 className="text-xl tracking-tighter uppercase">業務版終極修正 v3.0.8</h1>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                            <ControlPanel title="1. 媒體層設定" icon="image">
-                                <label className="control-label block mb-2">背景底圖網址</label>
+                            <ControlPanel title="1. 媒體層設定 (標籤限10字)" icon="image">
+                                <label className="control-label block mb-2">背景底圖網址 ( animated=true )</label>
                                 <input type="text" value={data.url} onChange={e => updateField('url', e.target.value)} className="w-full p-3 border rounded-xl bg-slate-50 font-mono text-xs" />
                                 <div className="grid grid-cols-2 gap-4 mt-4">
-                                    <div><label className="control-label block mb-2">標籤文字</label><input type="text" value={data.badgeText} onChange={e => updateField('badgeText', e.target.value)} className="w-full p-3 border rounded-xl" /></div>
+                                    <div>
+                                        <label className="control-label block mb-2">標籤文字 (最多10字)</label>
+                                        <input 
+                                            type="text" 
+                                            maxLength={10}
+                                            value={data.badgeText} 
+                                            onChange={e => updateField('badgeText', e.target.value)} 
+                                            className="w-full p-3 border rounded-xl placeholder-slate-300" 
+                                        />
+                                    </div>
                                     <div><label className="control-label block mb-2">標籤顏色</label><input type="color" value={data.badgeBg} onChange={e => updateField('badgeBg', e.target.value)} className="w-full h-11 p-1 border rounded-xl bg-white cursor-pointer" /></div>
                                 </div>
                             </ControlPanel>
@@ -341,81 +250,102 @@
                                     <label className="control-label">垂直位置連動</label>
                                     <span className="slider-value-display">{data.avatarTop}px</span>
                                 </div>
-                                <input type="range" min="0" max="600" value={data.avatarTop} onChange={e => handleMasterMove(parseInt(e.target.value))} className="w-full master-slider" />
+                                <input type="range" min="0" max="600" value={data.avatarTop} onChange={e => handleMasterMove(parseInt(e.target.value))} className="w-full master-slider cursor-pointer" />
                             </ControlPanel>
 
-                            <ControlPanel title="3. 姓名設定 (鎖定: LG)" icon="user">
-                                <div className="space-y-4">
-                                    <div className="flex gap-2">
-                                        <input type="text" value={data.name} onChange={e => updateField('name', e.target.value)} className="flex-1 p-3 border rounded-xl font-bold bg-white" placeholder="姓名" />
-                                        <input type="color" value={data.nameColor} onChange={e => updateField('nameColor', e.target.value)} className="w-12 h-12 p-1 border rounded-xl bg-white cursor-pointer shadow-sm" />
-                                    </div>
-                                    <div className="flex bg-slate-100 p-1 rounded-lg border">
-                                        {['start', 'center', 'end'].map(a => <button key={a} onClick={() => updateField('nameAlign', a)} className={`flex-1 py-2 rounded-md ${data.nameAlign === a ? 'bg-white shadow text-green-600' : 'text-slate-400'}`}><i data-lucide={a==='start'?'align-left':a==='center'?'align-center':'align-right'} className="w-4 h-4 mx-auto"></i></button>)}
-                                    </div>
+                            <ControlPanel title="3. 姓名設定" icon="user">
+                                <div className="flex gap-2">
+                                    <input type="text" value={data.name} onChange={e => updateField('name', e.target.value)} className="flex-1 p-3 border rounded-xl font-bold bg-white" placeholder="姓名" />
+                                    <input type="color" value={data.nameColor} onChange={e => updateField('nameColor', e.target.value)} className="w-12 h-12 p-1 border rounded-xl bg-white cursor-pointer shadow-sm" />
+                                </div>
+                                <div className="flex bg-slate-100 p-1 rounded-lg border mt-3">
+                                    {['start', 'center', 'end'].map(a => <button key={a} onClick={() => updateField('nameAlign', a)} className={`flex-1 py-2 rounded-md ${data.nameAlign === a ? 'bg-white shadow text-green-600' : 'text-slate-400'}`}><i data-lucide={a==='start'?'align-left':a==='center'?'align-center':'align-right'} className="w-4 h-4 mx-auto"></i></button>)}
                                 </div>
                             </ControlPanel>
 
-                            <ControlPanel title="4. 狀態消息 / 職稱" icon="bookmark">
-                                <input type="text" value={data.label1} onChange={e => updateField('label1', e.target.value)} className="w-full p-3 border rounded-xl bg-white font-bold" placeholder="職稱或動態" />
-                                <div className="grid grid-cols-2 gap-4 mt-2">
-                                    <div><label className="control-label block mb-2 text-xs">文字顏色</label><input type="color" value={data.label1Color} onChange={e => updateField('label1Color', e.target.value)} className="w-full h-10 p-1 border rounded-xl bg-white cursor-pointer" /></div>
-                                    <div><label className="control-label block mb-2 text-xs">背景顏色</label><input type="color" value={data.label1Bg} onChange={e => updateField('label1Bg', e.target.value)} className="w-full h-10 p-1 border rounded-xl bg-white cursor-pointer" /></div>
+                            <ControlPanel title="4. 簡介內容排版" icon="align-left">
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="control-label text-xs uppercase tracking-wider">簡介內容與樣式</label>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-slate-400">文字顏色</span>
+                                        <input type="color" value={data.descColor} onChange={e => updateField('descColor', e.target.value)} className="w-10 h-10 p-1 border rounded-lg bg-white cursor-pointer shadow-sm" />
+                                    </div>
+                                </div>
+                                <textarea 
+                                    value={data.desc} 
+                                    onChange={e => updateField('desc', e.target.value)} 
+                                    className="w-full p-3 border rounded-xl h-32 resize-none leading-relaxed bg-white shadow-inner focus:ring-2 ring-green-500 ring-opacity-10 outline-none transition-all" 
+                                    placeholder="輸入簡介內容..." 
+                                />
+                                <div className="flex bg-slate-100 p-1 rounded-lg border mt-2">
+                                    {['start', 'center', 'end'].map(a => (
+                                        <button key={a} onClick={() => updateField('descAlign', a)} className={`flex-1 py-2 rounded-md ${data.descAlign === a ? 'bg-white shadow text-green-600' : 'text-slate-400'}`}>
+                                            <i data-lucide={a==='start'?'align-left':a==='center'?'align-center':'align-right'} className="w-4 h-4 mx-auto"></i>
+                                        </button>
+                                    ))}
                                 </div>
                             </ControlPanel>
 
-                            <ControlPanel title="5. 說明排版 (鎖定: XS)" icon="align-left">
-                                <textarea value={data.desc} onChange={e => updateField('desc', e.target.value)} className="w-full p-3 border rounded-xl h-24 resize-none leading-relaxed bg-white" placeholder="簡介內容..." />
-                                <div className="flex gap-3">
-                                    <div className="flex bg-slate-100 p-1 rounded-lg border flex-1">
-                                        {['start', 'center', 'end'].map(a => (
-                                            <button key={a} onClick={() => updateField('descAlign', a)} className={`flex-1 py-2 rounded-md ${data.descAlign === a ? 'bg-white shadow text-green-600' : 'text-slate-400'}`}><i data-lucide={a==='start'?'align-left':a==='center'?'align-center':'align-right'} className="w-4 h-4 mx-auto"></i></button>
-                                        ))}
-                                    </div>
-                                    <input type="color" value={data.descColor} onChange={e => updateField('descColor', e.target.value)} className="w-12 h-11 p-1 border rounded-xl bg-white cursor-pointer shadow-sm" />
-                                </div>
-                            </ControlPanel>
-
-                            <ControlPanel title="6. 個人頭像與底部按鈕" icon="user-circle">
-                                <div className="space-y-4">
-                                    <div><label className="control-label block mb-2">頭像圖片網址</label><input type="text" value={data.avatar} onChange={e => updateField('avatar', e.target.value)} className="w-full p-2 border rounded-lg bg-slate-50 font-mono text-xs" /></div>
-                                    <div className="border-t pt-4 grid grid-cols-2 gap-3">
-                                        <div><label className="control-label block mb-1 text-xs">按鈕文字</label><input type="text" value={data.footerLabel} onChange={e => updateField('footerLabel', e.target.value)} className="w-full p-2 border rounded-lg bg-white" /></div>
-                                        <div><label className="control-label block mb-1 text-xs">按鈕連結</label><input type="text" value={data.footerUri} onChange={e => updateField('footerUri', e.target.value)} className="w-full p-2 border rounded-lg bg-white font-mono text-xs" /></div>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div><label className="control-label block mb-1 text-xs">Footer背景</label><input type="color" value={data.footerBg} onChange={e => updateField('footerBg', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white cursor-pointer" /></div>
-                                        <div><label className="control-label block mb-1 text-xs">按鈕背景</label><input type="color" value={data.footerThemeColor} onChange={e => updateField('footerThemeColor', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white cursor-pointer" /></div>
-                                        <div><label className="control-label block mb-1 text-xs">按鈕文字色</label><input type="color" value={data.footerTextColor} onChange={e => updateField('footerTextColor', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white cursor-pointer" /></div>
-                                    </div>
-                                </div>
-                            </ControlPanel>
-
-                            <ControlPanel title="7. 社群快捷設定" icon="share-2">
+                            <ControlPanel title="5. 社群連結管理" icon="share-2">
                                 <div className="flex justify-between items-center mb-4">
-                                    <label className="control-label font-black text-xs uppercase">連結清單</label>
-                                    <button onClick={() => updateField('icons', [...data.icons, { type: 'LINE', uri: 'https://line.me' }])} className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg shadow-md">+ 新增</button>
+                                    <label className="control-label font-black text-xs uppercase tracking-widest">聯絡管道設定</label>
+                                    <button 
+                                        onClick={() => updateField('icons', [...data.icons, { type: 'LINE', uri: 'https://line.me' }])} 
+                                        className="text-xs bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl shadow-lg transition-all active:scale-95 font-black"
+                                    >+ 新增按鈕</button>
                                 </div>
                                 {data.icons.map((icon, idx) => (
-                                    <div key={idx} className="bg-slate-50 p-4 border rounded-xl mb-3 relative group">
-                                        <button onClick={() => updateField('icons', data.icons.filter((_, i) => i !== idx))} className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 shadow-md transition-all"><i data-lucide="x" className="w-3 h-3"></i></button>
-                                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-2">
-                                            {Object.keys(CONSTANTS.SOCIAL_DATA).map(k => (
-                                                <button key={k} onClick={() => {
-                                                    const newList = [...data.icons];
-                                                    newList[idx].type = k;
-                                                    if (k === 'PHONE') newList[idx].uri = "tel:0912345678";
-                                                    else if (k === 'MAIL') newList[idx].uri = "mailto:a@gmail.com";
-                                                    else newList[idx].uri = "https://line.me";
-                                                    updateField('icons', newList);
-                                                }} className={`p-2 rounded-lg border shrink-0 ${icon.type === k ? 'bg-green-50 border-green-500 scale-110' : 'bg-white opacity-40 hover:opacity-100 transition-all'}`}>
-                                                    {k === 'NONE' ? '無' : <img src={CONSTANTS.SOCIAL_DATA[k].url} className="w-5 h-5 object-contain" />}
-                                                </button>
-                                            ))}
+                                    <div key={idx} className="bg-slate-50 p-4 border rounded-2xl mb-4 relative group hover:border-green-500 transition-colors shadow-sm">
+                                        <button onClick={() => updateField('icons', data.icons.filter((_, i) => i !== idx))} className="absolute -top-2 -right-2 bg-red-500 text-white w-7 h-7 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 shadow-xl transition-all hover:scale-110 z-10"><i data-lucide="x" className="w-4 h-4"></i></button>
+                                        
+                                        <div className="flex flex-col gap-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 shrink-0 bg-white rounded-lg flex items-center justify-center shadow-inner border border-slate-200">
+                                                    <img src={CONSTANTS.SOCIAL_DATA[icon.type]?.url || CONSTANTS.SOCIAL_DATA.NONE.url} className="w-6 h-6 object-contain" />
+                                                </div>
+                                                <select 
+                                                    value={icon.type} 
+                                                    onChange={e => {
+                                                        const newList = [...data.icons];
+                                                        const newType = e.target.value;
+                                                        const defaultUri = CONSTANTS.SOCIAL_DATA[newType]?.defaultUri || "https://";
+                                                        newList[idx].type = newType;
+                                                        newList[idx].uri = defaultUri;
+                                                        updateField('icons', newList);
+                                                    }}
+                                                    className="flex-1 p-3 border rounded-xl bg-white font-black text-sm outline-none focus:ring-2 ring-green-500 ring-opacity-20 transition-all cursor-pointer"
+                                                >
+                                                    {Object.keys(CONSTANTS.SOCIAL_DATA).map(k => (
+                                                        <option key={k} value={k}>{CONSTANTS.SOCIAL_DATA[k].label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <input 
+                                                type="text" 
+                                                value={icon.uri || ""} 
+                                                onChange={e => { 
+                                                    const n = [...data.icons]; 
+                                                    n[idx].uri = e.target.value; 
+                                                    updateField('icons', n); 
+                                                }} 
+                                                className="w-full p-3 text-xs border rounded-xl bg-white font-mono placeholder-slate-300" 
+                                                placeholder="輸入連結資訊"
+                                            />
                                         </div>
-                                        <input type="text" value={icon.uri} onChange={e => { const n = [...data.icons]; n[idx].uri = e.target.value; updateField('icons', n); }} className="w-full p-2 text-xs border rounded-lg bg-white font-mono" />
                                     </div>
                                 ))}
+                            </ControlPanel>
+
+                            <ControlPanel title="6. 底部行為按鈕" icon="external-link">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input type="text" value={data.footerLabel} onChange={e => updateField('footerLabel', e.target.value)} className="p-3 border rounded-xl bg-white font-bold" placeholder="按鈕文字" />
+                                    <input type="text" value={data.footerUri} onChange={e => updateField('footerUri', e.target.value)} className="p-3 border rounded-xl bg-white font-mono text-xs" placeholder="按鈕連結" />
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 mt-3">
+                                    <div><label className="text-[10px] text-slate-400 block mb-1">區域背景</label><input type="color" value={data.footerBg} onChange={e => updateField('footerBg', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white" /></div>
+                                    <div><label className="text-[10px] text-slate-400 block mb-1">按鈕背景</label><input type="color" value={data.footerThemeColor} onChange={e => updateField('footerThemeColor', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white" /></div>
+                                    <div><label className="text-[10px] text-slate-400 block mb-1">文字顏色</label><input type="color" value={data.footerTextColor} onChange={e => updateField('footerTextColor', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white" /></div>
+                                </div>
                             </ControlPanel>
                         </div>
                     </div>
@@ -425,19 +355,33 @@
                             <button onClick={() => setActiveTab('editor')} className={`text-sm tracking-widest ${activeTab === 'editor' ? 'text-green-600 border-b-4 border-green-600' : 'text-slate-400'}`}>視覺預覽</button>
                             <button onClick={() => setActiveTab('json')} className={`text-sm tracking-widest ${activeTab === 'json' ? 'text-green-600 border-b-4 border-green-600' : 'text-slate-400'}`}>JSON 代碼</button>
                             <div className="flex-1"></div>
-                            <button onClick={() => { navigator.clipboard.writeText(JSON.stringify(buildJson(), null, 2)); setCopyStatus("已複製！"); setTimeout(()=>setCopyStatus("複製 JSON"), 2000); }} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl text-xs flex items-center gap-2 shadow-lg active:scale-95 transition-all"><i data-lucide="copy" className="w-4 h-4"></i> {copyStatus}</button>
+                            <button onClick={() => { 
+                                const json = JSON.stringify(buildJson(), null, 2);
+                                if(navigator.clipboard) {
+                                    navigator.clipboard.writeText(json);
+                                } else {
+                                    const textArea = document.createElement("textarea");
+                                    textArea.value = json;
+                                    document.body.appendChild(textArea);
+                                    textArea.select();
+                                    document.execCommand('copy');
+                                    document.body.removeChild(textArea);
+                                }
+                                setCopyStatus("已複製！"); 
+                                setTimeout(()=>setCopyStatus("複製 JSON"), 2000); 
+                            }} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl text-xs flex items-center gap-2 shadow-lg active:scale-95 transition-all"><i data-lucide="copy" className="w-4 h-4"></i> {copyStatus}</button>
                         </div>
                         <div className="flex-1 overflow-y-auto">
                             {activeTab === 'editor' ? (
                                 <div className="py-12 flex flex-col items-center min-h-full">
                                     <div className="mb-10 px-6 py-2 bg-slate-900/90 text-white rounded-full text-[10px] tracking-[0.2em] font-black uppercase flex items-center gap-3 shadow-2xl">
                                         <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                                        LINE Flex LIVE PREVIEW (Business Pro)
+                                        LINE Flex Message LIVE PREVIEW
                                     </div>
                                     <FlexPreview data={data} />
                                 </div>
                             ) : (
-                                <div className="p-10"><div className="bg-slate-900 p-8 rounded-[32px] shadow-2xl border-4 border-slate-800 relative"><pre className="text-emerald-400 font-mono text-sm overflow-x-auto leading-relaxed custom-scrollbar pt-6">{JSON.stringify(buildJson(), null, 2)}</pre></div></div>
+                                <div className="p-10"><div className="bg-slate-900 p-8 rounded-[32px] shadow-2xl border-4 border-slate-800 relative"><pre className="text-emerald-400 font-mono text-xs overflow-x-auto leading-relaxed custom-scrollbar pt-6">{JSON.stringify(buildJson(), null, 2)}</pre></div></div>
                             )}
                         </div>
                     </div>
