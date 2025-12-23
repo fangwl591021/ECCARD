@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人單頁名片生成器 - 旗艦整合版 (v2.4.8)</title>
+    <title>個人單頁名片生成器 - 旗艦整合版 (v2.5.0)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -37,6 +37,8 @@
             box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
             outline: none;
         }
+        
+        .transition-all-300 { transition: all 0.3s ease; }
     </style>
 </head>
 <body>
@@ -122,7 +124,6 @@
                     size: data.size,
                     body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [] }
                 };
-                
                 const [w, h] = data.media.aspectRatio.split(':').map(Number);
                 const baseW = data.size === 'giga' ? 420 : 300;
                 const mediaH = (h / w) * baseW;
@@ -198,113 +199,128 @@
                 return bubble;
             }, [data, mediaType, videoConfig]);
 
-            // --- 通信邏輯 (解決同步中問題) ---
-            const syncToParent = useCallback(() => {
-                const currentJson = buildFinalJson();
-                window.parent.postMessage({
-                    type: 'SYNC_FLEX_DATA',
-                    json: JSON.stringify(currentJson, null, 2)
-                }, '*');
-            }, [buildFinalJson]);
-
-            useEffect(() => {
-                syncToParent();
-            }, [data, mediaType, videoConfig, syncToParent]);
-
-            useEffect(() => {
-                window.parent.postMessage({ type: 'CHILD_READY' }, '*');
-                const handleMessage = (event) => {
-                    if (event.data?.type === 'LOAD_FLEX_DATA') {
-                        if (event.data.json) {
-                            try {
-                                const parsed = typeof event.data.json === 'string' ? JSON.parse(event.data.json) : event.data.json;
-                                // 這裡可以做簡單的結構合併
-                                if (parsed.body) {
-                                    // 載入邏輯視結構而定，這裡建議根據需求還原 State
-                                }
-                            } catch (e) { console.error("Data Load Error"); }
-                        }
-                    }
-                };
-                window.addEventListener('message', handleMessage);
-                return () => window.removeEventListener('message', handleMessage);
-            }, []);
-
-            // --- 輔助更新功能 ---
-            const handleUpdate = (section, field, value) => {
+            // --- 輔助功能定義 (先於 render) ---
+            const handleUpdate = useCallback((section, field, value) => {
                 setData(prev => {
                     if (section === 'root') return { ...prev, [field]: value };
                     return { ...prev, [section]: { ...prev[section], [field]: value } };
                 });
-            };
+            }, []);
 
-            const copyJson = () => {
+            const copyJson = useCallback(() => {
                 const json = JSON.stringify(buildFinalJson(), null, 2);
                 navigator.clipboard.writeText(json).then(() => {
                     setCopyStatus("已複製！");
                     setTimeout(() => setCopyStatus("複製 JSON"), 2000);
                 });
-            };
+            }, [buildFinalJson]);
 
-            const updateLongBtn = (idx, field, value) => {
+            const updateLongBtn = useCallback((idx, field, value) => {
                 setData(prev => {
                     const newList = [...prev.footer.longBtns];
                     newList[idx] = { ...newList[idx], [field]: value };
                     return { ...prev, footer: { ...prev.footer, longBtns: newList } };
                 });
-            };
+            }, []);
 
-            const addLongBtn = () => {
-                if (data.footer.longBtns.length >= 3) return;
-                setData(prev => ({
-                    ...prev,
-                    footer: { ...prev.footer, longBtns: [...prev.footer.longBtns, { label: "新按鈕", uri: "https://line.me", themeColor: "#10b981", textColor: "#ffffff", isSolid: true }] }
-                }));
-            };
-
-            const deleteLongBtn = (idx) => {
-                setData(prev => ({ ...prev, footer: { ...prev.footer, longBtns: prev.footer.longBtns.filter((_, i) => i !== idx) } }));
-            };
-
-            const updateShortBtn = (idx, field, value) => {
+            const updateShortBtn = useCallback((idx, field, value) => {
                 setData(prev => {
                     const newList = [...prev.footer.shortBtns];
                     if (field === 'icon_data') {
                         newList[idx].type = value.type;
                         newList[idx].label = value.label;
-                        
-                        // --- 自動填入參數邏輯 ---
-                        if (value.type === 'PHONE') {
-                            newList[idx].uri = "tel:0912345678";
-                        } else if (value.type === 'MAIL') {
-                            newList[idx].uri = "mailto:a@gmail.com";
-                        } else {
-                            newList[idx].uri = "https://line.me";
-                        }
+                        // 自動填入參數邏輯
+                        if (value.type === 'PHONE') newList[idx].uri = "tel:0912345678";
+                        else if (value.type === 'MAIL') newList[idx].uri = "mailto:a@gmail.com";
+                        else newList[idx].uri = "https://line.me";
                     } else {
                         newList[idx][field] = value;
                     }
                     return { ...prev, footer: { ...prev.footer, shortBtns: newList } };
                 });
-            };
+            }, []);
 
-            const deleteShortBtn = (idx) => {
-                setData(prev => ({ ...prev, footer: { ...prev.footer, shortBtns: prev.footer.shortBtns.filter((_, i) => i !== idx) } }));
-            };
+            // --- 解析器 (還原儲存內容) ---
+            const parseJsonToState = useCallback((json) => {
+                if (!json) return;
+                try {
+                    const bubble = typeof json === 'string' ? JSON.parse(json) : json;
+                    const newState = JSON.parse(JSON.stringify(initialFlex));
+                    
+                    newState.size = bubble.size || "mega";
 
-            const addShortBtn = () => {
-                if (data.footer.shortBtns.length >= 5) return;
-                setData(prev => ({
-                    ...prev,
-                    footer: { ...prev.footer, shortBtns: [...prev.footer.shortBtns, { type: "WEB", label: "官網", uri: "https://line.me", themeColor: "#f1f5f9", textColor: "#444444", isSolid: true }] }
-                }));
-            };
+                    if (bubble.hero && bubble.hero.type === 'video') {
+                        setMediaType('video');
+                        setVideoConfig({ url: bubble.hero.url || "", previewUrl: bubble.hero.previewUrl || "" });
+                        newState.media.aspectRatio = bubble.hero.aspectRatio || "16:9";
+                    } else {
+                        setMediaType('image');
+                        const imgBox = bubble.body?.contents?.find(c => c.type === 'box' && c.contents?.[0]?.type === 'image');
+                        if (imgBox) {
+                            newState.media.url = imgBox.contents[0].url || "";
+                            newState.media.aspectRatio = imgBox.contents[0].aspectRatio || "16:9";
+                            newState.media.uri = imgBox.contents[0].action?.uri || "";
+                            const badge = imgBox.contents.find(c => c.position === 'absolute');
+                            if (badge) {
+                                newState.media.badgeText = badge.contents[0].text;
+                                newState.media.badgeBg = badge.backgroundColor;
+                                newState.media.badgePos = badge.offsetStart ? 'left' : 'right';
+                            }
+                        }
+                    }
+
+                    const infoBox = bubble.body?.contents?.find(c => c.type === 'box' && c.paddingAll === '15px');
+                    if (infoBox) {
+                        newState.content.name = infoBox.contents[0].text;
+                        newState.content.nameColor = infoBox.contents[0].color;
+                        newState.content.nameAlign = infoBox.contents[0].align;
+                        newState.content.desc = infoBox.contents[1].text;
+                        newState.content.descColor = infoBox.contents[1].color;
+                        newState.content.descAlign = infoBox.contents[1].align;
+                    }
+
+                    const avBox = bubble.body?.contents?.find(c => c.alignItems === 'center');
+                    if (avBox) {
+                        newState.avatar.show = true;
+                        newState.avatar.url = avBox.contents[0].contents[0].url;
+                        newState.avatar.cornerRadius = avBox.contents[0].cornerRadius;
+                        newState.avatar.borderColor = avBox.contents[0].borderColor;
+                    } else newState.avatar.show = false;
+
+                    if (bubble.footer) {
+                        const lBtns = bubble.footer.contents.filter(c => c.layout === 'vertical');
+                        newState.footer.longBtns = lBtns.map(b => ({
+                            label: b.contents[0].text, uri: b.action?.uri || "", themeColor: b.borderColor, textColor: b.contents[0].color, isSolid: !!b.backgroundColor
+                        }));
+                        const sBox = bubble.footer.contents.find(c => c.layout === 'horizontal');
+                        if (sBox) {
+                            newState.footer.shortBtns = sBox.contents.map(b => {
+                                let type = "WEB";
+                                Object.keys(SOCIAL_DATA).forEach(k => { if(SOCIAL_DATA[k].url === b.contents[0].url) type = k; });
+                                return { type, label: b.contents[1].text, uri: b.action?.uri || "", themeColor: b.borderColor, textColor: b.contents[1].color, isSolid: !!b.backgroundColor };
+                            });
+                        }
+                    }
+                    setData(newState);
+                } catch (e) { console.error("Parse Error", e); }
+            }, []);
+
+            // --- 通訊 useEffect ---
+            useEffect(() => {
+                const handleMessage = (e) => { if (e.data?.type === 'LOAD_FLEX_DATA') parseJsonToState(e.data.json); };
+                window.addEventListener('message', handleMessage);
+                window.parent.postMessage({ type: 'CHILD_READY' }, '*');
+                return () => window.removeEventListener('message', handleMessage);
+            }, [parseJsonToState]);
 
             useEffect(() => {
-                if (window.lucide) window.lucide.createIcons();
-            }, [data, activeTab, mediaType]);
+                const currentJson = buildFinalJson();
+                window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify(currentJson, null, 2) }, '*');
+            }, [data, mediaType, videoConfig, buildFinalJson]);
 
-            // --- 預覽組件 ---
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [data, activeTab, mediaType]);
+
+            // --- 內部組件 ---
             const Preview = () => {
                 const bubbleW = data.size === 'giga' ? '420px' : '300px';
                 const [w, h] = data.media.aspectRatio.split(':').map(Number);
@@ -334,158 +350,125 @@
 
             const AlignButtons = ({ value, onChange }) => (
                 <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-                    {[
-                        { id: 'start', icon: 'align-left' },
-                        { id: 'center', icon: 'align-center' },
-                        { id: 'end', icon: 'align-right' }
-                    ].map(btn => (
+                    {[{ id: 'start', icon: 'align-left' }, { id: 'center', icon: 'align-center' }, { id: 'end', icon: 'align-right' }].map(btn => (
                         <button key={btn.id} onClick={() => onChange(btn.id)} className={`flex-1 flex justify-center py-2 rounded-md transition-all ${value === btn.id ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-400'}`}><i data-lucide={btn.icon} className="w-4 h-4"></i></button>
                     ))}
                 </div>
             );
 
             return (
-                <div className="flex h-screen bg-slate-100 text-slate-900 overflow-hidden">
-                    {/* 左側 Sidebar */}
+                <div className="flex h-screen bg-slate-100 text-slate-900 overflow-hidden font-black">
                     <div className="w-[500px] bg-white border-r border-slate-300 flex flex-col shadow-xl z-10">
                         <div className="p-6 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="bg-emerald-500 p-2 rounded-lg text-white"><i data-lucide="layout-grid" className="w-6 h-6"></i></div>
-                                <h1 className="font-bold text-lg uppercase tracking-tight">旗艦整合設計 <span className="text-emerald-500">v2.4.8</span></h1>
+                                <h1 className="font-bold text-lg uppercase tracking-tight">旗艦整合設計 <span className="text-emerald-500">v2.5.0</span></h1>
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-                            
-                            {/* 01. 媒體視覺模式 */}
                             <section className="space-y-4">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="monitor" className="w-4 h-4"></i> 01. 媒體視覺模式</h3>
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="monitor" className="w-4 h-4"></i> 01. 媒體模式</h3>
                                 <div className="flex bg-slate-100 p-1.5 rounded-lg border border-slate-200 mb-3">
                                     <button onClick={() => setMediaType('image')} className={`flex-1 py-2 text-xs font-bold rounded-md transition ${mediaType === 'image' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'}`}>圖片模式</button>
                                     <button onClick={() => setMediaType('video')} className={`flex-1 py-2 text-xs font-bold rounded-md transition ${mediaType === 'video' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'}`}>影片模式</button>
                                 </div>
                                 {mediaType === 'image' ? (
-                                    <div className="space-y-3">
-                                        <input type="text" value={data.media.url} onChange={(e) => handleUpdate('media', 'url', e.target.value)} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="主圖網址..." />
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <select value={data.media.aspectRatio} onChange={(e) => handleUpdate('media', 'aspectRatio', e.target.value)} className="p-3 text-sm border border-slate-200 rounded-xl bg-slate-50 font-medium">{ASPECT_RATIOS.map(r => <option key={r} value={r}>{r}</option>)}</select>
-                                            <select value={data.size} onChange={(e) => handleUpdate('root', 'size', e.target.value)} className="p-3 text-sm border border-slate-200 rounded-xl bg-slate-50 font-medium">{BUBBLE_SIZES.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}</select>
-                                        </div>
-                                    </div>
+                                    <input type="text" value={data.media.url} onChange={(e) => handleUpdate('media', 'url', e.target.value)} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="主圖網址..." />
                                 ) : (
                                     <div className="space-y-3">
-                                        <input type="text" value={videoConfig.url} onChange={(e) => setVideoConfig({...videoConfig, url: e.target.value})} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="影片 MP4 網址..." />
-                                        <input type="text" value={videoConfig.previewUrl} onChange={(e) => setVideoConfig({...videoConfig, previewUrl: e.target.value})} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="預覽圖片網址..." />
+                                        <input type="text" value={videoConfig.url} onChange={(e) => setVideoConfig({...videoConfig, url: e.target.value})} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="影片網址..." />
+                                        <input type="text" value={videoConfig.previewUrl} onChange={(e) => setVideoConfig({...videoConfig, previewUrl: e.target.value})} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="預覽圖片..." />
                                     </div>
                                 )}
                             </section>
 
-                            {/* 02. 姓名排版設定 */}
                             <section className="space-y-4">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="type" className="w-4 h-4"></i> 02. 姓名排版設定</h3>
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="type" className="w-4 h-4"></i> 02. 姓名排版</h3>
                                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
                                     <div className="flex gap-2">
                                         <input type="text" value={data.content.name} onChange={(e) => handleUpdate('content', 'name', e.target.value)} className="flex-1 p-3 text-sm font-bold border border-slate-200 rounded-xl" placeholder="姓名" />
-                                        <input type="color" value={data.content.nameColor} onChange={(e) => handleUpdate('content', 'nameColor', e.target.value)} className="w-12 h-12 p-1 border border-slate-200 rounded-xl bg-white cursor-pointer shadow-sm" title="選擇姓名顏色" />
+                                        <input type="color" value={data.content.nameColor} onChange={(e) => handleUpdate('content', 'nameColor', e.target.value)} className="w-12 h-12 p-1 border border-slate-200 rounded-xl bg-white cursor-pointer shadow-sm" />
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">姓名水平對齊</label>
-                                        <AlignButtons value={data.content.nameAlign} onChange={(val) => handleUpdate('content', 'nameAlign', val)} />
-                                    </div>
+                                    <AlignButtons value={data.content.nameAlign} onChange={(val) => handleUpdate('content', 'nameAlign', val)} />
                                 </div>
                             </section>
 
-                            {/* 03. 說明文字設定 */}
                             <section className="space-y-4">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="align-left" className="w-4 h-4"></i> 03. 說明文字設定</h3>
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="align-left" className="w-4 h-4"></i> 03. 說明排版</h3>
                                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
-                                    <textarea value={data.content.desc} onChange={(e) => handleUpdate('content', 'desc', e.target.value)} className="w-full p-3 text-xs border border-slate-200 rounded-xl h-24 resize-none leading-relaxed" placeholder="說明內容..." />
+                                    <textarea value={data.content.desc} onChange={(e) => handleUpdate('content', 'desc', e.target.value)} className="w-full p-3 text-xs border border-slate-200 rounded-xl h-24 resize-none leading-relaxed" />
                                     <div className="grid grid-cols-2 gap-3">
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">對齊</label>
-                                            <AlignButtons value={data.content.descAlign} onChange={(val) => handleUpdate('content', 'descAlign', val)} />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">顏色</label>
-                                            <div className="h-[42px] p-1 bg-white border border-slate-200 rounded-xl flex items-center justify-center">
-                                                <input type="color" value={data.content.descColor} onChange={(e) => handleUpdate('content', 'descColor', e.target.value)} className="w-full h-full p-0 border-none bg-transparent cursor-pointer" />
-                                            </div>
-                                        </div>
+                                        <AlignButtons value={data.content.descAlign} onChange={(val) => handleUpdate('content', 'descAlign', val)} />
+                                        <input type="color" value={data.content.descColor} onChange={(e) => handleUpdate('content', 'descColor', e.target.value)} className="w-full h-11 p-1 border border-slate-200 rounded-xl bg-white cursor-pointer" />
                                     </div>
                                 </div>
                             </section>
 
-                            {/* 04. 個人頭像樣式 */}
                             <section className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="user" className="w-4 h-4"></i> 04. 個人頭像樣式</h3>
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="user" className="w-4 h-4"></i> 04. 個人頭像</h3>
                                     <input type="checkbox" checked={data.avatar.show} onChange={() => handleUpdate('avatar', 'show', !data.avatar.show)} className="accent-emerald-500 h-5 w-5" />
                                 </div>
                                 {data.avatar.show && (
                                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                                        <input type="text" value={data.avatar.url} onChange={(e) => handleUpdate('avatar', 'url', e.target.value)} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-white font-mono" placeholder="頭像圖片網址..." />
+                                        <input type="text" value={data.avatar.url} onChange={(e) => handleUpdate('avatar', 'url', e.target.value)} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-white font-mono" />
                                         <div className="grid grid-cols-2 gap-3">
                                             <select value={data.avatar.cornerRadius} onChange={(e) => handleUpdate('avatar', 'cornerRadius', e.target.value)} className="p-3 text-xs border border-slate-200 rounded-xl bg-white">{CORNER_RADIUS_OPTIONS.map(r => <option key={r} value={r}>圓角: {r}</option>)}</select>
-                                            <input type="color" value={data.avatar.borderColor} onChange={(e) => handleUpdate('avatar', 'borderColor', e.target.value)} className="w-full h-11 p-1 border border-slate-200 rounded-xl bg-white cursor-pointer shadow-sm" />
+                                            <input type="color" value={data.avatar.borderColor} onChange={(e) => handleUpdate('avatar', 'borderColor', e.target.value)} className="w-full h-11 p-1 border border-slate-200 rounded-xl bg-white cursor-pointer" />
                                         </div>
                                     </div>
                                 )}
                             </section>
 
-                            {/* 05. 主按鈕區 */}
                             <section className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="layers" className="w-4 h-4"></i> 05. 主按鈕區 (Max 3)</h3>
-                                    <button onClick={addLongBtn} className="text-[10px] font-black bg-emerald-500 text-white px-3 py-1.5 rounded-lg shadow-lg shadow-emerald-100 transition-all">+ 新增</button>
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="layers" className="w-4 h-4"></i> 05. 主按鈕區</h3>
+                                    <button onClick={() => setData(prev => ({...prev, footer: {...prev.footer, longBtns: [...prev.footer.longBtns, { label: "新按鈕", uri: "https://line.me", themeColor: "#10b981", textColor: "#ffffff", isSolid: true }]}}))} className="text-[10px] font-black bg-emerald-500 text-white px-3 py-1.5 rounded-lg">+ 新增</button>
                                 </div>
-                                <div className="space-y-3">
-                                    {data.footer.longBtns.map((btn, idx) => (
-                                        <div key={idx} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl relative group">
-                                            <button onClick={() => deleteLongBtn(idx)} className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-md"><i data-lucide="x" className="w-3 h-3"></i></button>
-                                            <div className="grid grid-cols-2 gap-3 mb-3">
-                                                <input type="text" value={btn.label} onChange={(e) => updateLongBtn(idx, 'label', e.target.value)} className="p-2.5 text-xs border border-slate-200 rounded-lg bg-white font-bold" placeholder="文字" />
-                                                <input type="text" value={btn.uri} onChange={(e) => updateLongBtn(idx, 'uri', e.target.value)} className="p-2.5 text-xs border border-slate-200 rounded-lg bg-white font-mono text-slate-500" placeholder="網址" />
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex gap-2">
-                                                    <input type="color" value={btn.themeColor} onChange={(e) => updateLongBtn(idx, 'themeColor', e.target.value)} className="w-8 h-8 p-1 border border-slate-200 rounded-lg bg-white cursor-pointer shadow-sm" />
-                                                    <input type="color" value={btn.textColor} onChange={(e) => updateLongBtn(idx, 'textColor', e.target.value)} className="w-8 h-8 p-1 border border-slate-200 rounded-lg bg-white cursor-pointer shadow-sm" />
-                                                </div>
-                                                <button onClick={() => updateLongBtn(idx, 'isSolid', !btn.isSolid)} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase shadow-sm ${btn.isSolid ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-500'}`}>{btn.isSolid ? '實心' : '空心'}</button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-
-                            {/* 06. 社群快捷按鈕 */}
-                            <section className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="share-2" className="w-4 h-4"></i> 06. 社群快捷按鈕 (Max 5)</h3>
-                                    <button onClick={addShortBtn} className="text-[10px] font-black bg-emerald-500 text-white px-3 py-1.5 rounded-lg shadow-lg shadow-emerald-100 transition-all">+ 新增</button>
-                                </div>
-                                {data.footer.shortBtns.map((btn, idx) => (
+                                {data.footer.longBtns.map((btn, idx) => (
                                     <div key={idx} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl relative group mb-3">
-                                        <button onClick={() => deleteShortBtn(idx)} className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-md"><i data-lucide="x" className="w-3 h-3"></i></button>
-                                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-2">
-                                            {Object.keys(SOCIAL_DATA).map(key => (
-                                                <button key={key} onClick={() => updateShortBtn(idx, 'icon_data', { type: key, label: SOCIAL_DATA[key].label })} className={`p-2 rounded-lg shrink-0 border transition-all ${btn.type === key ? 'bg-emerald-50 border-emerald-500 scale-110' : 'border-transparent opacity-40 hover:opacity-100'}`}>
-                                                    {key === 'NONE' ? <i data-lucide="minus" className="w-4 h-4 text-slate-300"></i> : <img src={SOCIAL_DATA[key].url} className="w-5 h-5 object-contain" />}
-                                                </button>
-                                            ))}
+                                        <button onClick={() => setData(prev => ({...prev, footer: {...prev.footer, longBtns: prev.footer.longBtns.filter((_, i) => i !== idx)}}))} className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 shadow-md"><i data-lucide="x" className="w-3 h-3"></i></button>
+                                        <div className="grid grid-cols-2 gap-2 mb-2">
+                                            <input type="text" value={btn.label} onChange={(e) => updateLongBtn(idx, 'label', e.target.value)} className="p-2 text-xs border border-slate-200 rounded-lg bg-white font-bold" />
+                                            <input type="text" value={btn.uri} onChange={(e) => updateLongBtn(idx, 'uri', e.target.value)} className="p-2 text-xs border border-slate-200 rounded-lg bg-white font-mono" />
                                         </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <input type="text" value={btn.label} onChange={(e) => updateShortBtn(idx, 'label', e.target.value)} className="p-2 text-xs border border-slate-200 rounded-lg bg-white" placeholder="標籤" />
-                                            <input type="text" value={btn.uri} onChange={(e) => updateShortBtn(idx, 'uri', e.target.value)} className="p-2 text-xs border border-slate-200 rounded-lg bg-white font-mono text-slate-500" placeholder="網址" />
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex gap-2">
+                                                <input type="color" value={btn.themeColor} onChange={(e) => updateLongBtn(idx, 'themeColor', e.target.value)} className="w-8 h-8 p-1 border border-slate-200 rounded-lg" />
+                                                <input type="color" value={btn.textColor} onChange={(e) => updateLongBtn(idx, 'textColor', e.target.value)} className="w-8 h-8 p-1 border border-slate-200 rounded-lg" />
+                                            </div>
+                                            <button onClick={() => updateLongBtn(idx, 'isSolid', !btn.isSolid)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black ${btn.isSolid ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-500'}`}>{btn.isSolid ? '實心' : '空心'}</button>
                                         </div>
                                     </div>
                                 ))}
                             </section>
 
+                            <section className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="share-2" className="w-4 h-4"></i> 06. 社群快捷</h3>
+                                    <button onClick={() => setData(prev => ({...prev, footer: {...prev.footer, shortBtns: [...prev.footer.shortBtns, { type: "WEB", label: "官網", uri: "https://line.me", themeColor: "#f1f5f9", textColor: "#444444", isSolid: true }]}}))} className="text-[10px] font-black bg-emerald-500 text-white px-3 py-1.5 rounded-lg">+ 新增</button>
+                                </div>
+                                {data.footer.shortBtns.map((btn, idx) => (
+                                    <div key={idx} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl relative group mb-3">
+                                        <button onClick={() => setData(prev => ({...prev, footer: {...prev.footer, shortBtns: prev.footer.shortBtns.filter((_, i) => i !== idx)}}))} className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 shadow-md"><i data-lucide="x" className="w-3 h-3"></i></button>
+                                        <div className="flex gap-2 overflow-x-auto pb-2 mb-2 scrollbar-hide">
+                                            {Object.keys(SOCIAL_DATA).map(k => (
+                                                <button key={k} onClick={() => updateShortBtn(idx, 'icon_data', { type: k, label: SOCIAL_DATA[k].label })} className={`p-2 rounded-lg border transition-all ${btn.type === k ? 'bg-emerald-50 border-emerald-500' : 'opacity-40'}`}>
+                                                    {k === 'NONE' ? <i data-lucide="minus" className="w-4 h-4"></i> : <img src={SOCIAL_DATA[k].url} className="w-5 h-5 object-contain" />}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <input type="text" value={btn.label} onChange={(e) => updateShortBtn(idx, 'label', e.target.value)} className="p-2 text-xs border border-slate-200 rounded-lg bg-white" />
+                                            <input type="text" value={btn.uri} onChange={(e) => updateShortBtn(idx, 'uri', e.target.value)} className="p-2 text-xs border border-slate-200 rounded-lg bg-white font-mono" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </section>
                             <div className="h-20"></div>
                         </div>
                     </div>
 
-                    {/* 右側 Preview Area */}
                     <div className="flex-1 flex flex-col overflow-hidden bg-slate-200 relative">
                         <div className="h-[70px] bg-white border-b border-slate-200 flex items-center px-10 gap-10 shrink-0 z-30 shadow-sm">
                             <button onClick={() => setActiveTab('editor')} className={`text-sm font-black h-full relative tracking-widest flex items-center gap-2 ${activeTab === 'editor' ? 'text-emerald-500 border-b-4 border-emerald-500' : 'text-slate-400'}`}><i data-lucide="eye" className="w-4 h-4"></i> 視覺預覽</button>
@@ -495,29 +478,22 @@
                                 <i data-lucide="copy" className="w-3.5 h-3.5"></i> {copyStatus}
                             </button>
                         </div>
-
                         <div className="flex-1 overflow-y-auto chat-room-bg flex flex-col">
                             {activeTab === 'editor' ? (
                                 <div className="py-12 flex flex-col items-center min-h-full">
                                     <div className="mb-10 px-6 py-3 bg-slate-900/90 backdrop-blur rounded-2xl text-[11px] font-black text-white shadow-2xl border border-white/10 uppercase tracking-[0.2em] flex items-center gap-3">
                                         <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                                        LINE Flex Flagship Preview
+                                        LINE Flex LIVE PREVIEW
                                     </div>
                                     <Preview />
                                 </div>
                             ) : (
                                 <div className="p-12 max-w-4xl mx-auto w-full">
                                     <div className="bg-slate-900 p-8 rounded-3xl shadow-2xl border-4 border-slate-800 relative">
-                                        <div className="absolute top-4 right-6 flex gap-2">
-                                            <div className="w-3 h-3 rounded-full bg-rose-500"></div>
-                                            <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                                            <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                                        </div>
                                         <pre className="text-emerald-400 font-mono text-sm overflow-x-auto leading-relaxed custom-scrollbar pt-6">
                                             {JSON.stringify(buildFinalJson(), null, 2)}
                                         </pre>
                                     </div>
-                                    <p className="text-center mt-6 text-slate-100 text-xs font-bold opacity-40">已優化同步機制，點擊「發送」應可正常抓取數據。</p>
                                 </div>
                             )}
                         </div>
