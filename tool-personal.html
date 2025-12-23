@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人單頁名片生成器 - 旗艦整合版 (v2.5.0)</title>
+    <title>個人單頁名片生成器 - 旗艦整合版 (v2.5.2)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -62,7 +62,7 @@
             WEB: { url: "https://cdn-icons-png.flaticon.com/512/1006/1006771.png", label: "官方網站" }
         };
 
-        const ASPECT_RATIOS = ['1:1', '4:3', '16:9', '9:16', '20:13'];
+        const ASPECT_RATIOS = ['1:1', '4:3', '16:9', '9:16', '2:3', '20:13'];
         const BUBBLE_SIZES = ['mega', 'giga'];
         const CORNER_RADIUS_OPTIONS = ['none', 'xs', 'sm', 'md', 'lg', 'xl', 'xxl', '40px', '100px'];
 
@@ -87,11 +87,11 @@
             },
             content: {
                 name: "陳大文",
-                nameSize: "xl",
+                nameSize: "lg", // 固定為 lg
                 nameAlign: "start",
                 nameColor: "#0f172a",
                 desc: "專業 LINE Bot 解決方案\n致力於提供最流暢的互動體驗",
-                descSize: "sm",
+                descSize: "xs", // 固定為 xs
                 descAlign: "start",
                 descColor: "#475569"
             },
@@ -199,7 +199,7 @@
                 return bubble;
             }, [data, mediaType, videoConfig]);
 
-            // --- 輔助功能定義 (先於 render) ---
+            // --- 輔助功能 ---
             const handleUpdate = useCallback((section, field, value) => {
                 setData(prev => {
                     if (section === 'root') return { ...prev, [field]: value };
@@ -229,7 +229,6 @@
                     if (field === 'icon_data') {
                         newList[idx].type = value.type;
                         newList[idx].label = value.label;
-                        // 自動填入參數邏輯
                         if (value.type === 'PHONE') newList[idx].uri = "tel:0912345678";
                         else if (value.type === 'MAIL') newList[idx].uri = "mailto:a@gmail.com";
                         else newList[idx].uri = "https://line.me";
@@ -305,7 +304,7 @@
                 } catch (e) { console.error("Parse Error", e); }
             }, []);
 
-            // --- 通訊 useEffect ---
+            // --- 通訊處理 ---
             useEffect(() => {
                 const handleMessage = (e) => { if (e.data?.type === 'LOAD_FLEX_DATA') parseJsonToState(e.data.json); };
                 window.addEventListener('message', handleMessage);
@@ -335,8 +334,8 @@
                                 {mediaType === 'image' ? <img src={data.media.url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center relative"><img src={videoConfig.previewUrl} className="absolute inset-0 w-full h-full object-cover opacity-60" /><i data-lucide="play-circle" className="w-16 h-16 text-white relative z-10 opacity-90 drop-shadow-xl"></i></div>}
                             </div>
                             <div style={{ padding: '15px', paddingTop: `${txtPad}px` }}>
-                                <div className="font-bold" style={{ textAlign: data.content.nameAlign, fontSize: '20px', color: data.content.nameColor }}>{data.content.name}</div>
-                                <div className="mt-1 text-[14px] leading-snug whitespace-pre-wrap" style={{ color: data.content.descColor, textAlign: data.content.descAlign }}>{data.content.desc}</div>
+                                <div className="font-bold" style={{ textAlign: data.content.nameAlign, fontSize: '19px', color: data.content.nameColor }}>{data.content.name}</div>
+                                <div className="mt-1 text-[13px] leading-snug whitespace-pre-wrap" style={{ color: data.content.descColor, textAlign: data.content.descAlign }}>{data.content.desc}</div>
                             </div>
                             {data.avatar.show && <div className="absolute w-full flex justify-center transition-all duration-500" style={{ top: `${avatarOff}px` }}><div className="overflow-hidden bg-white shadow-xl" style={{ width: '80px', height: '80px', border: `3px solid ${data.avatar.borderColor}`, borderRadius: data.avatar.cornerRadius.includes('px') ? data.avatar.cornerRadius : '12px' }}><img src={data.avatar.url} className="w-full h-full object-cover" /></div></div>}
                             <div className="flex flex-col gap-3 p-[10px] pt-0">
@@ -362,10 +361,12 @@
                         <div className="p-6 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="bg-emerald-500 p-2 rounded-lg text-white"><i data-lucide="layout-grid" className="w-6 h-6"></i></div>
-                                <h1 className="font-bold text-lg uppercase tracking-tight">旗艦整合設計 <span className="text-emerald-500">v2.5.0</span></h1>
+                                <h1 className="font-bold text-lg uppercase tracking-tight">旗艦整合設計 <span className="text-emerald-500">v2.5.2</span></h1>
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+                            
+                            {/* 01. 媒體模式 */}
                             <section className="space-y-4">
                                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="monitor" className="w-4 h-4"></i> 01. 媒體模式</h3>
                                 <div className="flex bg-slate-100 p-1.5 rounded-lg border border-slate-200 mb-3">
@@ -380,10 +381,15 @@
                                         <input type="text" value={videoConfig.previewUrl} onChange={(e) => setVideoConfig({...videoConfig, previewUrl: e.target.value})} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="預覽圖片..." />
                                     </div>
                                 )}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <select value={data.media.aspectRatio} onChange={(e) => handleUpdate('media', 'aspectRatio', e.target.value)} className="p-3 text-sm border border-slate-200 rounded-xl bg-slate-50">{ASPECT_RATIOS.map(r => <option key={r} value={r}>{r}</option>)}</select>
+                                    <select value={data.size} onChange={(e) => handleUpdate('root', 'size', e.target.value)} className="p-3 text-sm border border-slate-200 rounded-xl bg-slate-50 uppercase">{BUBBLE_SIZES.map(s => <option key={s} value={s}>{s}</option>)}</select>
+                                </div>
                             </section>
 
+                            {/* 02. 姓名排版 - 固定字體為 LG (19px) */}
                             <section className="space-y-4">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="type" className="w-4 h-4"></i> 02. 姓名排版</h3>
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="type" className="w-4 h-4"></i> 02. 姓名排版 (字體固定: LG)</h3>
                                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
                                     <div className="flex gap-2">
                                         <input type="text" value={data.content.name} onChange={(e) => handleUpdate('content', 'name', e.target.value)} className="flex-1 p-3 text-sm font-bold border border-slate-200 rounded-xl" placeholder="姓名" />
@@ -393,8 +399,9 @@
                                 </div>
                             </section>
 
+                            {/* 03. 說明排版 - 固定字體為 XS (13px) */}
                             <section className="space-y-4">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="align-left" className="w-4 h-4"></i> 03. 說明排版</h3>
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="align-left" className="w-4 h-4"></i> 03. 說明排版 (字體固定: XS)</h3>
                                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
                                     <textarea value={data.content.desc} onChange={(e) => handleUpdate('content', 'desc', e.target.value)} className="w-full p-3 text-xs border border-slate-200 rounded-xl h-24 resize-none leading-relaxed" />
                                     <div className="grid grid-cols-2 gap-3">
@@ -404,6 +411,7 @@
                                 </div>
                             </section>
 
+                            {/* 04. 個人頭像 */}
                             <section className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="user" className="w-4 h-4"></i> 04. 個人頭像</h3>
@@ -420,6 +428,7 @@
                                 )}
                             </section>
 
+                            {/* 05. 主按鈕 */}
                             <section className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="layers" className="w-4 h-4"></i> 05. 主按鈕區</h3>
@@ -427,7 +436,7 @@
                                 </div>
                                 {data.footer.longBtns.map((btn, idx) => (
                                     <div key={idx} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl relative group mb-3">
-                                        <button onClick={() => setData(prev => ({...prev, footer: {...prev.footer, longBtns: prev.footer.longBtns.filter((_, i) => i !== idx)}}))} className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 shadow-md"><i data-lucide="x" className="w-3 h-3"></i></button>
+                                        <button onClick={() => setData(prev => ({...prev, footer: {...prev.footer, longBtns: prev.footer.longBtns.filter((_, i) => i !== idx)}}))} className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md"><i data-lucide="x" className="w-3 h-3"></i></button>
                                         <div className="grid grid-cols-2 gap-2 mb-2">
                                             <input type="text" value={btn.label} onChange={(e) => updateLongBtn(idx, 'label', e.target.value)} className="p-2 text-xs border border-slate-200 rounded-lg bg-white font-bold" />
                                             <input type="text" value={btn.uri} onChange={(e) => updateLongBtn(idx, 'uri', e.target.value)} className="p-2 text-xs border border-slate-200 rounded-lg bg-white font-mono" />
@@ -443,6 +452,7 @@
                                 ))}
                             </section>
 
+                            {/* 06. 社群快捷 */}
                             <section className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="share-2" className="w-4 h-4"></i> 06. 社群快捷</h3>
@@ -450,7 +460,7 @@
                                 </div>
                                 {data.footer.shortBtns.map((btn, idx) => (
                                     <div key={idx} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl relative group mb-3">
-                                        <button onClick={() => setData(prev => ({...prev, footer: {...prev.footer, shortBtns: prev.footer.shortBtns.filter((_, i) => i !== idx)}}))} className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 shadow-md"><i data-lucide="x" className="w-3 h-3"></i></button>
+                                        <button onClick={() => setData(prev => ({...prev, footer: {...prev.footer, shortBtns: prev.footer.shortBtns.filter((_, i) => i !== idx)}}))} className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md"><i data-lucide="x" className="w-3 h-3"></i></button>
                                         <div className="flex gap-2 overflow-x-auto pb-2 mb-2 scrollbar-hide">
                                             {Object.keys(SOCIAL_DATA).map(k => (
                                                 <button key={k} onClick={() => updateShortBtn(idx, 'icon_data', { type: k, label: SOCIAL_DATA[k].label })} className={`p-2 rounded-lg border transition-all ${btn.type === k ? 'bg-emerald-50 border-emerald-500' : 'opacity-40'}`}>
