@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sequential Pro - 完整修復版 v2.8.0</title>
+    <title>Sequential Pro - 簡化版 v2.8.1</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -11,14 +11,13 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; margin: 0; color: #000; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; margin: 0; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #06C755; border-radius: 10px; }
         .chat-room-bg { background-color: #7988a0; background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px; }
         .control-panel { background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .master-slider { accent-color: #f59e0b; }
         .preview-text-multiline { white-space: pre-wrap; word-break: break-all; }
-        input[type="text"], select, textarea { font-size: 14px !important; }
     </style>
 </head>
 <body>
@@ -27,97 +26,111 @@
     <script type="text/babel">
         const { useState, useEffect, useCallback } = React;
 
-        const SOCIAL_DATA = {
-            NONE: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "無" },
-            FB: { url: "https://cdn-icons-png.flaticon.com/512/733/733547.png", label: "FB" },
-            IG: { url: "https://cdn-icons-png.flaticon.com/512/2111/2111463.png", label: "IG" },
-            TIKTOK: { url: "https://cdn-icons-png.flaticon.com/512/3046/3046121.png", label: "TikTok" },
-            LINE: { url: "https://cdn-icons-png.flaticon.com/512/124/124027.png", label: "LINE" },
-            PHONE: { url: "https://cdn-icons-png.flaticon.com/512/3616/3616215.png", label: "電話" },
-            MAIL: { url: "https://cdn-icons-png.flaticon.com/512/732/732200.png", label: "郵件" },
-            MAP: { url: "https://cdn-icons-png.flaticon.com/512/355/355980.png", label: "地標" }
-        };
-
-        const RADIUS_OPTIONS = ["none", "xs", "sm", "md", "lg", "xl", "xxl"];
-
-        // 修復：URI 清理函數（支援 tel:, mailto:, https:）
-        const cleanUri = (uri) => {
-            if (!uri || typeof uri !== 'string') return "https://line.me";
-            const trimmed = uri.trim();
-            if (trimmed === "" || trimmed === "https://" || trimmed === "http://") return "https://line.me";
-            if (trimmed.startsWith('tel:') || trimmed.startsWith('mailto:') || 
-                trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
-                return trimmed;
+        // 常數定義
+        const CONSTANTS = {
+            SOCIAL_DATA: {
+                NONE: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "無" },
+                FB: { url: "https://cdn-icons-png.flaticon.com/512/733/733547.png", label: "FB" },
+                IG: { url: "https://cdn-icons-png.flaticon.com/512/2111/2111463.png", label: "IG" },
+                TIKTOK: { url: "https://cdn-icons-png.flaticon.com/512/3046/3046121.png", label: "TikTok" },
+                LINE: { url: "https://cdn-icons-png.flaticon.com/512/124/124027.png", label: "LINE" },
+                PHONE: { url: "https://cdn-icons-png.flaticon.com/512/3616/3616215.png", label: "電話" },
+                MAIL: { url: "https://cdn-icons-png.flaticon.com/512/732/732200.png", label: "郵件" },
+                MAP: { url: "https://cdn-icons-png.flaticon.com/512/355/355980.png", label: "地標" }
+            },
+            RADIUS_OPTIONS: ["none", "xs", "sm", "md", "lg", "xl", "xxl"],
+            DEFAULT_DATA: {
+                url: "https://aiwe.cc/wp-content/uploads/2025/12/cf75e54791dd1f49f918345fdfe2430b.png",
+                animated: false,
+                badgeText: "PREMIUM",
+                badgeBg: "#D4AF37",
+                badgeRadius: "xs",
+                badgeTop: 20,
+                badgePos: "offsetEnd",
+                avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
+                avatarTop: 60,
+                avatarAnimated: false,
+                name: "張志明",
+                nameTop: 155,
+                nameColor: "#000000",
+                nameWeight: "bold",
+                label1: "行銷總監 / 品牌顧問",
+                label1Top: 190,
+                label1Bg: "#FFFFFF33",
+                label1Color: "#000000",
+                label1Weight: "bold",
+                desc: "致力於協助企業品牌數位轉型\n擁有超過 15 年的跨國行銷經驗",
+                descTop: 275,
+                descColor: "#000000",
+                descWeight: "regular",
+                descAlign: "center",
+                socialTop: 215,
+                icons: [
+                    { type: "PHONE", uri: "tel:0900000000" },
+                    { type: "LINE", uri: "https://line.me/R/ti/p/@example" }
+                ],
+                footerBg: "#111111",
+                footerLabel: "聯繫我了解更多",
+                footerUri: "https://line.me",
+                footerThemeColor: "#D4AF37",
+                footerTextColor: "#000000",
+                footerWeight: "bold"
             }
-            return `https://${trimmed}`;
         };
 
-        const getDefaultData = () => ({
-            url: "https://aiwe.cc/wp-content/uploads/2025/12/cf75e54791dd1f49f918345fdfe2430b.png",
-            animated: false,
-            badgeText: "PREMIUM",
-            badgeBg: "#D4AF37",
-            badgeRadius: "xs",
-            badgeTop: 20,
-            badgePos: "offsetEnd",
-            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
-            avatarTop: 60,
-            avatarAnimated: false,
-            name: "張志明",
-            nameTop: 155,
-            nameColor: "#000000",
-            nameWeight: "bold",
-            label1: "行銷總監 / 品牌顧問",
-            label1Top: 190,
-            label1Bg: "#FFFFFF33",
-            label1Color: "#000000",
-            label1Weight: "bold",
-            desc: "致力於協助企業品牌數位轉型\n擁有超過 15 年的跨國行銷經驗",
-            descTop: 275,
-            descColor: "#000000",
-            descWeight: "regular",
-            descAlign: "center",
-            socialTop: 215,
-            icons: [
-                { type: "PHONE", uri: "tel:0900000000" },
-                { type: "LINE", uri: "https://line.me/R/ti/p/@example" }
-            ],
-            footerBg: "#111111",
-            footerLabel: "聯繫我了解更多",
-            footerUri: "https://line.me",
-            footerThemeColor: "#D4AF37",
-            footerTextColor: "#000000",
-            footerWeight: "bold"
-        });
-
-        const App = () => {
-            const [data, setData] = useState(getDefaultData());
-            const [activeTab, setActiveTab] = useState('editor');
-
-            const toPx = (val) => {
+        // 工具函數
+        const Utils = {
+            cleanUri: (uri) => {
+                if (!uri || typeof uri !== 'string') return "https://line.me";
+                const trimmed = uri.trim();
+                if (trimmed === "" || trimmed === "https://" || trimmed === "http://") return "https://line.me";
+                if (trimmed.startsWith('tel:') || trimmed.startsWith('mailto:') || 
+                    trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
+                    return trimmed;
+                }
+                return `https://${trimmed}`;
+            },
+            
+            toPx: (val) => {
                 const s = String(val);
                 return s.endsWith('px') ? s : `${s}px`;
-            };
-
-            const updateData = (path, val) => {
-                setData(prev => {
-                    const next = { ...prev };
-                    const keys = path.split('.');
-                    let current = next;
-                    for (let i = 0; i < keys.length - 1; i++) {
+            },
+            
+            updateNestedState: (prev, path, value) => {
+                const next = { ...prev };
+                const keys = path.split('.');
+                let current = next;
+                
+                for (let i = 0; i < keys.length - 1; i++) {
+                    if (!current[keys[i]] || typeof current[keys[i]] !== 'object') {
+                        current[keys[i]] = {};
+                    } else {
                         current[keys[i]] = { ...current[keys[i]] };
-                        current = current[keys[i]];
                     }
-                    current[keys[keys.length - 1]] = val;
-                    return next;
-                });
+                    current = current[keys[i]];
+                }
+                
+                current[keys[keys.length - 1]] = value;
+                return next;
+            }
+        };
+
+        // 主要組件
+        const App = () => {
+            const [data, setData] = useState(CONSTANTS.DEFAULT_DATA);
+            const [activeTab, setActiveTab] = useState('editor');
+
+            // 更新數據的簡化函數
+            const updateData = (path, value) => {
+                setData(prev => Utils.updateNestedState(prev, path, value));
             };
 
-            // 修復：正確的 JSON 生成（不包含 altText）
+            // 生成 JSON 的函數
             const buildJson = useCallback(() => {
                 const d = data;
+                const SOCIAL = CONSTANTS.SOCIAL_DATA;
                 
-                const bubble = {
+                return {
                     type: "bubble",
                     size: "mega",
                     body: {
@@ -127,7 +140,7 @@
                         contents: [
                             {
                                 type: "image",
-                                url: d.url || SOCIAL_DATA.NONE.url,
+                                url: d.url || SOCIAL.NONE.url,
                                 size: "full",
                                 aspectRatio: "2:3",
                                 aspectMode: "cover",
@@ -137,7 +150,7 @@
                                 type: "box",
                                 layout: "vertical",
                                 position: "absolute",
-                                offsetTop: toPx(d.badgeTop),
+                                offsetTop: Utils.toPx(d.badgeTop),
                                 [d.badgePos === 'offsetStart' ? 'offsetStart' : 'offsetEnd']: "20px",
                                 backgroundColor: d.badgeBg || "#000000",
                                 cornerRadius: d.badgeRadius || "xs",
@@ -156,7 +169,7 @@
                                 type: "box",
                                 layout: "vertical",
                                 position: "absolute",
-                                offsetTop: toPx(d.avatarTop),
+                                offsetTop: Utils.toPx(d.avatarTop),
                                 offsetStart: "0px",
                                 offsetEnd: "0px",
                                 alignItems: "center",
@@ -170,7 +183,7 @@
                                     borderColor: "#ffffff",
                                     contents: [{
                                         type: "image",
-                                        url: d.avatar || SOCIAL_DATA.NONE.url,
+                                        url: d.avatar || SOCIAL.NONE.url,
                                         size: "full",
                                         aspectMode: "cover",
                                         animated: !!d.avatarAnimated
@@ -181,7 +194,7 @@
                                 type: "box",
                                 layout: "vertical",
                                 position: "absolute",
-                                offsetTop: toPx(d.nameTop),
+                                offsetTop: Utils.toPx(d.nameTop),
                                 offsetStart: "0px",
                                 offsetEnd: "0px",
                                 contents: [{
@@ -197,7 +210,7 @@
                                 type: "box",
                                 layout: "vertical",
                                 position: "absolute",
-                                offsetTop: toPx(d.label1Top),
+                                offsetTop: Utils.toPx(d.label1Top),
                                 offsetStart: "40px",
                                 offsetEnd: "40px",
                                 backgroundColor: d.label1Bg || "#FFFFFF33",
@@ -216,7 +229,7 @@
                                 type: "box",
                                 layout: "horizontal",
                                 position: "absolute",
-                                offsetTop: toPx(d.socialTop),
+                                offsetTop: Utils.toPx(d.socialTop),
                                 offsetStart: "0px",
                                 offsetEnd: "0px",
                                 justifyContent: "center",
@@ -231,11 +244,11 @@
                                     paddingAll: "10px",
                                     action: {
                                         type: "uri",
-                                        uri: cleanUri(icon.uri)
+                                        uri: Utils.cleanUri(icon.uri)
                                     },
                                     contents: [{
                                         type: "image",
-                                        url: SOCIAL_DATA[icon.type]?.url || SOCIAL_DATA.NONE.url,
+                                        url: SOCIAL[icon.type]?.url || SOCIAL.NONE.url,
                                         size: "full"
                                     }]
                                 }))
@@ -244,7 +257,7 @@
                                 type: "box",
                                 layout: "vertical",
                                 position: "absolute",
-                                offsetTop: toPx(d.descTop),
+                                offsetTop: Utils.toPx(d.descTop),
                                 offsetStart: "10px",
                                 offsetEnd: "10px",
                                 contents: [{
@@ -273,7 +286,7 @@
                             cornerRadius: "md",
                             action: {
                                 type: "uri",
-                                uri: cleanUri(d.footerUri)
+                                uri: Utils.cleanUri(d.footerUri)
                             },
                             contents: [{
                                 type: "text",
@@ -286,87 +299,15 @@
                         }]
                     }
                 };
-
-                return bubble;
             }, [data]);
 
-            // 修復：正確處理主系統的導入數據
-            useEffect(() => {
-                const handleMessage = (e) => {
-                    if (e.data?.type === 'LOAD_FLEX_DATA') {
-                        const saved = e.data.json;
-                        if (!saved) {
-                            setData(getDefaultData());
-                            return;
-                        }
-
-                        try {
-                            const parsed = JSON.parse(saved);
-                            
-                            // 如果是完整結構 {altText, pages}
-                            if (parsed.pages && Array.isArray(parsed.pages)) {
-                                const firstPage = parsed.pages.find(p => p.template === 'SEQUENTIAL_PRO');
-                                if (firstPage && firstPage.data) {
-                                    setData(firstPage.data);
-                                } else {
-                                    setData(getDefaultData());
-                                }
-                                return;
-                            }
-                            
-                            // 如果是舊格式的單個 bubble
-                            if (parsed.body && parsed.body.contents) {
-                                // 嘗試從 bubble 反向解析數據
-                                const extracted = extractDataFromBubble(parsed);
-                                setData(extracted);
-                                return;
-                            }
-
-                            // 如果是純數據對象
-                            if (parsed.url && parsed.name) {
-                                setData(parsed);
-                                return;
-                            }
-
-                        } catch (err) {
-                            console.error('解析失敗:', err);
-                        }
-                        
-                        setData(getDefaultData());
-                    }
-                };
-
-                window.addEventListener('message', handleMessage);
-                window.parent.postMessage({ type: 'CHILD_READY' }, '*');
-                return () => window.removeEventListener('message', handleMessage);
-            }, []);
-
-            // 輔助函數：從 bubble JSON 提取數據
-            const extractDataFromBubble = (bubble) => {
-                const defaults = getDefaultData();
-                // 這裡可以加入更複雜的解析邏輯
-                return defaults;
-            };
-
-            // 修復：向主系統同步時使用正確格式
-            useEffect(() => {
-                const jsonStr = JSON.stringify(buildJson());
-                window.parent.postMessage({ 
-                    type: 'SYNC_FLEX_DATA', 
-                    json: jsonStr 
-                }, '*');
-            }, [data, buildJson]);
-
-            useEffect(() => {
-                if (window.lucide) window.lucide.createIcons();
-            }, [data, activeTab]);
-
-            const handleMasterMove = (newVal) => {
+            // 主連動位移函數
+            const handleMasterMove = (newAvatarTop) => {
                 setData(prev => {
-                    const diff = newVal - prev.avatarTop;
+                    const diff = newAvatarTop - prev.avatarTop;
                     return {
                         ...prev,
-                        avatarTop: newVal,
+                        avatarTop: newAvatarTop,
                         nameTop: prev.nameTop + diff,
                         label1Top: prev.label1Top + diff,
                         socialTop: prev.socialTop + diff,
@@ -375,246 +316,292 @@
                 });
             };
 
-            const PreviewComp = () => {
-                const width = 300;
+            // 與父窗口通信
+            useEffect(() => {
+                const handleMessage = (e) => {
+                    if (e.data?.type === 'LOAD_FLEX_DATA') {
+                        try {
+                            const saved = e.data.json;
+                            if (saved) {
+                                const parsed = JSON.parse(saved);
+                                // 簡單的數據恢復邏輯
+                                if (parsed && typeof parsed === 'object') {
+                                    setData(prev => ({ ...CONSTANTS.DEFAULT_DATA, ...parsed }));
+                                }
+                            } else {
+                                setData(CONSTANTS.DEFAULT_DATA);
+                            }
+                        } catch (err) {
+                            console.warn('載入數據失敗，使用預設值');
+                            setData(CONSTANTS.DEFAULT_DATA);
+                        }
+                    }
+                };
+
+                window.addEventListener('message', handleMessage);
+                window.parent.postMessage({ type: 'CHILD_READY' }, '*');
+                
+                return () => window.removeEventListener('message', handleMessage);
+            }, []);
+
+            // 同步數據到父窗口
+            useEffect(() => {
+                const jsonStr = JSON.stringify(buildJson());
+                window.parent.postMessage({ 
+                    type: 'SYNC_FLEX_DATA', 
+                    json: jsonStr 
+                }, '*');
+            }, [data, buildJson]);
+
+            // 初始化圖標
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [data, activeTab]);
+
+            // 預覽組件
+            const Preview = () => {
                 const scale = 300 / 400;
+                const socialIcons = CONSTANTS.SOCIAL_DATA;
+                
                 return (
                     <div className="flex justify-center p-4 min-h-full">
-                        <div className="rounded-[45px] shadow-2xl overflow-hidden relative border-[10px] border-black bg-white" style={{ width: '300px' }}>
-                            <div className="relative overflow-hidden" style={{ height: '450px' }}>
-                                <img src={data.url} className="w-full h-full object-cover" />
-                                <div className="absolute px-3 py-1 text-white font-bold rounded shadow-sm" style={{ 
+                        <div className="rounded-[45px] shadow-2xl overflow-hidden relative border-[10px] border-black bg-white w-[300px]">
+                            <div className="relative h-[450px] overflow-hidden">
+                                <img src={data.url} className="w-full h-full object-cover" alt="背景" />
+                                
+                                {/* 徽章 */}
+                                <div className="absolute px-3 py-1 text-white font-bold rounded shadow-sm text-[9px]" style={{ 
                                     top: '15px', 
                                     [data.badgePos === 'offsetStart' ? 'left' : 'right']: '15px', 
-                                    backgroundColor: data.badgeBg, 
-                                    fontSize: '9px', 
-                                    borderRadius: data.badgeRadius === 'none' ? '0' : data.badgeRadius === 'xs' ? '2px' : '6px' 
-                                }}>{data.badgeText}</div>
-                                <div className="absolute w-full flex justify-center" style={{ top: (data.avatarTop * scale) + 'px' }}>
-                                    <img src={data.avatar} className="w-16 h-16 rounded-full border-2 border-white shadow-xl" />
+                                    backgroundColor: data.badgeBg,
+                                    borderRadius: data.badgeRadius === 'none' ? '0' : 
+                                        data.badgeRadius === 'xs' ? '2px' : '6px'
+                                }}>
+                                    {data.badgeText}
                                 </div>
+                                
+                                {/* 頭像 */}
+                                <div className="absolute w-full flex justify-center" style={{ top: (data.avatarTop * scale) + 'px' }}>
+                                    <img src={data.avatar} className="w-16 h-16 rounded-full border-2 border-white shadow-xl" alt="頭像" />
+                                </div>
+                                
+                                {/* 姓名 */}
                                 <div className="absolute w-full text-center px-4" style={{ 
                                     top: (data.nameTop * scale) + 'px', 
                                     color: data.nameColor, 
                                     fontWeight: 900, 
                                     fontSize: '18px' 
-                                }}>{data.name}</div>
+                                }}>
+                                    {data.name}
+                                </div>
+                                
+                                {/* 職稱 */}
                                 <div className="absolute w-full px-10" style={{ top: (data.label1Top * scale) + 'px' }}>
                                     <div className="py-0.5 rounded text-[9px] text-center font-black shadow-sm" style={{ 
                                         backgroundColor: data.label1Bg, 
                                         color: data.label1Color 
-                                    }}>{data.label1}</div>
+                                    }}>
+                                        {data.label1}
+                                    </div>
                                 </div>
+                                
+                                {/* 社群按鈕 */}
                                 <div className="absolute w-full flex justify-center gap-2" style={{ top: (data.socialTop * scale) + 'px' }}>
-                                    {(data.icons || []).map((s, i) => (
+                                    {data.icons.map((icon, i) => (
                                         <div key={i} className="w-9 h-9 p-1.5 bg-white/20 rounded-full border border-white/30 flex items-center justify-center shadow-sm backdrop-blur-sm">
-                                            <img src={SOCIAL_DATA[s.type]?.url} className="w-full h-full object-contain" />
+                                            <img src={socialIcons[icon.type]?.url} className="w-full h-full object-contain" alt="社群圖標" />
                                         </div>
                                     ))}
                                 </div>
-                                <div className="absolute w-full px-[12px]" style={{ 
+                                
+                                {/* 描述 */}
+                                <div className="absolute w-full px-3" style={{ 
                                     top: (data.descTop * scale) + 'px', 
                                     textAlign: data.descAlign 
                                 }}>
-                                    <p className="text-[10px] preview-text-multiline leading-relaxed font-black" style={{ 
+                                    <p className="text-[10px] preview-text-multiline leading-relaxed" style={{ 
                                         color: data.descColor, 
                                         fontWeight: data.descWeight === 'bold' ? 900 : 400 
-                                    }}>{data.desc}</p>
+                                    }}>
+                                        {data.desc}
+                                    </p>
                                 </div>
                             </div>
+                            
+                            {/* 底部按鈕 */}
                             <div className="p-4" style={{ backgroundColor: data.footerBg }}>
                                 <div className="py-2.5 text-center rounded-xl text-xs font-black shadow-sm" style={{ 
                                     backgroundColor: data.footerThemeColor, 
                                     color: data.footerTextColor 
-                                }}>{data.footerLabel}</div>
+                                }}>
+                                    {data.footerLabel}
+                                </div>
                             </div>
                         </div>
                     </div>
                 );
             };
 
+            // 控制面板組件
+            const ControlPanel = ({ title, icon, children, borderColor = "border-slate-400" }) => (
+                <div className="control-panel space-y-4">
+                    <h3 className={`text-sm font-black uppercase tracking-widest flex items-center gap-2 ${borderColor.replace('border-', 'text-')}`}>
+                        <i data-lucide={icon}></i> {title}
+                    </h3>
+                    {children}
+                </div>
+            );
+
             return (
                 <div className="flex h-screen bg-slate-100 overflow-hidden font-bold text-black">
+                    {/* 左側控制面板 */}
                     <div className="w-1/2 bg-white border-r flex flex-col shadow-2xl z-20">
-                        <div className="p-6 border-b flex items-center justify-between font-black">
+                        <div className="p-6 border-b">
                             <h1 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
                                 <i data-lucide="award"></i> Sequential Pro Master
                             </h1>
                         </div>
+                        
                         <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                            
-                            <div className="control-panel space-y-4">
+                            {/* 1. 底圖與標籤 */}
+                            <ControlPanel title="1. 底圖與標籤" icon="image">
                                 <div className="flex justify-between items-center">
-                                    <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        <i data-lucide="image"></i> 1. 底圖與標籤
-                                    </h3>
+                                    <span className="text-sm">底圖設定</span>
                                     <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" checked={data.animated} onChange={e=>updateData('animated', e.target.checked)} className="w-4 h-4 accent-green-600"/>
+                                        <input type="checkbox" checked={data.animated} onChange={e => updateData('animated', e.target.checked)} className="w-4 h-4 accent-green-600"/>
                                         <span className="text-[10px] font-black text-green-600">動畫</span>
                                     </label>
                                 </div>
-                                <input type="text" value={data.url} onChange={e=>updateData('url', e.target.value)} className="w-full p-2 border rounded" placeholder="底圖網址" />
+                                <input type="text" value={data.url} onChange={e => updateData('url', e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="底圖網址" />
+                                
                                 <div className="grid grid-cols-2 gap-2">
-                                    <input type="text" value={data.badgeText} onChange={e=>updateData('badgeText', e.target.value)} className="p-2 border rounded" placeholder="標籤文字" />
-                                    <select value={data.badgeRadius} onChange={e=>updateData('badgeRadius', e.target.value)} className="p-2 border rounded bg-white text-xs">
-                                        {RADIUS_OPTIONS.map(r => <option key={r} value={r}>圓角: {r.toUpperCase()}</option>)}
+                                    <input type="text" value={data.badgeText} onChange={e => updateData('badgeText', e.target.value)} className="p-2 border rounded" placeholder="標籤文字" />
+                                    <select value={data.badgeRadius} onChange={e => updateData('badgeRadius', e.target.value)} className="p-2 border rounded text-sm">
+                                        {CONSTANTS.RADIUS_OPTIONS.map(r => <option key={r} value={r}>圓角: {r.toUpperCase()}</option>)}
                                     </select>
                                 </div>
+                                
                                 <div className="grid grid-cols-2 gap-2">
-                                    <input type="color" value={data.badgeBg} onChange={e=>updateData('badgeBg', e.target.value)} className="w-full h-10 border rounded p-1" />
-                                    <select value={data.badgePos} onChange={e=>updateData('badgePos', e.target.value)} className="p-2 border rounded bg-white text-xs">
+                                    <input type="color" value={data.badgeBg} onChange={e => updateData('badgeBg', e.target.value)} className="w-full h-10 border rounded" />
+                                    <select value={data.badgePos} onChange={e => updateData('badgePos', e.target.value)} className="p-2 border rounded text-sm">
                                         <option value="offsetStart">靠左</option>
                                         <option value="offsetEnd">靠右</option>
                                     </select>
                                 </div>
-                            </div>
+                            </ControlPanel>
 
+                            {/* 2. 連動位移 */}
                             <div className="control-panel space-y-4 border-l-4 border-amber-500 bg-amber-50/30">
                                 <h3 className="text-sm font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
                                     <i data-lucide="move"></i> 2. 連動位移 (Master) - {data.avatarTop}px
                                 </h3>
-                                <input type="range" min="0" max="800" value={data.avatarTop} onChange={e=>handleMasterMove(parseInt(e.target.value))} className="w-full master-slider" />
+                                <input type="range" min="0" max="800" value={data.avatarTop} onChange={e => handleMasterMove(parseInt(e.target.value))} className="w-full master-slider" />
                             </div>
 
-                            <div className="control-panel space-y-4">
+                            {/* 3. 身份資料設定 */}
+                            <ControlPanel title="3. 身份資料設定" icon="user">
                                 <div className="flex justify-between items-center">
-                                    <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        <i data-lucide="user"></i> 3. 身份資料設定
-                                    </h3>
+                                    <span className="text-sm">頭像設定</span>
                                     <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" checked={data.avatarAnimated} onChange={e=>updateData('avatarAnimated', e.target.checked)} className="w-4 h-4 accent-green-600"/>
+                                        <input type="checkbox" checked={data.avatarAnimated} onChange={e => updateData('avatarAnimated', e.target.checked)} className="w-4 h-4 accent-green-600"/>
                                         <span className="text-[10px] font-black text-green-600">動畫</span>
                                     </label>
                                 </div>
-                                <input type="text" value={data.avatar} onChange={e=>updateData('avatar', e.target.value)} className="w-full p-2 border rounded text-xs" placeholder="頭像網址" />
+                                <input type="text" value={data.avatar} onChange={e => updateData('avatar', e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="頭像網址" />
+                                
                                 <div className="flex gap-2">
-                                    <input type="text" value={data.name} onChange={e=>updateData('name', e.target.value)} className="flex-1 p-2 border rounded" placeholder="姓名" />
-                                    <input type="color" value={data.nameColor} onChange={e=>updateData('nameColor', e.target.value)} className="w-10 h-10 border rounded" />
+                                    <input type="text" value={data.name} onChange={e => updateData('name', e.target.value)} className="flex-1 p-2 border rounded" placeholder="姓名" />
+                                    <input type="color" value={data.nameColor} onChange={e => updateData('nameColor', e.target.value)} className="w-10 h-10 border rounded" />
                                 </div>
-                                <select value={data.nameWeight} onChange={e=>updateData('nameWeight', e.target.value)} className="w-full border rounded p-2 text-xs">
+                                
+                                <select value={data.nameWeight} onChange={e => updateData('nameWeight', e.target.value)} className="w-full border rounded p-2 text-sm">
                                     <option value="bold">粗體</option>
                                     <option value="regular">一般</option>
                                 </select>
+                                
                                 <div className="border-t pt-4 space-y-2">
-                                    <input type="text" value={data.label1} onChange={e=>updateData('label1', e.target.value)} className="w-full p-2 border rounded text-xs" placeholder="職稱文字" />
+                                    <input type="text" value={data.label1} onChange={e => updateData('label1', e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="職稱文字" />
                                     <div className="grid grid-cols-3 gap-2">
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] text-slate-400">文字色</label>
-                                            <input type="color" value={data.label1Color} onChange={e=>updateData('label1Color', e.target.value)} className="w-full h-8" />
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] text-slate-400">背景色</label>
-                                            <input type="color" value={data.label1Bg.substring(0,7)} onChange={e=>updateData('label1Bg', e.target.value+'33')} className="w-full h-8" />
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] text-slate-400">粗細</label>
-                                            <select value={data.label1Weight} onChange={e=>updateData('label1Weight', e.target.value)} className="text-[10px] border rounded h-8">
-                                                <option value="bold">粗體</option>
-                                                <option value="regular">一般</option>
-                                            </select>
-                                        </div>
+                                        <ColorInput label="文字色" value={data.label1Color} onChange={v => updateData('label1Color', v)} />
+                                        <ColorInput label="背景色" value={data.label1Bg.substring(0,7)} onChange={v => updateData('label1Bg', v + '33')} />
+                                        <SelectInput label="粗細" value={data.label1Weight} onChange={v => updateData('label1Weight', v)} options={["bold", "regular"]} />
                                     </div>
                                 </div>
-                            </div>
+                            </ControlPanel>
 
-                            <div className="control-panel space-y-4">
+                            {/* 4. 社群按鈕 */}
+                            <ControlPanel title="4. 社群按鈕" icon="share-2">
                                 <div className="flex justify-between items-center">
-                                    <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        <i data-lucide="share-2"></i> 4. 社群按鈕
-                                    </h3>
-                                    <button onClick={()=>{if(data.icons.length < 5) updateData('icons', [...data.icons, {type:'LINE', uri:'https://line.me'}])}} className="bg-slate-800 text-white px-3 py-1.5 rounded-md hover:bg-black flex items-center gap-1">
+                                    <span className="text-sm">社群連結</span>
+                                    <button onClick={() => {
+                                        if (data.icons.length < 5) {
+                                            updateData('icons', [...data.icons, { type: 'LINE', uri: 'https://line.me' }]);
+                                        }
+                                    }} className="bg-slate-800 text-white px-3 py-1.5 rounded-md hover:bg-black flex items-center gap-1">
                                         <i data-lucide="plus" className="w-4 h-4"></i>
                                     </button>
                                 </div>
-                                {(data.icons || []).map((s, i) => (
-                                    <div key={i} className="flex gap-2 bg-slate-50 p-2 rounded-lg relative group border border-slate-100">
-                                        <button onClick={()=>{const nl=data.icons.filter((_,idx)=>idx!==i); updateData('icons', nl)}} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <i data-lucide="x" className="w-3 h-3"></i>
-                                        </button>
-                                        <select value={s.type} onChange={e=>{const nl=[...data.icons]; nl[i].type=e.target.value; updateData('icons', nl)}} className="border rounded text-[10px] w-24 bg-white">
-                                            {Object.keys(SOCIAL_DATA).map(k=><option key={k} value={k}>{SOCIAL_DATA[k].label}</option>)}
-                                        </select>
-                                        <input type="text" value={s.uri} onChange={e=>{const nl=[...data.icons]; nl[i].uri=e.target.value; updateData('icons', nl)}} className="flex-1 p-1 border rounded text-[10px] font-mono" placeholder="tel:0912345678 或 https://..." />
-                                    </div>
+                                
+                                {data.icons.map((icon, i) => (
+                                    <SocialIconInput key={i} index={i} icon={icon} data={data} updateData={updateData} />
                                 ))}
-                            </div>
+                            </ControlPanel>
 
-                            <div className="control-panel space-y-4">
-                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <i data-lucide="align-left"></i> 5. 說明區設定
-                                </h3>
+                            {/* 5. 說明區設定 */}
+                            <ControlPanel title="5. 說明區設定" icon="align-left">
                                 <div className="flex bg-slate-100 p-1 rounded gap-1">
                                     {['start', 'center', 'end'].map(align => (
-                                        <button key={align} onClick={()=>updateData('descAlign', align)} className={`flex-1 py-1 rounded text-[10px] font-black ${data.descAlign === align ? 'bg-white shadow text-green-600' : 'text-slate-400'}`}>
+                                        <button key={align} onClick={() => updateData('descAlign', align)} className={`flex-1 py-1 rounded text-[10px] font-black ${data.descAlign === align ? 'bg-white shadow text-green-600' : 'text-slate-400'}`}>
                                             {align.toUpperCase()}
                                         </button>
                                     ))}
                                 </div>
-                                <textarea value={data.desc} onChange={e=>updateData('desc', e.target.value)} className="w-full p-2 border rounded h-28 text-xs" placeholder="介紹內容..."></textarea>
+                                
+                                <textarea value={data.desc} onChange={e => updateData('desc', e.target.value)} className="w-full p-2 border rounded h-28 text-sm" placeholder="介紹內容..." />
+                                
                                 <div className="grid grid-cols-2 gap-2">
-                                    <div className="flex items-center gap-2 border p-1 rounded">
-                                        <label className="text-[10px] text-slate-400">文字色</label>
-                                        <input type="color" value={data.descColor} onChange={e=>updateData('descColor', e.target.value)} className="flex-1 h-6" />
-                                    </div>
-                                    <select value={data.descWeight} onChange={e=>updateData('descWeight', e.target.value)} className="text-xs border rounded">
-                                        <option value="regular">一般</option>
-                                        <option value="bold">粗體</option>
-                                    </select>
+                                    <ColorInput label="文字色" value={data.descColor} onChange={v => updateData('descColor', v)} />
+                                    <SelectInput label="粗細" value={data.descWeight} onChange={v => updateData('descWeight', v)} options={["regular", "bold"]} />
                                 </div>
-                            </div>
+                            </ControlPanel>
 
-                            <div className="control-panel space-y-4 mb-10">
-                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <i data-lucide="mouse-pointer-2"></i> 6. 底部按鈕設定
-                                </h3>
-                                <div className="space-y-3">
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] text-slate-400">Footer 背景色</label>
-                                        <input type="color" value={data.footerBg} onChange={e=>updateData('footerBg', e.target.value)} className="w-full h-8 border rounded" />
-                                    </div>
-                                    <input type="text" value={data.footerLabel} onChange={e=>updateData('footerLabel', e.target.value)} className="w-full p-2 border rounded font-black" placeholder="按鈕文字" />
-                                    <input type="text" value={data.footerUri} onChange={e=>updateData('footerUri', e.target.value)} className="w-full p-2 border rounded text-xs font-mono" placeholder="https://..." />
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] text-slate-400">按鈕背景</label>
-                                            <input type="color" value={data.footerThemeColor} onChange={e=>updateData('footerThemeColor', e.target.value)} className="w-full h-8" />
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] text-slate-400">按鈕文字</label>
-                                            <input type="color" value={data.footerTextColor} onChange={e=>updateData('footerTextColor', e.target.value)} className="w-full h-8" />
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] text-slate-400">粗細</label>
-                                            <select value={data.footerWeight} onChange={e=>updateData('footerWeight', e.target.value)} className="text-[10px] border rounded h-8">
-                                                <option value="bold">粗體</option>
-                                                <option value="regular">一般</option>
-                                            </select>
-                                        </div>
-                                    </div>
+                            {/* 6. 底部按鈕設定 */}
+                            <ControlPanel title="6. 底部按鈕設定" icon="mouse-pointer-2">
+                                <ColorInput label="Footer 背景色" value={data.footerBg} onChange={v => updateData('footerBg', v)} fullWidth />
+                                <input type="text" value={data.footerLabel} onChange={e => updateData('footerLabel', e.target.value)} className="w-full p-2 border rounded font-black" placeholder="按鈕文字" />
+                                <input type="text" value={data.footerUri} onChange={e => updateData('footerUri', e.target.value)} className="w-full p-2 border rounded text-sm font-mono" placeholder="https://..." />
+                                
+                                <div className="grid grid-cols-3 gap-2">
+                                    <ColorInput label="按鈕背景" value={data.footerThemeColor} onChange={v => updateData('footerThemeColor', v)} />
+                                    <ColorInput label="按鈕文字" value={data.footerTextColor} onChange={v => updateData('footerTextColor', v)} />
+                                    <SelectInput label="粗細" value={data.footerWeight} onChange={v => updateData('footerWeight', v)} options={["bold", "regular"]} />
                                 </div>
-                            </div>
+                            </ControlPanel>
                         </div>
                     </div>
+
+                    {/* 右側預覽區域 */}
                     <div className="flex-1 flex flex-col chat-room-bg overflow-hidden">
                         <div className="h-[70px] bg-white border-b flex items-center px-10 gap-8 shrink-0 shadow-sm">
-                            <button onClick={()=>setActiveTab('editor')} className={`h-full border-b-4 flex items-center gap-2 transition-all ${activeTab === 'editor' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}>
+                            <TabButton active={activeTab === 'editor'} onClick={() => setActiveTab('editor')}>
                                 視覺預覽
-                            </button>
-                            <button onClick={()=>setActiveTab('json')} className={`h-full border-b-4 flex items-center gap-2 transition-all ${activeTab === 'json' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}>
+                            </TabButton>
+                            <TabButton active={activeTab === 'json'} onClick={() => setActiveTab('json')}>
                                 JSON 代碼
-                            </button>
+                            </TabButton>
                         </div>
+                        
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
                             {activeTab === 'editor' ? (
                                 <div className="py-10 flex flex-col items-center">
                                     <div className="mb-6 px-6 py-2 bg-slate-800 text-white rounded-full text-[10px] tracking-[0.3em] font-black uppercase">
                                         Line Flex Design Mode
                                     </div>
-                                    <PreviewComp />
+                                    <Preview />
                                 </div>
                             ) : (
                                 <div className="p-10">
-                                    <pre className="bg-slate-900 p-8 rounded-3xl text-green-400 text-xs overflow-x-auto leading-relaxed shadow-2xl border border-white/10 font-mono">
+                                    <pre className="bg-slate-900 p-8 rounded-3xl text-green-400 text-sm overflow-x-auto leading-relaxed shadow-2xl border border-white/10 font-mono">
                                         {JSON.stringify(buildJson(), null, 2)}
                                     </pre>
                                 </div>
@@ -625,6 +612,57 @@
             );
         };
 
+        // 可複用的小組件
+        const ColorInput = ({ label, value, onChange, fullWidth = false }) => (
+            <div className={`flex flex-col gap-1 ${fullWidth ? 'col-span-2' : ''}`}>
+                <label className="text-[10px] text-slate-400">{label}</label>
+                <input type="color" value={value} onChange={e => onChange(e.target.value)} className="w-full h-8 border rounded" />
+            </div>
+        );
+
+        const SelectInput = ({ label, value, onChange, options }) => (
+            <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-slate-400">{label}</label>
+                <select value={value} onChange={e => onChange(e.target.value)} className="text-[10px] border rounded h-8 px-2">
+                    {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+            </div>
+        );
+
+        const SocialIconInput = ({ index, icon, data, updateData }) => (
+            <div className="flex gap-2 bg-slate-50 p-2 rounded-lg relative group border border-slate-100">
+                <button onClick={() => {
+                    const newIcons = data.icons.filter((_, i) => i !== index);
+                    updateData('icons', newIcons);
+                }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <i data-lucide="x" className="w-3 h-3"></i>
+                </button>
+                
+                <select value={icon.type} onChange={e => {
+                    const newIcons = [...data.icons];
+                    newIcons[index].type = e.target.value;
+                    updateData('icons', newIcons);
+                }} className="border rounded text-[10px] w-24 bg-white">
+                    {Object.keys(CONSTANTS.SOCIAL_DATA).map(key => (
+                        <option key={key} value={key}>{CONSTANTS.SOCIAL_DATA[key].label}</option>
+                    ))}
+                </select>
+                
+                <input type="text" value={icon.uri} onChange={e => {
+                    const newIcons = [...data.icons];
+                    newIcons[index].uri = e.target.value;
+                    updateData('icons', newIcons);
+                }} className="flex-1 p-1 border rounded text-[10px] font-mono" placeholder="tel:0912345678 或 https://..." />
+            </div>
+        );
+
+        const TabButton = ({ active, onClick, children }) => (
+            <button onClick={onClick} className={`h-full border-b-4 flex items-center gap-2 transition-all ${active ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent'}`}>
+                {children}
+            </button>
+        );
+
+        // 渲染應用
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
