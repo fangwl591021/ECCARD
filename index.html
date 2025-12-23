@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 旗艦分類聚合版 (v2.6.8)</title>
+    <title>FLEX Hub Pro - 旗艦分類聚合版 (v2.7.0)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -42,7 +42,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, Fragment, useCallback } = React;
 
-        const APP_VERSION = "v2.6.8";
+        const APP_VERSION = "v2.7.0";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
@@ -53,7 +53,8 @@
                 items: [
                     { id: 'CAROUSEL_PRO', name: "專業多頁型卡片", url: "./tool-carousel-pro.html", icon: 'layers' },
                     { id: 'SEQUENTIAL_PRO', name: "單頁業務名片", url: "./tool-sequential-pro.html", icon: 'award' },
-                    { id: 'PERSONAL', name: "單頁個人名片", url: "./tool-personal.html", icon: 'user' }
+                    { id: 'PERSONAL', name: "單頁個人名片", url: "./tool-personal.html", icon: 'user' },
+                    { id: 'ECOMMERCE', name: "單頁電商名片", url: "./tool-ecommerce.html", icon: 'shopping' }
                 ]
             },
             {
@@ -72,6 +73,7 @@
                 layers: <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />,
                 user: <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />,
                 award: <circle cx="12" cy="8" r="7" />,
+                shopping: <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" />,
                 tool: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />,
                 trash: <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />,
                 send: <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />,
@@ -236,7 +238,7 @@
                         ) : (
                             <div className="p-12 h-full overflow-y-auto font-black custom-scrollbar">
                                 <div className="flex justify-between items-center border-b-4 border-slate-100 pb-8 mb-10">
-                                    <div className="flex flex-col"><h2 className="text-4xl font-black uppercase text-slate-800 tracking-tighter">{currentProject.name}</h2><p className="text-base text-slate-400 mt-2 italic font-bold">Manage your exclusive designs.</p></div>
+                                    <div className="flex flex-col"><h2 className="text-4xl font-black uppercase text-slate-800 tracking-tighter">{currentProject.name}</h2><p className="text-base text-slate-400 mt-2 italic font-bold">管理您的專屬設計方案</p></div>
                                     <div className="flex gap-4">
                                         {selectedIds.size > 0 && (
                                             <button onClick={handleSendSelected} className="bg-blue-600 text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl active:scale-95 transition-all hover:bg-blue-700 animate-bounce">
