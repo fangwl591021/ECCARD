@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sequential Pro - 修正版 v2.9.1</title>
+    <title>Sequential Pro - 修正版 v2.9.2</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -16,14 +16,16 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #06C755; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .chat-room-bg { background-color: #7988a0; background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px; }
-        .control-panel { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .control-panel { background: white; border-radius: 12px; padding: 0; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .panel-header { background: linear-gradient(135deg, #06C755 0%, #00A648 100%); padding: 16px 20px; }
+        .panel-content { padding: 20px; }
         .master-slider { accent-color: #f59e0b; height: 10px; }
         .preview-text-multiline { white-space: pre-wrap; word-break: break-all; }
         input, select, textarea, button { font-size: 14px !important; }
         .color-input-group { display: flex; align-items: center; gap: 8px; }
         .color-preview { width: 36px; height: 36px; border-radius: 6px; border: 2px solid #e2e8f0; cursor: pointer; }
         .hex-input { font-family: 'Courier New', monospace; letter-spacing: 1px; }
-        .section-title { font-size: 15px; font-weight: 900; }
+        .section-title { font-size: 15px; font-weight: 900; color: white; }
         .control-label { font-size: 13px; font-weight: 700; color: #475569; }
         .social-icon-container { transition: all 0.2s; }
         .social-icon-container:hover { transform: scale(1.05); }
@@ -31,6 +33,7 @@
         .sticky-section { position: sticky; top: 0; background: white; z-index: 10; padding-top: 10px; padding-bottom: 10px; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: 2px solid #e2e8f0; border-radius: 4px; }
+        .amber-header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; }
     </style>
 </head>
 <body>
@@ -164,15 +167,23 @@
 
         // 主要組件
         const App = () => {
-            const [data, setData] = useState(CONSTANTS.DEFAULT_DATA);
+            const [data, setData] = useState(() => {
+                const saved = localStorage.getItem('sequential-pro-data');
+                return saved ? JSON.parse(saved) : CONSTANTS.DEFAULT_DATA;
+            });
             const [activeTab, setActiveTab] = useState('editor');
             const leftPanelRef = useRef(null);
+            const nameInputRef = useRef(null);
 
-            // 更新數據的簡化函數 - 不觸發滾動重置
+            // 修正：使用穩定的更新函數
             const updateData = useCallback((path, value) => {
                 setData(prev => {
                     const newData = Utils.updateNestedState(prev, path, value);
-                    // 即時同步到父窗口
+                    
+                    // 保存到 localStorage
+                    localStorage.setItem('sequential-pro-data', JSON.stringify(newData));
+                    
+                    // 同步到父窗口
                     setTimeout(() => {
                         const json = buildJsonFromData(newData);
                         window.parent.postMessage({ 
@@ -180,13 +191,14 @@
                             json: JSON.stringify(json)
                         }, '*');
                     }, 0);
+                    
                     return newData;
                 });
             }, []);
 
-            // 直接從數據生成 JSON（避免依賴問題）
-            const buildJsonFromData = useCallback((currentData) => {
-                const d = currentData || data;
+            // 直接從數據生成 JSON
+            const buildJsonFromData = useCallback((currentData = data) => {
+                const d = currentData;
                 const SOCIAL = CONSTANTS.SOCIAL_DATA;
                 
                 return {
@@ -373,7 +385,10 @@
                         descTop: prev.descTop + diff
                     };
                     
-                    // 即時同步
+                    // 保存到 localStorage
+                    localStorage.setItem('sequential-pro-data', JSON.stringify(newData));
+                    
+                    // 同步
                     setTimeout(() => {
                         const json = buildJsonFromData(newData);
                         window.parent.postMessage({ 
@@ -386,6 +401,35 @@
                 });
             };
 
+            // 修正：姓名輸入的專用處理函數
+            const handleNameChange = useCallback((value) => {
+                if (nameInputRef.current) {
+                    const scrollTop = leftPanelRef.current?.scrollTop || 0;
+                    setData(prev => {
+                        const newData = { ...prev, name: value };
+                        localStorage.setItem('sequential-pro-data', JSON.stringify(newData));
+                        
+                        // 同步
+                        setTimeout(() => {
+                            const json = buildJsonFromData(newData);
+                            window.parent.postMessage({ 
+                                type: 'SYNC_FLEX_DATA', 
+                                json: JSON.stringify(json)
+                            }, '*');
+                        }, 0);
+                        
+                        return newData;
+                    });
+                    
+                    // 恢復滾動位置
+                    setTimeout(() => {
+                        if (leftPanelRef.current) {
+                            leftPanelRef.current.scrollTop = scrollTop;
+                        }
+                    }, 10);
+                }
+            }, []);
+
             // 與父窗口通信
             useEffect(() => {
                 const handleMessage = (e) => {
@@ -395,10 +439,10 @@
                             if (saved) {
                                 const parsed = JSON.parse(saved);
                                 if (parsed && typeof parsed === 'object') {
-                                    setData(prev => ({ ...CONSTANTS.DEFAULT_DATA, ...parsed }));
+                                    const newData = { ...CONSTANTS.DEFAULT_DATA, ...parsed };
+                                    setData(newData);
+                                    localStorage.setItem('sequential-pro-data', JSON.stringify(newData));
                                 }
-                            } else {
-                                setData(CONSTANTS.DEFAULT_DATA);
                             }
                         } catch (err) {
                             console.warn('載入數據失敗，使用預設值');
@@ -506,17 +550,21 @@
                 );
             };
 
-            // 控制面板組件
-            const ControlPanel = ({ title, icon, children, className = "" }) => (
-                <div className={`control-panel space-y-4 ${className}`}>
-                    <h3 className="section-title flex items-center gap-2 text-slate-800">
-                        <i data-lucide={icon} className="w-5 h-5"></i> {title}
-                    </h3>
-                    {children}
+            // 控制面板組件（帶綠色banner）
+            const ControlPanel = ({ title, icon, children, className = "", headerClass = "" }) => (
+                <div className={`control-panel ${className}`}>
+                    <div className={`panel-header ${headerClass}`}>
+                        <h3 className="section-title flex items-center gap-2">
+                            <i data-lucide={icon} className="w-5 h-5"></i> {title}
+                        </h3>
+                    </div>
+                    <div className="panel-content">
+                        {children}
+                    </div>
                 </div>
             );
 
-            // 顏色輸入組件（固定十六進位顯示）
+            // 顏色輸入組件
             const ColorInput = ({ label, value, onChange, isRgba = false, className = "" }) => {
                 const [hexValue, setHexValue] = useState(Utils.rgbaToHex(value));
                 const [showPicker, setShowPicker] = useState(false);
@@ -528,19 +576,16 @@
                 const handleHexChange = (e) => {
                     let newValue = e.target.value.toUpperCase();
                     
-                    // 確保格式正確
                     if (!newValue.startsWith('#')) {
                         newValue = '#' + newValue;
                     }
                     
-                    // 限制長度為7 (#RRGGBB)
                     newValue = newValue.substring(0, 7);
                     setHexValue(newValue);
                     
-                    // 如果是有效的十六進位顏色，就更新
                     if (Utils.isValidHex(newValue)) {
                         if (isRgba) {
-                            onChange(newValue + '33'); // 加上透明度
+                            onChange(newValue + '33');
                         } else {
                             onChange(newValue);
                         }
@@ -557,10 +602,6 @@
                     }
                 };
 
-                const togglePicker = () => {
-                    setShowPicker(!showPicker);
-                };
-
                 return (
                     <div className={`space-y-2 ${className}`}>
                         <label className="control-label block">{label}</label>
@@ -569,16 +610,16 @@
                                 <div 
                                     className="color-preview hover:border-slate-400 transition-colors"
                                     style={{ backgroundColor: hexValue }}
-                                    onClick={togglePicker}
+                                    onClick={() => setShowPicker(!showPicker)}
                                     title="點擊開啟調色盤"
                                 >
                                     {showPicker && (
-                                        <div className="absolute top-full left-0 mt-2 z-50">
+                                        <div className="absolute top-full left-0 mt-2 z-50 shadow-xl rounded-lg overflow-hidden">
                                             <input
                                                 type="color"
                                                 value={hexValue}
                                                 onChange={handlePickerChange}
-                                                className="w-32 h-32 cursor-pointer"
+                                                className="w-32 h-32 cursor-pointer block"
                                                 onClick={(e) => e.stopPropagation()}
                                             />
                                         </div>
@@ -602,7 +643,7 @@
             };
 
             // 社群按鈕輸入組件
-            const SocialIconInput = ({ index, icon, updateData }) => {
+            const SocialIconInput = ({ index, icon }) => {
                 const [isExpanded, setIsExpanded] = useState(false);
 
                 return (
@@ -692,11 +733,12 @@
                 </div>
             );
 
-            // 簡單文字輸入組件
+            // 文字輸入組件
             const TextInput = ({ label, value, onChange, placeholder, type = "text", className = "" }) => (
                 <div className={`space-y-2 ${className}`}>
                     <label className="control-label block">{label}</label>
                     <input
+                        ref={label === "姓名" ? nameInputRef : null}
                         type={type}
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
@@ -710,11 +752,11 @@
                 <div className="flex h-screen bg-slate-100 overflow-hidden">
                     {/* 左側控制面板 */}
                     <div className="w-1/2 bg-white border-r border-slate-300 flex flex-col shadow-lg">
-                        <div className="sticky-section">
+                        <div className="sticky-section border-b border-slate-300">
                             <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3">
                                 <i data-lucide="award" className="w-8 h-8 text-green-600"></i> 
                                 <span>Sequential Pro Master</span>
-                                <span className="text-xs font-normal bg-green-100 text-green-800 px-2 py-1 rounded">v2.9.1</span>
+                                <span className="text-xs font-normal bg-green-100 text-green-800 px-2 py-1 rounded">v2.9.2</span>
                             </h1>
                         </div>
                         
@@ -789,10 +831,7 @@
                             </ControlPanel>
 
                             {/* 2. 連動位移 */}
-                            <div className="control-panel border-l-4 border-amber-500 bg-gradient-to-r from-amber-50 to-white">
-                                <h3 className="section-title flex items-center gap-2 text-amber-700">
-                                    <i data-lucide="move-vertical" className="w-5 h-5"></i> 2. 主控連動位移
-                                </h3>
+                            <ControlPanel title="2. 主控連動位移" icon="move-vertical" headerClass="amber-header">
                                 <div className="space-y-4">
                                     <SliderInput 
                                         label="所有元素垂直位置" 
@@ -813,7 +852,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </ControlPanel>
 
                             {/* 3. 身份資料設定 */}
                             <ControlPanel title="3. 身份資料設定" icon="user">
@@ -842,7 +881,7 @@
                                         <TextInput 
                                             label="姓名" 
                                             value={data.name} 
-                                            onChange={(value) => updateData('name', value)} 
+                                            onChange={handleNameChange} 
                                             placeholder="姓名" 
                                         />
                                         <ColorInput 
@@ -925,7 +964,6 @@
                                                 key={i} 
                                                 index={i} 
                                                 icon={icon} 
-                                                updateData={updateData}
                                             />
                                         ))}
                                     </div>
@@ -1102,7 +1140,7 @@
             );
         };
 
-        // 可複用的小組件
+        // Tab按鈕組件
         const TabButton = ({ active, onClick, children, icon }) => (
             <button 
                 onClick={onClick} 
