@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 旗艦分類聚合版 (v2.7.0)</title>
+    <title>FLEX Hub Pro - 旗艦分類聚合版 (v2.7.1)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -42,7 +42,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, Fragment, useCallback } = React;
 
-        const APP_VERSION = "v2.7.0";
+        const APP_VERSION = "v2.7.1";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
@@ -98,12 +98,12 @@
 
             const showMsg = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
-            const refreshFiles = useCallback(async (uid) => {
+            const refreshFiles = useCallback(async (uid, keepSelection = true) => {
                 try {
                     const res = await fetch(`${GAS_URL}?userId=${uid}&action=getFiles`);
                     const data = await res.json();
                     setUserFiles(data || []);
-                    setSelectedIds(new Set());
+                    if (!keepSelection) setSelectedIds(new Set());
                 } catch (e) { setUserFiles([]); }
             }, []);
 
@@ -113,13 +113,13 @@
                         const isPreview = window.location.href.includes('usercontent.goog');
                         if (isPreview) {
                             setUser({ uid: 'DEBUG_USER', displayName: '管理員' });
-                            await refreshFiles('DEBUG_USER'); setViewState('MAIN'); return;
+                            await refreshFiles('DEBUG_USER', false); setViewState('MAIN'); return;
                         }
                         await liff.init({ liffId: LIFF_ID });
                         if (!liff.isLoggedIn()) { setViewState('LOGIN'); return; }
                         const lp = await liff.getProfile();
                         setUser({ uid: lp.userId, displayName: lp.displayName });
-                        await refreshFiles(lp.userId); setViewState('MAIN');
+                        await refreshFiles(lp.userId, false); setViewState('MAIN');
                     } catch (e) { setViewState('LOGIN'); }
                 };
                 init();
@@ -136,6 +136,11 @@
                 return () => window.removeEventListener('message', handleMessage);
             }, [activeFile]);
 
+            // 在編輯介面切換時，如果切換模組，清空勾選
+            useEffect(() => {
+                setSelectedIds(new Set());
+            }, [activeModuleId]);
+
             const handleSave = async () => {
                 if (!activeFile) return;
                 setIsLoading(true);
@@ -145,9 +150,31 @@
                         body: JSON.stringify({ action: 'saveFile', userId: user.uid, id: String(activeFile.id), name: activeFile.name || "未命名設計", content: currentJson }) 
                     });
                     const result = await res.json();
-                    if (result.success) { showMsg("✅ 儲存成功！"); await refreshFiles(user.uid); }
+                    if (result.success) { 
+                        showMsg("✅ 儲存成功！"); 
+                        // 更新當前編輯檔案的內容，確保同步
+                        setActiveFile(prev => ({ ...prev, content: currentJson }));
+                        await refreshFiles(user.uid, true); 
+                    }
                 } catch (e) { showMsg("❌ 儲存失敗"); }
                 setIsLoading(false);
+            };
+
+            const handleTestSend = async () => {
+                if (!currentJson) { alert("⚠️ 尚未產生 Flex 數據，請先編輯內容"); return; }
+                try {
+                    const content = typeof currentJson === 'string' ? JSON.parse(currentJson) : currentJson;
+                    const clean = JSON.parse(JSON.stringify(content));
+                    // 清理非 LINE 官方支援的屬性
+                    ["altText", "_pages", "pages", "isVisible", "template"].forEach(k => delete clean[k]);
+                    
+                    const result = await liff.shareTargetPicker([{
+                        type: "flex",
+                        altText: activeFile?.name || "測試發送",
+                        contents: clean
+                    }]);
+                    if (result) showMsg("✅ 測試發送成功！");
+                } catch (e) { alert("❌ 發送失敗：" + e.message); }
             };
 
             const handleSendSelected = async () => {
@@ -177,7 +204,7 @@
                     const result = await response.json();
                     if (result.success) {
                         showMsg("🗑️ 已刪除");
-                        await refreshFiles(user.uid);
+                        await refreshFiles(user.uid, true);
                     } else {
                         showMsg("❌ 刪除失敗: " + (result.message || "未知錯誤"));
                     }
@@ -230,7 +257,10 @@
                                     <button onClick={()=>setActiveFile(null)} className="font-black text-black flex items-center gap-3 hover:text-[#06C755] transition-colors shrink-0 text-lg"><span>← 返回</span></button>
                                     <input type="text" value={activeFile.name} onChange={e=>setActiveFile({...activeFile, name: e.target.value})} className="bg-slate-100 border-2 border-black rounded-2xl px-6 py-3 font-black text-center max-w-xl mx-8 outline-none text-xl focus:bg-white transition-all shadow-inner" />
                                     <div className="flex items-center gap-4 shrink-0">
-                                        <button onClick={handleSave} className="bg-black text-white px-10 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-slate-800"><Icon name="save" /> <span>儲存</span></button>
+                                        <button onClick={handleTestSend} className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-blue-700">
+                                            <Icon name="send" /> <span>測試發送</span>
+                                        </button>
+                                        <button onClick={handleSave} className="bg-black text-white px-10 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-slate-800"><Icon name="save" /> <span>儲存專案</span></button>
                                     </div>
                                 </div>
                                 <iframe ref={iframeRef} src={currentProject.url} className="flex-1 border-none shadow-inner"></iframe>
