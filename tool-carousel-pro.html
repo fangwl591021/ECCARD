@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carousel Pro - 旗艦全功能穩定版 v2.8.6</title>
+    <title>Carousel Pro - 旗艦全功能穩定版 v2.8.7</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -25,7 +25,7 @@
         .preview-text-multiline { white-space: pre-wrap; word-break: break-all; }
         input[type="color"] { padding: 0; border: none; height: 50px; width: 100%; cursor: pointer; background: none; border-radius: 12px; overflow: hidden; }
         label { font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; display: block; font-weight: 900; }
-        input[type="text"], select, textarea { font-size: 16px !important; border-radius: 12px !important; padding: 14px !important; border: 2px solid #f1f5f9 !important; font-weight: 900 !important; width: 100%; color: #000; }
+        input[type="text"], select, textarea { font-size: 18px !important; border-radius: 12px !important; padding: 14px !important; border: 2px solid #f1f5f9 !important; font-weight: 900 !important; width: 100%; color: #000; }
         input:focus { border-color: #06C755 !important; outline: none; background-color: #fff; }
     </style>
 </head>
@@ -33,9 +33,8 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useCallback } = React;
+        const { useState, useEffect, useCallback, Fragment } = React; // 修正：補回 Fragment
 
-        // --- 核心資料庫 (圖示 100% 同步) ---
         const SOCIAL_DATA = {
             NONE: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "無圖示" },
             LINE: { url: "https://cdn-icons-png.flaticon.com/512/124/124027.png", label: "LINE" },
@@ -48,14 +47,13 @@
         };
 
         const TEMPLATE_TYPES = {
-            SEQUENTIAL_PRO: { name: "專業業務版", icon: "award", desc: "旗艦級商務展示，支援 Master 連動" },
-            PERSONAL: { name: "個人名片版", icon: "user", desc: "大圖排版，簡約優雅" },
-            ECOMMERCE: { name: "電商商品版", icon: "shopping-bag", desc: "產品展示與導購按鈕" }
+            SEQUENTIAL_PRO: { name: "專業業務版", icon: "award", desc: "商務旗艦展示，支援連動位移" },
+            PERSONAL: { name: "個人名片版", icon: "user", desc: "大圖簡約排版" },
+            ECOMMERCE: { name: "電商商品版", icon: "shopping-bag", desc: "商品推薦導購" }
         };
 
         const RADIUS_OPTIONS = ["none", "xs", "sm", "md", "lg", "xl", "xxl"];
 
-        // --- 各版型完整預設資料恢復 ---
         const GET_DEFAULT_DATA = (type) => {
             if (type === 'SEQUENTIAL_PRO') return {
                 url: "https://aiwe.cc/wp-content/uploads/2025/12/cf75e54791dd1f49f918345fdfe2430b.png",
@@ -63,22 +61,22 @@
                 avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
                 avatarTop: 60, avatarAnimated: false,
                 name: "張志明", nameTop: 155, nameColor: "#000000", nameWeight: "bold",
-                label1: "首席技術顧問", label1Top: 190, label1Bg: "#FFFFFF33", label1Color: "#000000", label1Weight: "bold",
-                desc: "致力於協助企業品牌數位轉型\n提供最優質的開發解決方案", descTop: 275, descColor: "#000000", descWeight: "regular", descAlign: "center",
+                label1: "首席顧問", label1Top: 190, label1Bg: "#FFFFFF33", label1Color: "#000000", label1Weight: "bold",
+                desc: "致力於協助企業品牌數位轉型\n擁有豐富的跨國行銷經驗", descTop: 275, descColor: "#000000", descWeight: "regular", descAlign: "center",
                 icons: [{type: 'PHONE', uri: 'tel:0900000000'}, {type: 'LINE', uri: 'https://line.me'}],
                 socialTop: 215,
                 footerBg: "#111111", footerLabel: "聯繫我了解更多", footerUri: "https://line.me", footerThemeColor: "#D4AF37", footerTextColor: "#000000", footerWeight: "bold"
             };
             if (type === 'PERSONAL') return {
                 url: "https://lihi.cc/5OXMZ", aspectRatio: "16:9",
-                name: "我的名稱", nameColor: "#111111",
-                desc: "個人簡介內容文字...\n支援換行顯示。", descColor: "#666666",
+                name: "王小明", nameColor: "#111111",
+                desc: "資深開發工程師\n專業 LINE Bot 解決方案", descColor: "#666666",
                 themeColor: "#00b900", btnLabel: "立即預約", btnUri: "https://line.me",
                 icons: [{ type: 'LINE', uri: 'https://line.me' }]
             };
             if (type === 'ECOMMERCE') return {
-                url: "https://lihi.cc/mwMvo", title: "旗艦限定商品", price: "$9,999", desc: "高品質保證，現貨免運中。\n歡迎點擊下方按鈕直接下單。",
-                themeColor: "#000000", btnLabel: "立即前往購買", btnUri: "https://line.me"
+                url: "https://lihi.cc/mwMvo", title: "限定商品推薦", price: "$9,999", desc: "高品質保證，現貨免運中。\n歡迎點擊下方按鈕直接下單。",
+                themeColor: "#000000", btnLabel: "立即購買", btnUri: "https://line.me"
             };
             return {};
         };
@@ -98,7 +96,7 @@
                         if (saved && saved.startsWith('{')) {
                             try {
                                 const parsed = JSON.parse(saved);
-                                if (parsed._pages) { setPages(parsed._pages); setAltText(parsed.altText || "這是我的數位名片，請多指教"); return; }
+                                if (parsed._pages) { setPages(parsed._pages); return; }
                                 if (parsed.pages) { setPages(parsed.pages); return; }
                             } catch(err) {}
                         }
@@ -112,10 +110,9 @@
                 return () => window.removeEventListener('message', handleMessage);
             }, []);
 
-            // --- 聚合發送邏輯：生成純淨標準的 LINE Carousel JSON ---
             const buildJson = useCallback(() => {
                 const activePages = pages.filter(p => p.template && p.isVisible);
-                if (activePages.length === 0) return { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "未配置內容" }] } };
+                if (activePages.length === 0) return { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "請配置內容" }] } };
 
                 const contents = activePages.map(page => {
                     const d = page.data;
@@ -174,7 +171,7 @@
                             footer: { type: "box", layout: "vertical", paddingAll: "10px", contents: [{ type: "button", style: "primary", color: d.themeColor || "#000000", action: { type: "uri", label: d.btnLabel || "立即購買", uri: cleanUri(d.btnUri) } }] }
                         };
                     }
-                    return { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "不支援版型" }] } };
+                    return { type: "bubble", body: { type: "box", layout: "vertical", contents: [{ type: "text", text: "版型載入中" }] } };
                 });
 
                 return { type: "carousel", contents, altText: "這是我的數位名片，請多指教" };
@@ -211,13 +208,13 @@
                 const page = pages[activeIndex];
                 if (!page.template) {
                     return (
-                        <div className="text-center py-24 border-4 border-dashed border-slate-200 rounded-[40px] space-y-10 bg-white/50">
-                            <h2 className="text-4xl font-black text-slate-300 uppercase italic tracking-tighter">Page {activeIndex + 1} Empty</h2>
-                            <div className="grid grid-cols-1 gap-6 px-12">
+                        <div className="text-center py-20 border-4 border-dashed border-slate-200 rounded-[40px] space-y-8 bg-white/50">
+                            <h2 className="text-3xl font-black text-slate-300 uppercase italic tracking-widest">Page {activeIndex + 1} Empty</h2>
+                            <div className="grid grid-cols-1 gap-5 px-12">
                                 {Object.keys(TEMPLATE_TYPES).map(k => (
-                                    <button key={k} onClick={()=>{const n=[...pages]; n[activeIndex]={...page, template:k, data:GET_DEFAULT_DATA(k)}; setPages(n)}} className="bg-white border-4 border-slate-100 p-10 rounded-[30px] font-black hover:border-[#06C755] transition-all flex items-center justify-between text-3xl text-black shadow-2xl hover:-translate-y-2 group active:scale-95">
-                                        <div className="flex items-center gap-6"><i data-lucide={TEMPLATE_TYPES[k].icon} className="w-12 h-12 text-[#06C755] group-hover:scale-125 transition-transform"></i> <div className="text-left"><div className="font-black">{TEMPLATE_TYPES[k].name}</div><div className="text-sm text-slate-400 font-bold">{TEMPLATE_TYPES[k].desc}</div></div></div>
-                                        <i data-lucide="chevron-right" className="text-slate-200 w-8 h-8"></i>
+                                    <button key={k} onClick={()=>{const n=[...pages]; n[activeIndex]={...page, template:k, data:GET_DEFAULT_DATA(k)}; setPages(n)}} className="bg-white border-4 border-slate-100 p-8 rounded-3xl font-black hover:border-[#06C755] transition-all flex items-center justify-between text-2xl text-black shadow-xl hover:-translate-y-1 active:scale-95 group">
+                                        <div className="flex items-center gap-4"><i data-lucide={TEMPLATE_TYPES[k].icon} className="w-8 h-8 text-[#06C755]"></i> <span>{TEMPLATE_TYPES[k].name}</span></div>
+                                        <i data-lucide="chevron-right" className="text-slate-200"></i>
                                     </button>
                                 ))}
                             </div>
@@ -228,112 +225,79 @@
                 const d = page.data;
                 return (
                     <div className="space-y-12 animate-in fade-in duration-500 pb-32">
-                        <div className="flex justify-between items-center bg-[#06C755] p-6 rounded-[25px] shadow-2xl ring-4 ring-[#06C755]/20">
+                        <div className="flex justify-between items-center bg-[#06C755] p-6 rounded-[25px] shadow-2xl">
                             <div className="font-black text-2xl text-white flex items-center gap-3"><i data-lucide={TEMPLATE_TYPES[page.template].icon} className="w-8 h-8"></i> {TEMPLATE_TYPES[page.template].name}設定</div>
-                            <button onClick={()=>{const n=[...pages]; n[activeIndex].template=null; setPages(n)}} className="bg-white/20 text-white px-6 py-2.5 rounded-xl text-base font-black hover:bg-white/30 transition-all">重選版型</button>
+                            <button onClick={()=>{const n=[...pages]; n[activeIndex].template=null; setPages(n)}} className="bg-white/20 text-white px-6 py-2 rounded-xl text-base font-black hover:bg-white/30 transition-all">重選版型</button>
                         </div>
 
-                        {/* 版型特定的控制項 */}
                         {page.template === 'SEQUENTIAL_PRO' && (
                             <Fragment>
                                 <div className="control-panel space-y-8">
-                                    <div className="flex justify-between items-center border-b-2 border-slate-50 pb-5"><h3 className="text-xl font-black text-slate-800 flex items-center gap-3"><i data-lucide="image"></i> 1. 視覺媒體層</h3><label className="flex items-center gap-3 cursor-pointer bg-green-50 px-5 py-2 rounded-2xl border-2 border-green-100"><input type="checkbox" checked={d.animated} onChange={e=>updateActivePageData('animated', e.target.checked)} className="w-6 h-6 accent-green-600"/><span className="text-sm font-black text-green-700">動畫開關</span></label></div>
-                                    <div className="space-y-3"><label>背景圖 URL (400x600 比例)</label><input type="text" value={d.url} onChange={e=>updateActivePageData('url', e.target.value)} /></div>
-                                    <div className="grid grid-cols-2 gap-8">
-                                        <div className="space-y-3"><label>標籤內容</label><input type="text" value={d.badgeText} onChange={e=>updateActivePageData('badgeText', e.target.value)} /></div>
-                                        <div className="space-y-3"><label>標籤圓角</label><select value={d.badgeRadius} onChange={e=>updateActivePageData('badgeRadius', e.target.value)}>{RADIUS_OPTIONS.map(r=><option key={r} value={r}>{r.toUpperCase()}</option>)}</select></div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-8">
-                                        <div className="space-y-3"><label>標籤底色</label><input type="color" value={d.badgeBg} onChange={e=>updateActivePageData('badgeBg', e.target.value)} /></div>
-                                        <div className="space-y-3"><label>標籤位置</label><select value={d.badgePos} onChange={e=>updateActivePageData('badgePos', e.target.value)}><option value="offsetStart">靠左</option><option value="offsetEnd">靠右</option></select></div>
-                                    </div>
+                                    <div className="flex justify-between items-center border-b pb-4"><h3 className="text-xl font-black text-slate-800">1. 背景圖與標籤</h3><label className="flex items-center gap-3 cursor-pointer bg-green-50 px-5 py-2 rounded-2xl border-2 border-green-100"><input type="checkbox" checked={d.animated} onChange={e=>updateActivePageData('animated', e.target.checked)} className="w-6 h-6 accent-green-600"/><span className="text-sm font-black text-green-700 uppercase">動畫開關</span></label></div>
+                                    <input type="text" value={d.url} onChange={e=>updateActivePageData('url', e.target.value)} placeholder="背景圖網址" />
+                                    <div className="grid grid-cols-2 gap-8"><input type="text" value={d.badgeText} onChange={e=>updateActivePageData('badgeText', e.target.value)} placeholder="標籤內容" /><select value={d.badgeRadius} onChange={e=>updateActivePageData('badgeRadius', e.target.value)}>{RADIUS_OPTIONS.map(r=><option key={r} value={r}>{r.toUpperCase()}</option>)}</select></div>
+                                    <div className="grid grid-cols-2 gap-8"><input type="color" value={d.badgeBg} onChange={e=>updateActivePageData('badgeBg', e.target.value)} /><select value={d.badgePos} onChange={e=>updateActivePageData('badgePos', e.target.value)}><option value="offsetStart">靠左</option><option value="offsetEnd">靠右</option></select></div>
                                 </div>
 
-                                <div className="control-panel space-y-6 border-l-[12px] border-amber-500 bg-amber-50/10 shadow-amber-900/5">
-                                    <div className="flex justify-between items-end"><h3 className="text-xl font-black text-amber-700 uppercase tracking-tighter">全局高度連動 (MASTER SLIDER)</h3><span className="text-amber-700 font-black text-3xl italic">{d.avatarTop}px</span></div>
-                                    <input type="range" min="0" max="800" value={d.avatarTop} onChange={e=>handleMasterMove(parseInt(e.target.value))} className="w-full master-slider" />
-                                    <p className="text-xs text-amber-600 font-bold">※ 拖動此滑桿，可「按比例」同步位移頭像、姓名、社群與說明區。</p>
-                                </div>
+                                <div className="control-panel space-y-5 border-l-8 border-amber-500 bg-amber-50/20 font-black"><h3 className="text-lg font-black text-amber-700 uppercase tracking-tighter">全局高度連動 (MASTER) - {d.avatarTop}px</h3><input type="range" min="0" max="800" value={d.avatarTop} onChange={e=>handleMasterMove(parseInt(e.target.value))} className="w-full master-slider" /></div>
 
+                                <div className="control-panel space-y-8"><div className="flex justify-between items-center border-b pb-4"><h3 className="text-xl font-black text-slate-800">2. 身份與姓名設定</h3><label className="flex items-center gap-3 cursor-pointer bg-green-50 px-5 py-2 rounded-2xl border-2 border-green-100"><input type="checkbox" checked={d.avatarAnimated} onChange={e=>updateActivePageData('avatarAnimated', e.target.checked)} className="w-6 h-6 accent-green-600"/><span className="text-sm font-black text-green-700">頭像動畫</span></label></div><input type="text" value={d.avatar} onChange={e=>updateActivePageData('avatar', e.target.value)} placeholder="頭像網址" /><div className="grid grid-cols-2 gap-8"><input type="text" value={d.name} onChange={e=>updateActivePageData('name', e.target.value)} className="font-black text-2xl" /><input type="color" value={d.nameColor} onChange={e=>updateActivePageData('nameColor', e.target.value)} /></div><div className="border-t pt-5 space-y-4"><input type="text" value={d.label1} onChange={e=>updateActivePageData('label1', e.target.value)} className="font-bold" placeholder="職稱標籤"/><div className="grid grid-cols-3 gap-6"><div className="flex flex-col gap-1"><label className="text-xs">背景色</label><input type="color" value={d.label1Bg.substring(0,7)} onChange={e=>updateActivePageData('label1Bg', e.target.value+'33')} /></div><div className="flex flex-col gap-1"><label className="text-xs">文字色</label><input type="color" value={d.label1Color} onChange={e=>updateActivePageData('label1Color', e.target.value)} /></div><div className="flex flex-col gap-1"><label className="text-xs">粗細</label><select value={d.label1Weight} onChange={e=>updateActivePageData('label1Weight', e.target.value)}><option value="bold">粗</option><option value="regular">細</option></select></div></div></div></div>
+
+                                <div className="control-panel space-y-8 font-black"><div className="flex justify-between items-center border-b pb-4"><h3 className="text-xl font-black text-slate-800">3. 社群互動按鈕 (50x50)</h3><button onClick={()=>{if(d.icons.length < 5) updateActivePageData('icons', [...d.icons, {type:'LINE', uri:'https://line.me'}])}} className="bg-slate-800 text-white px-8 py-3 rounded-2xl flex items-center gap-2 font-black active:scale-95 shadow-md"><i data-lucide="plus" className="w-5 h-5"></i> 新增按鈕</button></div><div className="space-y-4">{d.icons.map((s, i) => (<div key={i} className="flex gap-3 bg-slate-50 p-4 rounded-2xl relative border-2 border-slate-100 group hover:border-[#06C755] transition-all"><button onClick={()=>{const nl=d.icons.filter((_,idx)=>idx!==i); updateActivePageData('icons', nl)}} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-2 shadow-lg group-hover:scale-110 transition-transform"><i data-lucide="trash-2" className="w-4 h-4"></i></button><select value={s.type} onChange={e=>{const nl=[...d.icons]; nl[i].type=e.target.value; updateActivePageData('icons', nl)}} className="w-40 bg-white shadow-inner">{Object.keys(SOCIAL_DATA).map(k=><option key={k} value={k}>{SOCIAL_DATA[k].label}</option>)}</select><input type="text" value={s.uri} onChange={e=>{const nl=[...d.icons]; nl[i].uri=e.target.value; updateActivePageData('icons', nl)}} className="flex-1 font-mono font-black bg-white" placeholder="連結 URL" /></div>))}</div><div className="border-t pt-8 space-y-6"><h3 className="text-xl font-black text-slate-800 uppercase tracking-widest font-black">4. 介紹內容 (10px 邊界)</h3><textarea value={d.desc} onChange={e=>updateActivePageData('desc', e.target.value)} className="w-full h-52 text-lg leading-relaxed font-black" placeholder="請輸入介紹內容...支援 Enter 換行"></textarea><div className="grid grid-cols-2 gap-8"><div className="flex flex-col gap-1"><label className="text-xs">文字顏色</label><input type="color" value={d.descColor} onChange={e=>updateActivePageData('descColor', e.target.value)} /></div><div className="flex bg-slate-100 p-2 rounded-2xl gap-3 mt-auto h-fit shadow-inner">{['start', 'center', 'end'].map(a => <button key={a} onClick={()=>updateActivePageData('descAlign', a)} className={`flex-1 py-3 rounded-xl font-black transition-all ${d.descAlign===a?'bg-white shadow-lg text-[#06C755]':'text-slate-400'}`}>{a.toUpperCase()}</button>)}</div></div></div></div>
+
+                                <div className="control-panel space-y-8 shadow-2xl border-4 border-slate-900"><h3 className="text-2xl font-black text-black border-b-4 border-black pb-5 uppercase tracking-tighter">5. 底部按鈕全細節設定</h3><div className="grid grid-cols-2 gap-8"><div className="space-y-2"><label>Footer 背景</label><input type="color" value={d.footerBg} onChange={e=>updateActivePageData('footerBg', e.target.value)} /></div><div className="space-y-2"><label>按鈕主題色</label><input type="color" value={d.footerThemeColor} onChange={e=>updateActivePageData('footerThemeColor', e.target.value)} /></div></div><div className="grid grid-cols-2 gap-8"><div className="space-y-2"><label>按鈕文字色</label><input type="color" value={d.footerTextColor} onChange={e=>updateActivePageData('footerTextColor', e.target.value)} /></div><div className="space-y-2"><label>文字粗細</label><select value={d.footerWeight} onChange={e=>updateActivePageData('footerWeight', e.target.value)}><option value="bold">粗體</option><option value="regular">一般</option></select></div></div><input type="text" value={d.footerLabel} onChange={e=>updateActivePageData('footerLabel', e.target.value)} className="w-full text-center text-xl font-black" placeholder="按鈕文字" /><input type="text" value={d.footerUri} onChange={e=>updateActivePageData('footerUri', e.target.value)} className="w-full font-mono text-sm font-black" placeholder="https://..." /></div>
+                            </Fragment>
+                        )}
+
+                        {page.template === 'PERSONAL' && (
+                            <Fragment>
                                 <div className="control-panel space-y-8">
-                                    <div className="flex justify-between items-center border-b-2 border-slate-50 pb-5"><h3 className="text-xl font-black text-slate-800">2. 身份與頭像</h3><label className="flex items-center gap-3 cursor-pointer bg-green-50 px-5 py-2 rounded-2xl border-2 border-green-100"><input type="checkbox" checked={d.avatarAnimated} onChange={e=>updateActivePageData('avatarAnimated', e.target.checked)} className="w-6 h-6 accent-green-600"/><span className="text-sm font-black text-green-700">頭像動畫</span></label></div>
-                                    <div className="space-y-3"><label>個人頭像 URL</label><input type="text" value={d.avatar} onChange={e=>updateActivePageData('avatar', e.target.value)} /></div>
-                                    <div className="grid grid-cols-2 gap-8">
-                                        <div className="space-y-3"><label>姓名</label><input type="text" value={d.name} onChange={e=>updateActivePageData('name', e.target.value)} className="text-2xl" /></div>
-                                        <div className="space-y-3"><label>姓名顏色</label><input type="color" value={d.nameColor} onChange={e=>updateActivePageData('nameColor', e.target.value)} /></div>
-                                    </div>
-                                    <div className="border-t-2 pt-8 space-y-6">
-                                        <div className="space-y-3"><label>職稱標籤文字</label><input type="text" value={d.label1} onChange={e=>updateActivePageData('label1', e.target.value)} /></div>
-                                        <div className="grid grid-cols-3 gap-6">
-                                            <div className="space-y-3"><label>背景</label><input type="color" value={d.label1Bg.substring(0,7)} onChange={e=>updateActivePageData('label1Bg', e.target.value+'33')} /></div>
-                                            <div className="space-y-3"><label>文字</label><input type="color" value={d.label1Color} onChange={e=>updateActivePageData('label1Color', e.target.value)} /></div>
-                                            <div className="space-y-3"><label>粗細</label><select value={d.label1Weight} onChange={e=>updateActivePageData('label1Weight', e.target.value)}><option value="bold">粗</option><option value="regular">細</option></select></div>
-                                        </div>
-                                    </div>
+                                    <h3 className="text-xl font-black text-slate-800 border-b pb-4">1. 主圖設定</h3>
+                                    <input type="text" value={d.url} onChange={e=>updateActivePageData('url', e.target.value)} className="w-full" placeholder="圖片網址" />
+                                    <select value={d.aspectRatio} onChange={e=>updateActivePageData('aspectRatio', e.target.value)} className="w-full font-black"><option value="16:9">16:9 比例</option><option value="4:3">4:3 比例</option><option value="1:1">1:1 比例</option></select>
                                 </div>
-
                                 <div className="control-panel space-y-8">
-                                    <div className="flex justify-between items-center border-b-2 border-slate-50 pb-5"><h3 className="text-xl font-black text-slate-800 uppercase tracking-widest font-black">3. 社群互動按鈕 (50x50)</h3><button onClick={()=>{if(d.icons.length < 5) updateActivePageData('icons', [...d.icons, {type:'LINE', uri:'https://line.me'}])}} className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl flex items-center gap-3 font-black active:scale-95 shadow-xl hover:bg-black transition-all"><i data-lucide="plus-circle" className="w-7 h-7 text-[#06C755]"></i> 新增按鈕</button></div>
-                                    <div className="space-y-5">
-                                        {d.icons.map((s, i) => (
-                                            <div key={i} className="flex gap-4 bg-slate-50 p-6 rounded-[25px] relative border-2 border-slate-100 group hover:border-[#06C755] transition-all">
-                                                <button onClick={()=>{const nl=d.icons.filter((_,idx)=>idx!==i); updateActivePageData('icons', nl)}} className="absolute -top-4 -right-4 bg-red-500 text-white rounded-full p-2.5 shadow-2xl opacity-0 group-hover:opacity-100 transition-all hover:scale-110 z-10"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
-                                                <select value={s.type} onChange={e=>{const nl=[...d.icons]; nl[i].type=e.target.value; updateActivePageData('icons', nl)}} className="w-40 bg-white shadow-inner">{Object.keys(SOCIAL_DATA).map(k=><option key={k} value={k}>{SOCIAL_DATA[k].label}</option>)}</select>
-                                                <input type="text" value={s.uri} onChange={e=>{const nl=[...d.icons]; nl[i].uri=e.target.value; updateActivePageData('icons', nl)}} className="flex-1 font-mono font-black" placeholder="連結 URL" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="border-t-2 pt-8 space-y-6">
-                                        <h3 className="text-xl font-black text-slate-800 uppercase tracking-widest font-black">4. 介紹內容 (10px 邊界)</h3>
-                                        <textarea value={d.desc} onChange={e=>updateActivePageData('desc', e.target.value)} className="w-full h-52 text-lg leading-relaxed" placeholder="請輸入介紹文字...按 Enter 可直接換行"></textarea>
-                                        <div className="grid grid-cols-2 gap-8">
-                                            <div className="space-y-3"><label>文字顏色</label><input type="color" value={d.descColor} onChange={e=>updateActivePageData('descColor', e.target.value)} /></div>
-                                            <div className="flex bg-slate-100 p-2 rounded-2xl gap-3 mt-auto h-fit shadow-inner">
-                                                {['start', 'center', 'end'].map(a => <button key={a} onClick={()=>updateActivePageData('descAlign', a)} className={`flex-1 py-3.5 rounded-xl font-black transition-all ${d.descAlign===a?'bg-white shadow-lg text-[#06C755] scale-105':'text-slate-400'}`}>{a.toUpperCase()}</button>)}
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <h3 className="text-xl font-black text-slate-800 border-b pb-4">2. 內容文字與顏色</h3>
+                                    <div className="grid grid-cols-2 gap-6 font-black"><div className="space-y-2"><label>姓名顏色</label><input type="color" value={d.nameColor} onChange={e=>updateActivePageData('nameColor', e.target.value)} /></div><div className="space-y-2"><label>簡介顏色</label><input type="color" value={d.descColor} onChange={e=>updateActivePageData('descColor', e.target.value)} /></div></div>
+                                    <input type="text" value={d.name} onChange={e=>updateActivePageData('name', e.target.value)} className="w-full font-black text-2xl" placeholder="請輸入姓名" />
+                                    <textarea value={d.desc} onChange={e=>updateActivePageData('desc', e.target.value)} className="w-full h-52 font-bold" placeholder="簡介內容...支援 Enter"></textarea>
                                 </div>
-
-                                <div className="control-panel space-y-8 shadow-2xl border-4 border-slate-900 ring-8 ring-slate-900/5">
-                                    <h3 className="text-2xl font-black text-black border-b-4 border-black pb-5 uppercase tracking-tighter">5. 底部長按鈕 (旗艦版)</h3>
-                                    <div className="grid grid-cols-2 gap-10">
-                                        <div className="space-y-3"><label>Footer 背景色</label><input type="color" value={d.footerBg} onChange={e=>updateActivePageData('footerBg', e.target.value)} /></div>
-                                        <div className="space-y-3"><label>按鈕主題色</label><input type="color" value={d.footerThemeColor} onChange={e=>updateActivePageData('footerThemeColor', e.target.value)} /></div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-10">
-                                        <div className="space-y-3"><label>按鈕文字色</label><input type="color" value={d.footerTextColor} onChange={e=>updateActivePageData('footerTextColor', e.target.value)} /></div>
-                                        <div className="space-y-3"><label>文字粗細</label><select value={d.footerWeight} onChange={e=>updateActivePageData('footerWeight', e.target.value)}><option value="bold">粗體</option><option value="regular">一般</option></select></div>
-                                    </div>
-                                    <div className="space-y-3"><label>按鈕顯示文字</label><input type="text" value={d.footerLabel} onChange={e=>updateActivePageData('footerLabel', e.target.value)} className="text-center text-xl font-black" /></div>
-                                    <div className="space-y-3"><label>點擊跳轉網址</label><input type="text" value={d.footerUri} onChange={e=>updateActivePageData('footerUri', e.target.value)} className="font-mono text-sm font-black" placeholder="https://..." /></div>
+                                <div className="control-panel space-y-8">
+                                    <h3 className="text-xl font-black text-slate-800 border-b pb-4">3. 底部按鈕</h3>
+                                    <input type="color" value={d.themeColor} onChange={e=>updateActivePageData('themeColor', e.target.value)} />
+                                    <input type="text" value={d.btnLabel} onChange={e=>updateActivePageData('btnLabel', e.target.value)} className="w-full text-center font-black" />
+                                    <input type="text" value={d.btnUri} onChange={e=>updateActivePageData('btnUri', e.target.value)} className="font-mono text-sm" placeholder="https://..." />
                                 </div>
                             </Fragment>
                         )}
 
-                        {/* 個人與電商版簡化控制 (維持大字體) */}
-                        {page.template !== 'SEQUENTIAL_PRO' && (
-                            <div className="control-panel space-y-8">
-                                <div className="space-y-3"><label>主圖/商品圖 URL</label><input type="text" value={d.url} onChange={e=>updateActivePageData('url', e.target.value)} /></div>
-                                <div className="space-y-3"><label>{page.template==='PERSONAL'?'姓名':'商品名稱'}</label><input type="text" value={d.name || d.title} onChange={e=>updateActivePageData(page.template==='PERSONAL'?'name':'title', e.target.value)} className="text-2xl" /></div>
-                                <div className="space-y-3"><label>內容介紹</label><textarea value={d.desc} onChange={e=>updateActivePageData('desc', e.target.value)} className="h-40"></textarea></div>
-                                <div className="grid grid-cols-2 gap-8 mt-6"><div className="space-y-3"><label>按鈕主題色</label><input type="color" value={d.themeColor} onChange={e=>updateActivePageData('themeColor', e.target.value)} /></div><div className="space-y-3"><label>按鈕文字</label><input type="text" value={d.btnLabel} onChange={e=>updateActivePageData('btnLabel', e.target.value)} className="text-center" /></div></div>
-                            </div>
+                        {page.template === 'ECOMMERCE' && (
+                            <Fragment>
+                                <div className="control-panel space-y-8">
+                                    <h3 className="text-xl font-black text-slate-800 border-b pb-4">1. 商品資訊</h3>
+                                    <input type="text" value={d.url} onChange={e=>updateActivePageData('url', e.target.value)} placeholder="商品圖網址" />
+                                    <input type="text" value={d.title} onChange={e=>updateActivePageData('title', e.target.value)} className="text-2xl font-black" placeholder="商品標題" />
+                                    <input type="text" value={d.price} onChange={e=>updateActivePageData('price', e.target.value)} className="text-4xl text-red-500 font-black" placeholder="商品價格" />
+                                    <textarea value={d.desc} onChange={e=>updateActivePageData('desc', e.target.value)} className="h-40" placeholder="商品描述..."></textarea>
+                                </div>
+                                <div className="control-panel space-y-8">
+                                    <h3 className="text-xl font-black text-slate-800 border-b pb-4">2. 購買按鈕設定</h3>
+                                    <input type="color" value={d.themeColor} onChange={e=>updateActivePageData('themeColor', e.target.value)} />
+                                    <input type="text" value={d.btnLabel} onChange={e=>updateActivePageData('btnLabel', e.target.value)} className="text-center font-black" />
+                                    <input type="text" value={d.btnUri} onChange={e=>updateActivePageData('btnUri', e.target.value)} className="font-mono text-sm" placeholder="https://..." />
+                                </div>
+                            </Fragment>
                         )}
 
-                        <div className="p-10 bg-slate-900 rounded-[50px] flex justify-between items-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-4 border-white/10">
-                            <div className="text-white font-black text-2xl uppercase italic flex items-center gap-4"><i data-lucide="send" className="w-10 h-10 text-[#06C755] drop-shadow-[0_0_10px_#06C755]"></i> 發送時顯示本頁</div>
-                            <button onClick={()=>setPages(p=>{const n=[...p]; n[activeIndex].isVisible=!n[activeIndex].isVisible; return n})} className={`w-24 h-12 rounded-full relative transition-all shadow-inner ring-4 ring-white/5 ${page.isVisible?'bg-[#06C755]':'bg-slate-700'}`}><div className={`absolute top-1.5 w-9 h-9 bg-white rounded-full transition-all shadow-2xl ${page.isVisible?'left-13':'left-2'}`}></div></button>
-                        </div>
-                        
-                        <button onClick={()=>{if(activeIndex < 11){const n=[...pages]; n[activeIndex+1]=JSON.parse(JSON.stringify(page)); n[activeIndex+1].id=activeIndex+1; setPages(n); setActiveIndex(activeIndex+1)}}} className="w-full py-10 border-8 border-dashed border-slate-200 text-slate-300 rounded-[50px] font-black text-2xl hover:border-[#06C755] hover:text-[#06C755] hover:bg-green-50 transition-all flex items-center justify-center gap-6 active:scale-95 mb-20 font-black"><i data-lucide="copy" className="w-10 h-10"></i> 複製內容至下一頁 (Page {activeIndex+2})</button>
+                        <div className="p-8 bg-slate-900 rounded-[50px] flex justify-between items-center shadow-2xl ring-8 ring-slate-900/10"><div className="text-white font-black text-2xl uppercase flex items-center gap-3"><i data-lucide="send" className="w-8 h-8 text-[#06C755]"></i> 發送時顯示本頁</div><button onClick={()=>setPages(p=>{const n=[...p]; n[activeIndex].isVisible=!n[activeIndex].isVisible; return n})} className={`w-24 h-12 rounded-full relative transition-all shadow-inner ${page.isVisible?'bg-[#06C755]':'bg-slate-700'}`}><div className={`absolute top-1.5 w-9 h-9 bg-white rounded-full transition-all shadow-2xl ${page.isVisible?'left-13':'left-2'}`}></div></button></div>
+                        <button onClick={()=>{if(activeIndex < 11){const n=[...pages]; n[activeIndex+1]=JSON.parse(JSON.stringify(page)); n[activeIndex+1].id=activeIndex+1; setPages(n); setActiveIndex(activeIndex+1)}}} className="w-full py-10 border-8 border-dashed border-slate-200 text-slate-300 rounded-[50px] font-black text-2xl hover:border-[#06C755] hover:text-[#06C755] hover:bg-green-50 transition-all flex items-center justify-center gap-6 active:scale-95 mb-20 font-black font-black"><i data-lucide="copy" className="w-10 h-10"></i> 複製內容至下一頁</button>
                     </div>
                 );
             };
 
             const PreviewComp = () => {
                 const page = pages[activeIndex];
-                if (!page.template) return <div className="p-20 text-center italic text-slate-300 font-black text-3xl font-black">EMPTY PAGE</div>;
+                if (!page.template) return <div className="p-20 text-center italic text-slate-300 font-black text-3xl">本分頁尚未設定</div>;
                 const d = page.data;
                 const width = 300;
                 
@@ -348,41 +312,42 @@
                                 <div className="absolute w-full text-center px-4" style={{ top: (d.nameTop * scale) + 'px', color: d.nameColor, fontWeight: 900, fontSize: '20px' }}>{d.name}</div>
                                 <div className="absolute w-full px-10" style={{ top: (d.label1Top * scale) + 'px' }}><div className="py-1.5 rounded-lg text-[10px] text-center font-black shadow-lg font-black" style={{ backgroundColor: d.label1Bg, color: d.label1Color }}>{d.label1}</div></div>
                                 <div className="absolute w-full flex justify-center gap-3" style={{ top: (d.socialTop * scale) + 'px' }}>{(d.icons || []).map((s, i) => <div key={i} className="w-12 h-12 p-3 bg-white/20 rounded-full border border-white/50 flex items-center justify-center shadow-2xl backdrop-blur-md"><img src={SOCIAL_DATA[s.type]?.url} className="w-full h-full object-contain" /></div>)}</div>
-                                <div className="absolute w-full px-[14px]" style={{ top: (d.descTop * scale) + 'px', textAlign: d.descAlign }}><p className="text-[11px] preview-text-multiline leading-relaxed font-black font-black" style={{ color: d.descColor }}>{d.desc}</p></div>
+                                <div className="absolute w-full px-[14px]" style={{ top: (d.descTop * scale) + 'px', textAlign: d.descAlign }}><p className="text-[11px] preview-text-multiline leading-relaxed font-black font-black font-black" style={{ color: d.descColor }}>{d.desc}</p></div>
                                 <div className="absolute top-0 left-0 w-full h-full border-b-2 border-dashed border-red-500 pointer-events-none opacity-20"></div>
                             </div>
                             <div className="p-5" style={{ backgroundColor: d.footerBg }}>
-                                <div className="py-4 text-center rounded-2xl text-xs font-black shadow-xl font-black" style={{ backgroundColor: d.footerThemeColor, color: d.footerTextColor }}>{d.footerLabel}</div>
+                                <div className="py-4 text-center rounded-2xl text-xs font-black shadow-xl font-black font-black" style={{ backgroundColor: d.footerThemeColor, color: d.footerTextColor }}>{d.footerLabel}</div>
                             </div>
                         </div>
                     );
                 }
 
                 if (page.template === 'PERSONAL') {
-                    const mediaH = (9 / 16) * 300;
+                    const [w, h] = (d.aspectRatio || "16:9").split(':').map(Number);
+                    const mediaH = (h / w) * 300;
                     return (
-                        <div className="rounded-[50px] bg-white shadow-2xl overflow-hidden relative border-[12px] border-black animate-in zoom-in-95 duration-500 shadow-2xl" style={{ width: '300px' }}>
+                        <div className="rounded-[50px] bg-white shadow-2xl overflow-hidden relative border-[12px] border-black animate-in zoom-in-95 duration-500 shadow-2xl font-black" style={{ width: '300px' }}>
                             <div className="bg-slate-100" style={{ height: `${mediaH}px` }}><img src={d.url} className="w-full h-full object-cover" /></div>
                             <div className="p-8 pt-10">
                                 <div className="font-black text-3xl text-black" style={{ color: d.nameColor }}>{d.name}</div>
                                 <div className="mt-5 text-base leading-relaxed whitespace-pre-wrap font-bold" style={{ color: d.descColor }}>{d.desc}</div>
                                 <div className="flex gap-3 mt-8">{(d.icons || []).map((icon, i) => <div key={i} className="w-14 h-14 p-3 bg-slate-50 border-4 border-slate-100 rounded-full flex items-center justify-center shadow-lg"><img src={SOCIAL_DATA[icon.type]?.url} className="w-full h-full object-contain" /></div>)}</div>
                             </div>
-                            <div className="p-6 pt-0"><div className="py-5 text-center rounded-[20px] text-white font-black text-lg shadow-xl font-black" style={{ backgroundColor: d.themeColor }}>{d.btnLabel}</div></div>
+                            <div className="p-6 pt-0"><div className="py-5 text-center rounded-[20px] text-white font-black text-lg shadow-xl font-black font-black" style={{ backgroundColor: d.themeColor }}>{d.btnLabel}</div></div>
                         </div>
                     );
                 }
 
                 if (page.template === 'ECOMMERCE') {
                     return (
-                        <div className="rounded-[50px] bg-white shadow-2xl overflow-hidden relative border-[12px] border-black animate-in zoom-in-95 duration-500 shadow-2xl" style={{ width: '300px' }}>
+                        <div className="rounded-[50px] bg-white shadow-2xl overflow-hidden relative border-[12px] border-black animate-in zoom-in-95 duration-500 shadow-2xl font-black" style={{ width: '300px' }}>
                             <div className="bg-slate-100" style={{ height: `300px` }}><img src={d.url} className="w-full h-full object-cover" /></div>
                             <div className="p-8">
                                 <div className="font-black text-2xl text-black">{d.title}</div>
                                 <div className="text-3xl font-black text-red-500 mt-2 font-black italic">{d.price}</div>
                                 <div className="mt-5 text-base leading-relaxed whitespace-pre-wrap font-bold text-slate-500">{d.desc}</div>
                             </div>
-                            <div className="p-6 pt-0"><div className="py-5 text-center rounded-[20px] text-white font-black text-lg shadow-xl font-black" style={{ backgroundColor: d.themeColor }}>{d.btnLabel}</div></div>
+                            <div className="p-6 pt-0"><div className="py-5 text-center rounded-[20px] text-white font-black text-lg shadow-xl font-black font-black" style={{ backgroundColor: d.themeColor }}>{d.btnLabel}</div></div>
                         </div>
                     );
                 }
@@ -400,10 +365,9 @@
                             ))}
                         </div>
                         <div className="flex-1 overflow-y-auto p-12 custom-scrollbar font-black text-black">
-                            <div className="mb-16 control-panel border-[6px] border-[#06C755] bg-green-50/20 font-black text-black">
-                                <label className="text-base text-slate-500 block mb-3 font-black uppercase font-black tracking-widest flex items-center gap-3"><i data-lucide="bell-ring" className="w-6 h-6"></i> LINE通知與分享文字</label>
-                                <div className="text-2xl font-black p-5 bg-white rounded-2xl border-2 border-slate-100 text-black shadow-inner font-black">這是我的數位名片，請多指教</div>
-                                <p className="text-xs text-slate-400 font-bold mt-4 italic">※ 此文字為全分頁共用，統一格式有助於提升好友點擊意願。</p>
+                            <div className="mb-16 control-panel border-[6px] border-[#06C755] bg-green-50/20 font-black text-black shadow-inner">
+                                <label className="text-base text-slate-500 block mb-3 font-black uppercase tracking-widest flex items-center gap-3 font-black"><i data-lucide="bell-ring" className="w-6 h-6"></i> 分享預覽文字</label>
+                                <div className="text-2xl font-black p-5 bg-white rounded-2xl border-2 border-slate-100 text-black shadow-inner font-black italic">這是我的數位名片，請多指教</div>
                             </div>
                             {renderEditor()}
                         </div>
@@ -411,7 +375,7 @@
                     <div className="flex-1 flex flex-col chat-room-bg overflow-hidden text-black font-black">
                         <div className="h-[100px] bg-white border-b flex items-center px-16 gap-12 shrink-0 shadow-sm relative z-30 font-black text-black font-black"><button onClick={()=>setActiveTab('editor')} className={`h-full border-b-[12px] flex items-center gap-4 transition-all text-2xl font-black font-black ${activeTab === 'editor' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent hover:text-black'}`}><i data-lucide="eye"></i> 視覺預覽</button><button onClick={()=>setActiveTab('json')} className={`h-full border-b-[12px] flex items-center gap-4 transition-all text-2xl font-black font-black ${activeTab === 'json' ? 'text-[#06C755] border-[#06C755]' : 'text-slate-400 border-transparent hover:text-black'}`}><i data-lucide="code"></i> JSON 代碼</button></div>
                         <div className="flex-1 overflow-y-auto p-16 flex flex-col items-center custom-scrollbar">
-                            {activeTab === 'editor' ? (<div className="space-y-12 flex flex-col items-center animate-in zoom-in-95 duration-700 font-black"><div className="px-14 py-5 bg-black text-white rounded-full text-base tracking-[0.6em] font-black uppercase shadow-[0_30px_60px_-10px_rgba(0,0,0,0.5)] border-4 border-white/20">PAGE {activeIndex + 1} REAL-TIME</div><PreviewComp /></div>) : (<div className="w-full max-w-4xl mx-auto font-black shadow-2xl rounded-[60px] overflow-hidden border-8 border-white/10"><pre className="bg-slate-900 p-16 text-green-400 text-sm overflow-x-auto font-mono w-full leading-relaxed select-all">{JSON.stringify(buildJson(), null, 2)}</pre></div>)}
+                            {activeTab === 'editor' ? (<div className="space-y-12 flex flex-col items-center animate-in zoom-in-95 duration-700 font-black"><div className="px-14 py-5 bg-black text-white rounded-full text-base tracking-[0.6em] font-black uppercase shadow-[0_30px_60px_-10px_rgba(0,0,0,0.5)] border-4 border-white/20">PAGE {activeIndex + 1} LIVE PREVIEW</div><PreviewComp /></div>) : (<div className="w-full max-w-4xl mx-auto font-black shadow-2xl rounded-[60px] overflow-hidden border-8 border-white/10"><pre className="bg-slate-900 p-16 text-green-400 text-sm overflow-x-auto font-mono w-full leading-relaxed select-all">{JSON.stringify(buildJson(), null, 2)}</pre></div>)}
                         </div>
                     </div>
                 </div>
