@@ -45,7 +45,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useCallback, useRef } = React;
+        const { useState, useEffect, useCallback, useRef, memo } = React;
 
         // --- 全局常數定義 ---
         const SOCIAL_DATA = {
@@ -75,7 +75,7 @@
                 gravity: "center",
                 badgeText: "精選推薦",
                 badgeUri: "https://line.me",
-                badgeBg: "#10b981",
+                badgeBg: "#ef4444", // 預設紅色
                 badgePos: "left"
             },
             avatar: {
@@ -87,11 +87,11 @@
             },
             content: {
                 name: "陳大文",
-                nameSize: "lg", // 固定為 lg
+                nameSize: "lg",
                 nameAlign: "start",
                 nameColor: "#0f172a",
                 desc: "專業 LINE Bot 解決方案\n致力於提供最流暢的互動體驗",
-                descSize: "xs", // 固定為 xs
+                descSize: "xs",
                 descAlign: "start",
                 descColor: "#475569"
             },
@@ -142,7 +142,8 @@
                                 animated: true, action: data.media.uri ? { type: "uri", uri: data.media.uri } : undefined
                             },
                             {
-                                type: "box", layout: "vertical", position: "absolute", backgroundColor: data.media.badgeBg, cornerRadius: "15px", paddingAll: "4px", paddingStart: "10px", paddingEnd: "10px", offsetTop: "10px", [data.media.badgePos === 'left' ? 'offsetStart' : 'offsetEnd']: "10px",
+                                type: "box", layout: "vertical", position: "absolute", backgroundColor: data.media.badgeBg, cornerRadius: "15px", height: "25px", paddingAll: "4px", paddingStart: "10px", paddingEnd: "10px", offsetTop: "10px", [data.media.badgePos === 'left' ? 'offsetStart' : 'offsetEnd']: "10px",
+                                justifyContent: "center",
                                 action: data.media.badgeUri ? { type: "uri", uri: data.media.badgeUri } : undefined,
                                 contents: [{ type: "text", text: data.media.badgeText, color: "#ffffff", align: "center", size: "xs", weight: "bold" }]
                             }
@@ -239,13 +240,12 @@
                 });
             }, []);
 
-            // --- 解析器 (還原儲存內容) ---
+            // --- 解析器 ---
             const parseJsonToState = useCallback((json) => {
                 if (!json) return;
                 try {
                     const bubble = typeof json === 'string' ? JSON.parse(json) : json;
                     const newState = JSON.parse(JSON.stringify(initialFlex));
-                    
                     newState.size = bubble.size || "mega";
 
                     if (bubble.hero && bubble.hero.type === 'video') {
@@ -304,7 +304,6 @@
                 } catch (e) { console.error("Parse Error", e); }
             }, []);
 
-            // --- 通訊處理 ---
             useEffect(() => {
                 const handleMessage = (e) => { if (e.data?.type === 'LOAD_FLEX_DATA') parseJsonToState(e.data.json); };
                 window.addEventListener('message', handleMessage);
@@ -319,7 +318,7 @@
 
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [data, activeTab, mediaType]);
 
-            // --- 內部組件 ---
+            // --- 視覺預覽組件 ---
             const Preview = () => {
                 const bubbleW = data.size === 'giga' ? '420px' : '300px';
                 const [w, h] = data.media.aspectRatio.split(':').map(Number);
@@ -332,12 +331,27 @@
                         <div className="bg-white rounded-2xl overflow-hidden flex-bubble-shadow border border-slate-200 h-fit relative transition-all duration-500" style={{ width: bubbleW }}>
                             <div className="relative bg-black overflow-hidden" style={{ height: `${mediaH}px` }}>
                                 {mediaType === 'image' ? <img src={data.media.url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center relative"><img src={videoConfig.previewUrl} className="absolute inset-0 w-full h-full object-cover opacity-60" /><i data-lucide="play-circle" className="w-16 h-16 text-white relative z-10 opacity-90 drop-shadow-xl"></i></div>}
+                                
+                                {/* 標籤顯示 (修正位置) */}
+                                {mediaType === 'image' && (
+                                    <div className="absolute px-3 text-white font-bold shadow-sm text-[10px] flex items-center justify-center whitespace-nowrap" style={{ 
+                                        top: '10px', 
+                                        [data.media.badgePos === 'left' ? 'left' : 'right']: '10px', 
+                                        backgroundColor: data.media.badgeBg, 
+                                        borderRadius: '15px',
+                                        height: '25px',
+                                        minWidth: '50px'
+                                    }}>{data.media.badgeText}</div>
+                                )}
                             </div>
+                            
                             <div style={{ padding: '15px', paddingTop: `${txtPad}px` }}>
                                 <div className="font-bold" style={{ textAlign: data.content.nameAlign, fontSize: '19px', color: data.content.nameColor }}>{data.content.name}</div>
                                 <div className="mt-1 text-[13px] leading-snug whitespace-pre-wrap" style={{ color: data.content.descColor, textAlign: data.content.descAlign }}>{data.content.desc}</div>
                             </div>
+                            
                             {data.avatar.show && <div className="absolute w-full flex justify-center transition-all duration-500" style={{ top: `${avatarOff}px` }}><div className="overflow-hidden bg-white shadow-xl" style={{ width: '80px', height: '80px', border: `3px solid ${data.avatar.borderColor}`, borderRadius: data.avatar.cornerRadius.includes('px') ? data.avatar.cornerRadius : '12px' }}><img src={data.avatar.url} className="w-full h-full object-cover" /></div></div>}
+                            
                             <div className="flex flex-col gap-3 p-[10px] pt-0">
                                 {data.footer.longBtns.map((btn, i) => <div key={i} className="py-2.5 text-center rounded-md border font-bold text-[14px]" style={{ borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : 'transparent', color: btn.textColor }}>{btn.label}</div>)}
                                 <div className="flex gap-2">{data.footer.shortBtns.map((btn, i) => <div key={i} className="flex-1 py-2 flex flex-col items-center gap-1 rounded-sm border shadow-sm" style={{ borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : 'transparent' }}><img src={SOCIAL_DATA[btn.type]?.url} className="w-4 h-4 object-contain" /><span className="text-[10px] font-medium" style={{ color: btn.textColor }}>{btn.label}</span></div>)}</div>
@@ -366,28 +380,44 @@
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
                             
-                            {/* 01. 媒體模式 */}
+                            {/* 01. 媒體模式 & 標籤設定 */}
                             <section className="space-y-4">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="monitor" className="w-4 h-4"></i> 01. 媒體模式</h3>
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="monitor" className="w-4 h-4"></i> 01. 媒體與標籤設定</h3>
                                 <div className="flex bg-slate-100 p-1.5 rounded-lg border border-slate-200 mb-3">
                                     <button onClick={() => setMediaType('image')} className={`flex-1 py-2 text-xs font-bold rounded-md transition ${mediaType === 'image' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'}`}>圖片模式</button>
                                     <button onClick={() => setMediaType('video')} className={`flex-1 py-2 text-xs font-bold rounded-md transition ${mediaType === 'video' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'}`}>影片模式</button>
                                 </div>
-                                {mediaType === 'image' ? (
-                                    <input type="text" value={data.media.url} onChange={(e) => handleUpdate('media', 'url', e.target.value)} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="主圖網址..." />
-                                ) : (
-                                    <div className="space-y-3">
-                                        <input type="text" value={videoConfig.url} onChange={(e) => setVideoConfig({...videoConfig, url: e.target.value})} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="影片網址..." />
-                                        <input type="text" value={videoConfig.previewUrl} onChange={(e) => setVideoConfig({...videoConfig, previewUrl: e.target.value})} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="預覽圖片..." />
-                                    </div>
-                                )}
+                                
+                                <div className="space-y-3">
+                                    {mediaType === 'image' ? (
+                                        <div className="space-y-3">
+                                            <input type="text" value={data.media.url} onChange={(e) => handleUpdate('media', 'url', e.target.value)} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="主圖網址..." />
+                                            {/* 標籤輸入 UI */}
+                                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                                                <div className="flex gap-2">
+                                                    <input type="text" maxLength={10} value={data.media.badgeText} onChange={(e) => handleUpdate('media', 'badgeText', e.target.value)} className="flex-1 p-3 text-xs border border-slate-200 rounded-xl" placeholder="標籤文字 (限10字)" />
+                                                    <input type="color" value={data.media.badgeBg} onChange={(e) => handleUpdate('media', 'badgeBg', e.target.value)} className="w-12 h-12 p-1 border border-slate-200 rounded-xl bg-white cursor-pointer shadow-sm" />
+                                                </div>
+                                                <div className="flex bg-white p-1 rounded-lg border">
+                                                    <button onClick={() => handleUpdate('media', 'badgePos', 'left')} className={`flex-1 py-1.5 text-[10px] font-black rounded ${data.media.badgePos === 'left' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>靠左</button>
+                                                    <button onClick={() => handleUpdate('media', 'badgePos', 'right')} className={`flex-1 py-1.5 text-[10px] font-black rounded ${data.media.badgePos === 'right' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>靠右</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <input type="text" value={videoConfig.url} onChange={(e) => setVideoConfig({...videoConfig, url: e.target.value})} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="影片網址 (.mp4)..." />
+                                            <input type="text" value={videoConfig.previewUrl} onChange={(e) => setVideoConfig({...videoConfig, previewUrl: e.target.value})} className="w-full p-3 text-xs border border-slate-200 rounded-xl bg-slate-50 font-mono" placeholder="預覽圖片網址..." />
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="grid grid-cols-2 gap-3">
                                     <select value={data.media.aspectRatio} onChange={(e) => handleUpdate('media', 'aspectRatio', e.target.value)} className="p-3 text-sm border border-slate-200 rounded-xl bg-slate-50">{ASPECT_RATIOS.map(r => <option key={r} value={r}>{r}</option>)}</select>
                                     <select value={data.size} onChange={(e) => handleUpdate('root', 'size', e.target.value)} className="p-3 text-sm border border-slate-200 rounded-xl bg-slate-50 uppercase">{BUBBLE_SIZES.map(s => <option key={s} value={s}>{s}</option>)}</select>
                                 </div>
                             </section>
 
-                            {/* 02. 姓名排版 - 固定字體為 LG (19px) */}
+                            {/* 02. 姓名排版 */}
                             <section className="space-y-4">
                                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="type" className="w-4 h-4"></i> 02. 姓名排版 (字體固定: LG)</h3>
                                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
@@ -399,7 +429,7 @@
                                 </div>
                             </section>
 
-                            {/* 03. 說明排版 - 固定字體為 XS (13px) */}
+                            {/* 03. 說明排版 */}
                             <section className="space-y-4">
                                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="align-left" className="w-4 h-4"></i> 03. 說明排版 (字體固定: XS)</h3>
                                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
