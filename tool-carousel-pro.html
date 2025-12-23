@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Carousel Pro - 旗艦核心全移植版 v5.0.6</title>
+    <title>FLEX Carousel Pro - 旗艦核心全移植版 v5.1.0</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -39,6 +39,7 @@
     <script type="text/babel">
         const { useState, useEffect, useCallback, useRef, memo } = React;
 
+        // --- 全局資料定義 ---
         const SOCIAL_DATA = {
             NONE: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "無圖示", defaultUri: "https://" },
             FB: { url: "https://cdn-icons-png.flaticon.com/512/733/733547.png", label: "Facebook", defaultUri: "https://facebook.com/" },
@@ -50,10 +51,14 @@
         };
 
         const Utils = {
-            toPx: (v) => String(v).endsWith('px') ? v : `${v}px`,
+            toPx: (v) => {
+                const num = parseFloat(v);
+                return isNaN(num) ? v : `${Math.round(num)}px`;
+            },
             deepCopy: (o) => JSON.parse(JSON.stringify(o))
         };
 
+        // --- 三大核心原始模板 ---
         const TEMPLATE_P1 = {
             model: "BUSINESS_CORE", url: "https://aiwe.cc/wp-content/uploads/2025/12/cf75e54791dd1f49f918345fdfe2430b.png",
             badgeText: "HOT ITEM", badgeBg: "#FF0000", badgeTop: 20, badgePos: "offsetEnd",
@@ -80,6 +85,7 @@
             footer: { bg: "#ffffff", textEnabled: false, text: "", textColor: "#666666", textAlign: "center", btn1: { label: "品牌故事", color: "#000000", textColor: "#FFFFFF", uri: "https://line.me" }, btn2: { label: "好友分享", color: "#000000", textColor: "#FFFFFF", uri: "line://nv/recommendOA/@754tjssx" } }
         };
 
+        // --- 共用組件 ---
         const ControlPanel = ({ title, icon, children, headerClass = "" }) => (
             <div className="control-panel shadow-sm">
                 <div className={`panel-header ${headerClass}`}><i data-lucide={icon} className="w-4 h-4"></i><span>{title}</span></div>
@@ -97,6 +103,7 @@
             </div>
         );
 
+        // --- 視覺渲染器 ---
         const FlexPreview = memo(({ data }) => {
             const d = data;
             const scale = 300 / 400;
@@ -104,7 +111,7 @@
             if (d.model === 'BUSINESS_CORE') {
                 return (
                     <div className="rounded-[45px] shadow-2xl overflow-hidden relative border-[10px] border-black bg-white w-[300px] shrink-0 font-black">
-                        <div className="relative h-[450px] overflow-hidden">
+                        <div className="relative h-[450px] overflow-hidden bg-slate-100">
                             <img src={d.url} className="w-full h-full object-cover" />
                             <div className="absolute px-3 py-1 text-white font-bold rounded text-[10px]" style={{ top: '15px', [d.badgePos === 'offsetStart' ? 'left' : 'right']: '15px', backgroundColor: d.badgeBg, borderRadius: '15px', height: '25px', display: 'flex', alignItems: 'center' }}>{d.badgeText}</div>
                             <div className="absolute w-full flex justify-center" style={{ top: (d.avatarTop * scale) + 'px' }}><img src={d.avatar} className="w-16 h-16 rounded-full border-2 border-white shadow-xl object-cover" /></div>
@@ -142,7 +149,9 @@
                 return (
                     <div className="rounded-[40px] shadow-2xl overflow-hidden border-[10px] border-black bg-white w-[300px] flex flex-col font-black shrink-0">
                         {d.hero.type !== 'none' && <div className="relative w-full overflow-hidden bg-black shrink-0" style={{ aspectRatio: d.hero.aspectRatio.replace(':', '/') }}>{d.hero.type === 'image' ? <img src={d.hero.url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center relative"><img src={d.hero.url} className="absolute inset-0 w-full h-full object-cover opacity-70" /><i data-lucide="play" className="w-10 h-10 text-white relative z-10"></i></div>}</div>}
-                        <div className="flex-1 p-4" style={{ backgroundColor: d.body.bgColor }}><div className={`grid gap-2 ${d.body.columns === 3 ? 'grid-cols-3' : 'grid-cols-4'}`}>{(d.body.items || []).map((item, i) => (<div key={i} className="bg-white rounded-[10px] p-1 shadow-sm border border-slate-100 flex flex-col"><div className="aspect-square rounded-sm overflow-hidden mb-1"><img src={item.img} className="w-full h-full object-cover" /></div><div style={{ backgroundColor: d.body.tagBgColor, color: d.body.tagTextColor }} className="text-[8px] font-bold text-center py-1 rounded-sm truncate">{item.title}</div></div>))}</div></div>
+                        <div className="flex-1 p-4" style={{ backgroundColor: d.body.bgColor }}><div className={`grid gap-2 ${d.body.columns === 3 ? 'grid-cols-3' : 'grid-cols-4'}`}>{(d.body.items || []).map((item, i) => (
+                            <div key={i} className="bg-white rounded-[10px] p-1 shadow-sm border border-slate-100 flex flex-col"><div className="aspect-square rounded-sm overflow-hidden mb-1"><img src={item.img} className="w-full h-full object-cover" /></div><div style={{ backgroundColor: d.body.tagBgColor, color: d.body.tagTextColor }} className="text-[8px] font-bold text-center py-1 rounded-sm truncate">{item.title}</div></div>
+                        ))}</div></div>
                         <div className="p-4 border-t bg-white flex gap-2" style={{ backgroundColor: d.footer.bg }}>{['btn1', 'btn2'].map(k => <div key={k} className="flex-1 py-3 rounded-xl text-center font-bold text-[11px] text-white shadow-md transition-opacity hover:opacity-90" style={{ backgroundColor: d.footer[k].color, color: d.footer[k].textColor }}>{d.footer[k].label}</div>)}</div>
                     </div>
                 );
@@ -169,9 +178,10 @@
                 });
             };
 
+            // --- 核心修正：精準取整數，解決 LINE 拒絕小數點的問題 ---
             const buildJson = useCallback(() => {
                 const contents = pages.map(d => {
-                    if (d.model === 'BUSINESS_CORE') return { type: "bubble", body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [{ type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: true }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.badgeTop), [d.badgePos]: "20px", backgroundColor: d.badgeBg, cornerRadius: "15px", paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px", contents: [{ type: "text", text: d.badgeText, color: "#ffffff", size: "xxs", weight: "bold" }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.avatarTop), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "85px", height: "85px", cornerRadius: "100px", borderWidth: "3px", borderColor: "#ffffff", contents: [{ type: "image", url: d.avatar, size: "full", aspectMode: "cover", animated: true }] }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.nameTop), offsetStart: "0px", offsetEnd: "0px", contents: [{ type: "text", text: d.name, weight: "bold", size: "lg", color: d.nameColor, align: d.nameAlign }] }, { type: "box", layout: "horizontal", position: "absolute", offsetTop: Utils.toPx(d.socialTop), offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md", contents: d.icons.map(icon => ({ type: "box", layout: "vertical", width: "45px", height: "45px", cornerRadius: "100px", backgroundColor: "#ffffff1a", paddingAll: "8px", action: { type: "uri", uri: icon.uri || "https://line.me" }, contents: [{ type: "image", url: SOCIAL_DATA[icon.type]?.url || SOCIAL_DATA.NONE.url, size: "full", animated: true }] })) }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.descTop), offsetStart: "15px", offsetEnd: "15px", contents: [{ type: "text", text: d.desc, wrap: true, size: "xs", color: d.descColor, align: d.descAlign }] }] }, footer: { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: d.footerBg, contents: [{ type: "box", layout: "vertical", backgroundColor: d.footerThemeColor, paddingAll: "12px", cornerRadius: "md", action: { type: "uri", uri: d.footerUri || "https://line.me" }, contents: [{ type: "text", text: d.footerLabel, color: d.footerTextColor, align: "center", weight: "bold", size: "sm" }] }] } };
+                    if (d.model === 'BUSINESS_CORE') return { type: "bubble", body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [{ type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: true }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.badgeTop), [d.badgePos]: "20px", backgroundColor: d.badgeBg, cornerRadius: "15px", paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px", contents: [{ type: "text", text: d.badgeText, color: "#ffffff", size: "xxs", weight: "bold" }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.avatarTop), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "85px", height: "85px", cornerRadius: "100px", borderWidth: "3px", borderColor: "#ffffff", contents: [{ type: "image", url: d.avatar, size: "full", aspectMode: "cover", animated: true }] }] }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.nameTop), offsetStart: "0px", offsetEnd: "0px", contents: [{ type: "text", text: d.name, weight: "bold", size: "lg", color: d.nameColor, align: d.nameAlign }] }, { type: "box", layout: "horizontal", position: "absolute", offsetTop: Utils.toPx(d.socialTop), offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md", contents: (d.icons || []).map(icon => ({ type: "box", layout: "vertical", width: "45px", height: "45px", cornerRadius: "100px", backgroundColor: "#ffffff1a", paddingAll: "8px", action: { type: "uri", uri: icon.uri || "https://line.me" }, contents: [{ type: "image", url: SOCIAL_DATA[icon.type]?.url || SOCIAL_DATA.NONE.url, size: "full", aspectRatio: "1:1", animated: true }] })) }, { type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.descTop), offsetStart: "15px", offsetEnd: "15px", contents: [{ type: "text", text: d.desc, wrap: true, size: "xs", color: d.descColor, align: d.descAlign }] }] }, footer: { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: d.footerBg, contents: [{ type: "box", layout: "vertical", backgroundColor: d.footerThemeColor, paddingAll: "12px", cornerRadius: "md", action: { type: "uri", uri: d.footerUri || "https://line.me" }, contents: [{ type: "text", text: d.footerLabel, color: d.footerTextColor, align: "center", weight: "bold", size: "sm" }] }] } };
                     if (d.model === 'PERSONAL_CORE') {
                         const [w, h] = d.media.aspectRatio.split(':').map(Number);
                         const mediaH = (h / w) * 300;
@@ -179,13 +189,12 @@
                         if (d.mediaType === 'video') bubble.hero = { type: "video", url: d.videoConfig.url, previewUrl: d.videoConfig.previewUrl, aspectRatio: d.media.aspectRatio, altContent: { type: "image", size: "full", aspectRatio: d.media.aspectRatio, aspectMode: "cover", url: d.videoConfig.previewUrl, backgroundColor: "#000000", animated: true } };
                         else bubble.body.contents.push({ type: "box", layout: "vertical", contents: [{ type: "image", url: d.media.url, size: "full", aspectRatio: d.media.aspectRatio, aspectMode: "cover", animated: true, action: d.media.uri ? { type: "uri", uri: d.media.uri } : undefined }, { type: "box", layout: "vertical", position: "absolute", backgroundColor: d.media.badgeBg, cornerRadius: "15px", paddingAll: "4px", paddingStart: "10px", paddingEnd: "10px", offsetTop: "10px", [d.media.badgePos === 'left' ? 'offsetStart' : 'offsetEnd']: "10px", contents: [{ type: "text", text: d.media.badgeText, color: "#ffffff", size: "xs", weight: "bold" }] }] });
                         bubble.body.contents.push({ type: "box", layout: "vertical", paddingAll: "15px", paddingTop: d.avatar.show ? (d.mediaType === 'video' ? "95px" : "45px") : "15px", contents: [{ type: "text", text: d.content.name, weight: "bold", size: "lg", color: d.content.nameColor, align: d.content.nameAlign }, { type: "text", text: d.content.desc, wrap: true, color: d.content.descColor, size: "xs", margin: "md", align: d.content.descAlign }] });
-                        if (d.avatar.show) bubble.body.contents.push({ type: "box", layout: "vertical", position: "absolute", offsetTop: d.mediaType === 'video' ? "10px" : Utils.toPx(mediaH - 45), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "80px", height: "80px", cornerRadius: d.avatar.cornerRadius, borderWidth: "3px", borderColor: d.avatar.borderColor, contents: [{ type: "image", url: d.avatar.url, size: "full", aspectMode: "cover", animated: true }] }] });
+                        if (d.avatar.show) bubble.body.contents.push({ type: "box", layout: "vertical", position: "absolute", offsetTop: d.mediaType === 'video' ? "10px" : Utils.toPx(mediaH - 45), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "80px", height: "80px", cornerRadius: d.avatar.cornerRadius, borderWidth: "3px", borderColor: d.avatar.borderColor, contents: [{ type: "image", url: d.avatar.url, size: "full", aspectRatio: "1:1", aspectMode: "cover", animated: true }] }] });
                         bubble.footer = { type: "box", layout: "vertical", spacing: "md", paddingAll: "10px", contents: (d.footer.longBtns || []).map(b => ({ type: "box", layout: "vertical", contents: [{ type: "text", text: b.label, align: "center", color: b.textColor, size: "sm", weight: "bold" }], paddingAll: "10px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "md", action: { type: "uri", uri: b.uri } })) };
-                        if (d.footer.shortBtns && d.footer.shortBtns.length > 0) bubble.footer.contents.push({ type: "box", layout: "horizontal", spacing: "md", contents: d.footer.shortBtns.map(b => ({ type: "box", layout: "vertical", spacing: "xs", paddingAll: "8px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "sm", action: { type: "uri", uri: b.uri }, contents: [{ type: "image", url: SOCIAL_DATA[b.type]?.url || SOCIAL_DATA.WEB.url, size: "xxs", aspectRatio: "1:1" }, { type: "text", text: b.label, align: "center", color: b.textColor, size: "xxs" }] })) });
+                        if (d.footer.shortBtns && d.footer.shortBtns.length > 0) bubble.footer.contents.push({ type: "box", layout: "horizontal", spacing: "md", contents: d.footer.shortBtns.map(b => ({ type: "box", layout: "vertical", spacing: "xs", paddingAll: "8px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "sm", action: { type: "uri", uri: b.uri }, contents: [{ type: "image", url: SOCIAL_DATA[b.type]?.url || SOCIAL_DATA.WEB.url, size: "xxs", aspectRatio: "1:1", animated: true }, { type: "text", text: b.label, align: "center", color: b.textColor, size: "xxs" }] })) });
                         return bubble;
-                    }
-                    if (d.model === 'ECOMMERCE_CORE') {
-                        const chunk = (a, s) => Array.from({ length: Math.ceil(a.length / s) }, (v, i) => a.slice(i * s, i * s + s));
+                    } else if (d.model === 'ECOMMERCE_CORE') {
+                        const chunk = (a, size) => Array.from({ length: Math.ceil(a.length / size) }, (v, i) => a.slice(i * size, i * size + size));
                         const items = chunk(d.body.items || [], d.body.columns).map((row, idx) => ({ type: "box", layout: "horizontal", margin: idx === 0 ? "none" : "md", contents: row.map((item, cidx) => ({ type: "box", layout: "vertical", width: d.body.columns === 3 ? "32%" : "23%", margin: cidx === 0 ? "none" : "md", backgroundColor: "#FFFFFF", cornerRadius: "10px", action: { type: "uri", uri: item.url }, contents: [{ type: "image", url: item.img, aspectRatio: "1:1", size: "full", aspectMode: "cover" }, { type: "box", layout: "vertical", backgroundColor: d.body.tagBgColor, cornerRadius: "sm", paddingAll: "xs", margin: "xs", contents: [{ type: "text", text: item.title, size: "xxs", color: d.body.tagTextColor, align: "center", weight: "bold", wrap: true }] }] })) }));
                         const bubble = { type: "bubble", size: d.body.bubbleSize, body: { type: "box", layout: "vertical", paddingAll: "md", backgroundColor: d.body.bgColor, contents: items }, footer: { type: "box", layout: "vertical", spacing: "sm", backgroundColor: d.footer.bg, paddingAll: "md", contents: [] } };
                         if (d.footer.textEnabled) bubble.footer.contents.push({ type: "text", text: d.footer.text, wrap: true, size: "xs", color: d.footer.textColor, align: d.footer.textAlign });
@@ -216,7 +225,7 @@
                 <div className="flex h-screen bg-slate-100 font-black overflow-hidden text-slate-900">
                     <div className="w-[480px] bg-white border-r flex flex-col shadow-2xl z-10">
                         <div className="sticky-section flex flex-col gap-4 bg-white shadow-sm shrink-0">
-                            <h1 className="text-xl flex items-center gap-2 text-green-600 uppercase tracking-tighter italic font-black"><i data-lucide="layers"></i> Carousel Pro v5.0.6</h1>
+                            <h1 className="text-xl flex items-center gap-2 text-green-600 uppercase tracking-tighter italic font-black"><i data-lucide="layers"></i> Carousel Pro v5.1.0</h1>
                             <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
                                 {pages.map((p, i) => (
                                     <div key={i} className="relative group shrink-0">
@@ -229,6 +238,7 @@
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                            {/* P1 業務模組面板 */}
                             {activePage.model === 'BUSINESS_CORE' && (
                                 <>
                                     <ControlPanel title="1. 背景與標籤" icon="image">
@@ -312,8 +322,8 @@
                                                     <button onClick={() => {const n=[...activePage.footer.longBtns]; n[idx].isSolid=!b.isSolid; updateActivePage('footer.longBtns', n);}} className={`text-[10px] font-black rounded border transition-colors ${b.isSolid ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50'}`}>{b.isSolid ? '實心模式' : '空心模式'}</button>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-2 mb-2">
-                                                    <div><label className="text-[9px] text-slate-400 block mb-1 uppercase">背景/邊框色</label><input type="color" value={b.themeColor} onChange={e => {const n=[...activePage.footer.longBtns]; n[idx].themeColor=e.target.value; updateActivePage('footer.longBtns', n);}} /></div>
-                                                    <div><label className="text-[9px] text-slate-400 block mb-1 uppercase">文字顏色</label><input type="color" value={b.textColor} onChange={e => {const n=[...activePage.footer.longBtns]; n[idx].textColor=e.target.value; updateActivePage('footer.longBtns', n);}} /></div>
+                                                    <div><label className="text-[9px] text-slate-400 block mb-1 uppercase font-bold">背景/邊框</label><input type="color" value={b.themeColor} onChange={e => {const n=[...activePage.footer.longBtns]; n[idx].themeColor=e.target.value; updateActivePage('footer.longBtns', n);}} /></div>
+                                                    <div><label className="text-[9px] text-slate-400 block mb-1 uppercase font-bold">文字色</label><input type="color" value={b.textColor} onChange={e => {const n=[...activePage.footer.longBtns]; n[idx].textColor=e.target.value; updateActivePage('footer.longBtns', n);}} /></div>
                                                 </div>
                                                 <input type="text" value={b.uri} onChange={e => {const n=[...activePage.footer.longBtns]; n[idx].uri=e.target.value; updateActivePage('footer.longBtns', n);}} className="text-[10px] font-mono border rounded p-2" placeholder="跳轉連結" />
                                             </div>
@@ -322,7 +332,7 @@
                                     <ControlPanel title="06. 社群快捷" icon="share-2">
                                         <button onClick={() => {const n=[...(activePage.footer.shortBtns || []), {type:'WEB', label:'官網', uri:'https://line.me', themeColor:'#f1f5f9', textColor:'#444444', isSolid:true}]; updateActivePage('footer.shortBtns', n);}} className="w-full bg-slate-800 text-white py-2 rounded-xl mb-4 font-black text-xs shadow-md">+ 新增快捷</button>
                                         <div className="grid grid-cols-1 gap-3">{(activePage.footer.shortBtns || []).map((b, idx) => (
-                                            <div key={idx} className="bg-slate-50 p-3 border border-slate-200 rounded-xl relative group">
+                                            <div key={idx} className="bg-slate-50 p-3 border border-slate-200 rounded-xl relative group font-black">
                                                 <button onClick={() => {const n=activePage.footer.shortBtns.filter((_,i)=>i!==idx); updateActivePage('footer.shortBtns', n);}} className="absolute -top-1 -right-1 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">×</button>
                                                 <div className="grid grid-cols-2 gap-2 mb-2">
                                                     <select value={b.type} onChange={e => {const n=[...activePage.footer.shortBtns]; n[idx].type=e.target.value; n[idx].uri=SOCIAL_DATA[e.target.value]?.defaultUri || 'https://'; updateActivePage('footer.shortBtns', n);}} className="text-xs">{Object.keys(SOCIAL_DATA).map(k=><option key={k} value={k}>{SOCIAL_DATA[k].label}</option>)}</select>
@@ -335,6 +345,7 @@
                                 </>
                             )}
 
+                            {/* P3 電商模組面板 */}
                             {activePage.model === 'ECOMMERCE_CORE' && (
                                 <>
                                     <ControlPanel title="1. 頂部 Hero 視覺" icon="image">
@@ -346,7 +357,7 @@
                                         <div className="grid grid-cols-2 gap-3 mb-3"><div><label className="text-[10px] text-slate-400 block mb-1">每行欄數</label><select value={activePage.body.columns} onChange={e => updateActivePage('body.columns', parseInt(e.target.value))} className="text-xs"><option value="3">3 欄</option><option value="4">4 欄</option></select></div><div><label className="text-[10px] text-slate-400 block mb-1">Body 底色</label><input type="color" value={activePage.body.bgColor} onChange={e => updateActivePage('body.bgColor', e.target.value)} /></div></div>
                                         <div className="grid grid-cols-2 gap-3 mb-4"><div><label className="text-[10px] text-slate-400 block mb-1 uppercase">標籤底色</label><input type="color" value={activePage.body.tagBgColor} onChange={e => updateActivePage('body.tagBgColor', e.target.value)} /></div><div><label className="text-[10px] text-slate-400 block mb-1 uppercase">標籤字色</label><input type="color" value={activePage.body.tagTextColor} onChange={e => updateActivePage('body.tagTextColor', e.target.value)} /></div></div>
                                         <button onClick={() => {const n=[...(activePage.body.items || []), {title:'新商品', img:'https://lihi.cc/mwMvo', url:'https://line.me'}]; updateActivePage('body.items', n);}} className="w-full py-2 bg-blue-50 border-dashed border-2 border-blue-200 rounded-xl mb-4 text-blue-600 font-bold text-xs shadow-sm">+ 新增商品</button>
-                                        <div className="space-y-2">{(activePage.body.items || []).map((item, i) => (<div key={i} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex gap-3 relative group"><button onClick={() => {const n=activePage.body.items.filter((_,idx)=>idx!==i); updateActivePage('body.items', n);}} className="absolute -top-1 -right-1 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">×</button><img src={item.img} className="w-10 h-10 rounded border shadow-sm object-cover bg-white" /><div className="flex-1 space-y-1"><input type="text" value={item.title} onChange={e => {const n=[...activePage.body.items]; n[i].title=e.target.value; updateActivePage('body.items', n);}} className="w-full p-2 text-xs border rounded font-bold" /><input type="text" value={item.url} onChange={e => {const n=[...activePage.body.items]; n[i].url=e.target.value; updateActivePage('body.items', n);}} className="w-full p-1 text-[9px] font-mono border rounded" /></div></div>))}</div>
+                                        <div className="space-y-2">{(activePage.body.items || []).map((item, i) => (<div key={i} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex gap-3 relative group font-black"><button onClick={() => {const n=activePage.body.items.filter((_,idx)=>idx!==i); updateActivePage('body.items', n);}} className="absolute -top-1 -right-1 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">×</button><img src={item.img} className="w-10 h-10 rounded border shadow-sm object-cover bg-white" /><div className="flex-1 space-y-1"><input type="text" value={item.title} onChange={e => {const n=[...activePage.body.items]; n[i].title=e.target.value; updateActivePage('body.items', n);}} className="w-full p-2 text-xs border rounded-lg font-bold bg-white" /><input type="text" value={item.url} onChange={e => {const n=[...activePage.body.items]; n[i].url=e.target.value; updateActivePage('body.items', n);}} className="w-full p-1 text-[9px] font-mono border rounded" /></div></div>))}</div>
                                     </ControlPanel>
                                     <ControlPanel title="3. 底部行為按鈕" icon="external-link">
                                         <div className="flex gap-2 mb-3"><div className="flex-1 text-center"><label className="text-[8px] text-slate-400 uppercase font-bold">區域背景顏色</label><input type="color" value={activePage.footer.bg} onChange={e => updateActivePage('footer.bg', e.target.value)} className="h-8" /></div></div>
@@ -354,7 +365,7 @@
                                             <div key={k} className="p-3 bg-slate-50 rounded-xl border border-slate-100 mb-2 space-y-2">
                                                 <input type="text" value={activePage.footer[k].label} onChange={e => updateActivePage(`footer.${k}.label`, e.target.value)} className="p-2 font-bold text-xs" placeholder="按鈕文字" />
                                                 <div className="grid grid-cols-2 gap-2"><div><label className="text-[8px] text-slate-400 uppercase">背景</label><input type="color" value={activePage.footer[k].color} onChange={e => updateActivePage(`footer.${k}.color`, e.target.value)} className="h-7" /></div><div><label className="text-[8px] text-slate-400 uppercase">文字</label><input type="color" value={activePage.footer[k].textColor} onChange={e => updateActivePage(`footer.${k}.textColor`, e.target.value)} className="h-7" /></div></div>
-                                                <input type="text" value={activePage.footer[k].uri} onChange={e => updateActivePage(`footer.${k}.uri`, e.target.value)} className="p-1.5 text-[9px] font-mono border rounded w-full" placeholder="跳轉連結" />
+                                                <input type="text" value={activePage.footer[k].uri} onChange={e => updateActivePage(`footer.${k}.uri`, e.target.value)} className="p-1.5 text-[9px] font-mono border rounded w-full" placeholder="跳轉網址" />
                                             </div>
                                         ))}
                                     </ControlPanel>
