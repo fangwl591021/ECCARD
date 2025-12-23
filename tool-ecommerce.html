@@ -157,8 +157,15 @@
                         </div>
                     </div>
 
-                    <!-- 標籤顏色設定 -->
+                    <!-- 顏色與底色設定 -->
                     <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">卡片背景顏色</label>
+                            <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-300 h-[46px]">
+                                <input type="color" id="input-body-color" onchange="updateConfig('bodyColor', this.value)" class="w-8 h-8 rounded cursor-pointer border-none p-0 flex-shrink-0">
+                                <input type="text" id="text-body-color" oninput="updateConfig('bodyColor', this.value)" class="flex-1 bg-transparent text-sm font-mono text-slate-700 outline-none uppercase" value="#F8F8F8">
+                            </div>
+                        </div>
                         <div>
                             <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">標籤背景色</label>
                             <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-300 h-[46px]">
@@ -171,54 +178,6 @@
                             <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-300 h-[46px]">
                                 <input type="color" id="input-tag-text-color" onchange="updateConfig('tagTextColor', this.value)" class="w-8 h-8 rounded cursor-pointer border-none p-0 flex-shrink-0">
                                 <input type="text" id="text-tag-text-color" oninput="updateConfig('tagTextColor', this.value)" class="flex-1 bg-transparent text-sm font-mono text-slate-700 outline-none uppercase" value="#FFFFFF">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 背景類型切換 -->
-                    <div>
-                        <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">背景類型</label>
-                        <div class="flex bg-slate-100 p-1.5 rounded-lg border border-slate-300">
-                            <button onclick="updateBodyType('color')" id="btn-body-type-color" class="flex-1 py-2 text-sm font-bold rounded-md transition text-slate-600">純色背景</button>
-                            <button onclick="updateBodyType('image')" id="btn-body-type-image" class="flex-1 py-2 text-sm font-bold rounded-md transition text-slate-600">圖片背景</button>
-                        </div>
-                    </div>
-                    
-                    <!-- 背景詳細設定 -->
-                    <div id="body-bg-settings" class="space-y-5">
-                        <!-- 純色模式 -->
-                        <div id="body-color-settings">
-                            <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">背景底色</label>
-                            <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-300 h-[46px]">
-                                <input type="color" id="input-body-color-simple" onchange="updateConfig('bodyColor', this.value)" class="w-8 h-8 rounded cursor-pointer border-none p-0 flex-shrink-0">
-                                <input type="text" id="text-body-color-simple" oninput="updateConfig('bodyColor', this.value)" class="flex-1 bg-transparent text-sm font-mono text-slate-700 outline-none uppercase" value="#F8F8F8">
-                            </div>
-                        </div>
-
-                        <!-- 圖片模式 -->
-                        <div id="body-image-settings" class="hidden space-y-5">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">圖片模式</label>
-                                    <select id="body-bg-mode" onchange="updateConfig('bodyBgMode', this.value)" class="w-full text-sm p-3 border border-slate-300 rounded-lg bg-white text-slate-800 focus:ring-1 focus:ring-line-green outline-none">
-                                        <option value="cover">全版拉伸 (Cover)</option>
-                                        <option value="top">等比縮放 (Fit Width)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-sm font-bold text-slate-700 uppercase mb-1.5 block">背景底色 (補白用)</label>
-                                    <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-300 h-[46px]">
-                                        <input type="color" id="input-body-color-img" onchange="updateConfig('bodyColor', this.value)" class="w-8 h-8 rounded cursor-pointer border-none p-0 flex-shrink-0">
-                                        <input type="text" id="text-body-color-img" oninput="updateConfig('bodyColor', this.value)" class="flex-1 bg-transparent text-sm font-mono text-slate-700 outline-none uppercase" value="#F8F8F8">
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block mb-1.5">
-                                    <span class="text-sm font-bold text-slate-700 uppercase block">背景圖片網址</span>
-                                    <span class="text-xs text-blue-600 font-medium">※ 滿版背景圖 (Absolute Background)</span>
-                                </label>
-                                <input type="text" id="input-body-bg" oninput="updateConfig('bodyBg', this.value)" class="w-full text-sm p-3 bg-white border border-slate-300 rounded-lg text-slate-800 focus:border-line-green focus:ring-1 focus:ring-line-green outline-none">
                             </div>
                         </div>
                     </div>
@@ -337,9 +296,6 @@
 
                         <!-- Body Area -->
                         <div class="relative w-full" id="view-body-container">
-                            <!-- 背景圖 (絕對定位) -->
-                            <img id="view-body-bg" src="" class="absolute inset-0 w-full h-full object-cover z-0 hidden">
-                            
                             <!-- 內容網格 -->
                             <div class="relative z-10 p-4">
                                 <div class="grid gap-2" id="view-grid">
@@ -384,10 +340,7 @@
             body: {
                 columns: 3,
                 bubbleSize: "mega", 
-                bgType: "image", // color | image
-                bgMode: "cover", // cover | top
                 bgColor: "#F8F8F8", // Body 預設底色
-                bg: "https://lihi.cc/l5qqU",
                 tagBgColor: "#0D0D0D",
                 tagTextColor: "#FFFFFF",
                 items: [
@@ -412,90 +365,6 @@
 
         let history = [];
 
-        // --- 與母系統對接通訊 ---
-        window.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'LOAD_FLEX_DATA') {
-                try {
-                    const flexJson = JSON.parse(event.data.json);
-                    reverseMapFlexToState(flexJson);
-                    syncUI();
-                    render();
-                } catch(e) { console.error("解析失敗", e); }
-            }
-        });
-
-        function syncToParent() {
-            window.parent.postMessage({
-                type: 'SYNC_FLEX_DATA',
-                json: JSON.stringify(generateFlexJSON())
-            }, '*');
-        }
-
-        // 逆向解析：100% 遵守您的媒體存放規則與佈局
-        function reverseMapFlexToState(flex) {
-            // 1. Hero
-            state.hero.type = flex.hero ? (flex.hero.type === 'video' ? 'video' : 'image') : 'none';
-            state.hero.aspectRatio = flex.hero?.aspectRatio || '16:9';
-            state.hero.url = flex.hero?.previewUrl || flex.hero?.url || "";
-            state.hero.videoUrl = flex.hero?.url || "";
-            state.hero.link = flex.hero?.action?.uri || "";
-
-            // 2. Body
-            state.body.bubbleSize = flex.size || "mega";
-            const bodyBox = flex.body;
-            state.body.bgColor = bodyBox.backgroundColor || "#F8F8F8";
-            
-            const stackBox = bodyBox.contents?.[0]; // 第一層 Box
-            if (stackBox && stackBox.contents?.[0]?.type === 'image' && stackBox.contents?.[0]?.position === 'absolute') {
-                state.body.bgType = 'image';
-                state.body.bg = stackBox.contents[0].url;
-                state.body.bgMode = stackBox.contents[0].aspectMode === 'cover' ? 'cover' : 'top';
-            } else {
-                state.body.bgType = 'color';
-            }
-
-            // 產品列表還原 (位於 stackBox 第二個內容或直接在 body 第一個內容)
-            const itemsBox = (state.body.bgType === 'image') ? stackBox?.contents?.[1] : bodyBox.contents?.[0];
-            const rows = itemsBox?.contents || [];
-            let allItems = [];
-            rows.forEach(row => {
-                if(row.contents) {
-                    row.contents.forEach(item => {
-                        allItems.push({
-                            title: item.contents?.[1]?.contents?.[0]?.text || "商品",
-                            img: item.contents?.[0]?.url || "",
-                            url: item.action?.uri || ""
-                        });
-                        // 嘗試抓回標籤顏色設定
-                        state.body.tagBgColor = item.contents?.[1]?.backgroundColor || "#0D0D0D";
-                        state.body.tagTextColor = item.contents?.[1]?.contents?.[0]?.color || "#FFFFFF";
-                    });
-                }
-            });
-            state.body.items = allItems;
-            state.body.columns = rows[0]?.contents?.length || 3;
-
-            // 3. Footer
-            const footer = flex.footer;
-            state.footer.bg = footer.backgroundColor || "#FFFFFF";
-            const textComp = footer.contents?.find(c => c.type === 'text');
-            state.footer.textEnabled = !!textComp;
-            if (textComp) {
-                state.footer.text = textComp.text;
-                state.footer.textColor = textComp.color;
-                state.footer.textAlign = textComp.align;
-            }
-            const btnBox = footer.contents?.find(c => c.type === 'box' && c.layout === 'horizontal');
-            if (btnBox) {
-                state.footer.btn1.label = btnBox.contents?.[0]?.action?.label || "";
-                state.footer.btn1.uri = btnBox.contents?.[0]?.action?.uri || "";
-                state.footer.btn1.color = btnBox.contents?.[0]?.color || "#000000";
-                state.footer.btn2.label = btnBox.contents?.[1]?.action?.label || "";
-                state.footer.btn2.uri = btnBox.contents?.[1]?.action?.uri || "";
-                state.footer.btn2.color = btnBox.contents?.[1]?.color || "#000000";
-            }
-        }
-
         function saveState() {
             if (history.length > 20) history.shift();
             history.push(JSON.parse(JSON.stringify(state)));
@@ -508,7 +377,6 @@
                 if (history.length === 0) document.getElementById('btn-undo').disabled = true;
                 syncUI();
                 render();
-                syncToParent();
             }
         }
 
@@ -517,15 +385,6 @@
             state.hero.type = type;
             syncUI();
             render();
-            syncToParent();
-        }
-
-        function updateBodyType(type) {
-            saveState();
-            state.body.bgType = type;
-            syncUI();
-            render();
-            syncToParent();
         }
 
         function updateConfig(path, value) {
@@ -535,8 +394,6 @@
             if(path === 'videoUrl') state.hero.videoUrl = value;
             if(path === 'heroLink') state.hero.link = value;
             
-            if(path === 'bodyBg') state.body.bg = value;
-            if(path === 'bodyBgMode') state.body.bgMode = value;
             if(path === 'bodyColor') state.body.bgColor = value.toUpperCase(); 
             if(path === 'tagBgColor') state.body.tagBgColor = value.toUpperCase();
             if(path === 'tagTextColor') state.body.tagTextColor = value.toUpperCase();
@@ -562,7 +419,16 @@
             if (path === 'footerTextEnabled' || path === 'footerTextAlign') {
                 syncUI();
             }
+            
+            // 與母系統對接通訊
             syncToParent();
+        }
+
+        function syncToParent() {
+            window.parent.postMessage({
+                type: 'SYNC_FLEX_DATA',
+                json: JSON.stringify(generateFlexJSON())
+            }, '*');
         }
 
         function updateItem(index, field, value) {
@@ -632,31 +498,8 @@
             document.getElementById('input-hero-link').value = state.hero.link;
             
             // --- Body UI Sync ---
-            const btnBodyColor = document.getElementById('btn-body-type-color');
-            const btnBodyImage = document.getElementById('btn-body-type-image');
-            const bodyColorSettings = document.getElementById('body-color-settings');
-            const bodyImageSettings = document.getElementById('body-image-settings');
-
-            btnBodyColor.className = inactiveClass;
-            btnBodyImage.className = inactiveClass;
-
-            if (state.body.bgType === 'color') {
-                btnBodyColor.className = activeClass;
-                bodyColorSettings.classList.remove('hidden');
-                bodyImageSettings.classList.add('hidden');
-            } else {
-                btnBodyImage.className = activeClass;
-                bodyColorSettings.classList.add('hidden');
-                bodyImageSettings.classList.remove('hidden');
-            }
-
-            document.getElementById('input-body-bg').value = state.body.bg;
-            document.getElementById('body-bg-mode').value = state.body.bgMode;
-            
-            document.getElementById('input-body-color-simple').value = state.body.bgColor;
-            document.getElementById('text-body-color-simple').value = state.body.bgColor;
-            document.getElementById('input-body-color-img').value = state.body.bgColor;
-            document.getElementById('text-body-color-img').value = state.body.bgColor;
+            document.getElementById('input-body-color').value = state.body.bgColor;
+            document.getElementById('text-body-color').value = state.body.bgColor;
 
             document.getElementById('body-columns').value = state.body.columns;
             document.getElementById('bubble-size').value = state.body.bubbleSize; 
@@ -767,27 +610,8 @@
 
             // Body Container Style
             const bodyContainer = document.getElementById('view-body-container');
-            const bodyBg = document.getElementById('view-body-bg');
-            
             bodyContainer.style.backgroundColor = state.body.bgColor;
             
-            if (state.body.bgType === 'image') {
-                bodyBg.classList.remove('hidden');
-                bodyBg.src = state.body.bg;
-                if (state.body.bgMode === 'top') {
-                    bodyBg.style.height = 'auto';
-                    bodyBg.style.objectFit = 'contain';
-                    bodyBg.style.top = '0';
-                    bodyBg.style.bottom = 'auto';
-                } else {
-                    bodyBg.style.height = '100%';
-                    bodyBg.style.objectFit = 'cover';
-                    bodyBg.style.bottom = '0';
-                }
-            } else {
-                bodyBg.classList.add('hidden');
-            }
-
             const grid = document.getElementById('view-grid');
             grid.className = "grid gap-2 " + (state.body.columns === 3 ? "grid-cols-3" : "grid-cols-4");
             
@@ -836,11 +660,17 @@
             const chunk = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) => arr.slice(i * size, i * size + size));
             
             const bodyConfig = {
-                "type": "box", "layout": "vertical", "backgroundColor": state.body.bgColor, "paddingAll": "none", "contents": []
+                "type": "box", 
+                "layout": "vertical", 
+                "backgroundColor": state.body.bgColor, 
+                "paddingAll": "none", 
+                "contents": []
             };
 
             const productContent = {
-                "type": "box", "layout": "vertical", "contents": chunk(state.body.items, cols).map((row, idx) => ({
+                "type": "box", 
+                "layout": "vertical", 
+                "contents": chunk(state.body.items, cols).map((row, idx) => ({
                     "type": "box", "layout": "horizontal", "margin": idx === 0 ? "none" : "md", "contents": row.map((item, colIdx) => ({
                         "type": "box", "layout": "vertical", "contents": [
                             { "type": "image", "url": item.img, "aspectRatio": "1:1", "size": "full", "aspectMode": "cover" },
@@ -852,14 +682,7 @@
                 })), "paddingAll": "md"
             };
 
-            if (state.body.bgType === 'image') {
-                const bgImageProps = state.body.bgMode === 'top' ? { "width": "100%", "aspectMode": "width", "align": "start", "offsetTop": "0px" } : { "size": "full", "aspectMode": "cover" };
-                bodyConfig.contents.push({
-                    "type": "box", "layout": "vertical", "contents": [{ "type": "image", "url": state.body.bg, "position": "absolute", ...bgImageProps }, productContent]
-                });
-            } else {
-                bodyConfig.contents.push(productContent);
-            }
+            bodyConfig.contents.push(productContent);
 
             const footerContents = [];
             if (state.footer.textEnabled) {
@@ -885,6 +708,71 @@
                 };
             }
             return flex;
+        }
+
+        // 與母系統對接通訊：接收初始化資料
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'LOAD_FLEX_DATA') {
+                try {
+                    const flexJson = JSON.parse(event.data.json);
+                    reverseMapFlexToState(flexJson);
+                    syncUI();
+                    render();
+                } catch(e) { console.error("解析失敗", e); }
+            }
+        });
+
+        function reverseMapFlexToState(flex) {
+            // 1. Hero
+            state.hero.type = flex.hero ? (flex.hero.type === 'video' ? 'video' : 'image') : 'none';
+            state.hero.aspectRatio = flex.hero?.aspectRatio || '16:9';
+            state.hero.url = flex.hero?.previewUrl || flex.hero?.url || "";
+            state.hero.videoUrl = flex.hero?.url || "";
+            state.hero.link = flex.hero?.action?.uri || "";
+
+            // 2. Body
+            state.body.bubbleSize = flex.size || "mega";
+            const bodyBox = flex.body;
+            state.body.bgColor = bodyBox.backgroundColor || "#F8F8F8";
+            
+            const itemsBox = bodyBox.contents?.[0];
+            const rows = itemsBox?.contents || [];
+            let allItems = [];
+            rows.forEach(row => {
+                if(row.contents) {
+                    row.contents.forEach(item => {
+                        allItems.push({
+                            title: item.contents?.[1]?.contents?.[0]?.text || "商品",
+                            img: item.contents?.[0]?.url || "",
+                            url: item.action?.uri || ""
+                        });
+                        state.body.tagBgColor = item.contents?.[1]?.backgroundColor || "#0D0D0D";
+                        state.body.tagTextColor = item.contents?.[1]?.contents?.[0]?.color || "#FFFFFF";
+                    });
+                }
+            });
+            state.body.items = allItems;
+            state.body.columns = rows[0]?.contents?.length || 3;
+
+            // 3. Footer
+            const footer = flex.footer;
+            state.footer.bg = footer.backgroundColor || "#FFFFFF";
+            const textComp = footer.contents?.find(c => c.type === 'text');
+            state.footer.textEnabled = !!textComp;
+            if (textComp) {
+                state.footer.text = textComp.text;
+                state.footer.textColor = textComp.color;
+                state.footer.textAlign = textComp.align;
+            }
+            const btnBox = footer.contents?.find(c => c.type === 'box' && c.layout === 'horizontal');
+            if (btnBox) {
+                state.footer.btn1.label = btnBox.contents?.[0]?.action?.label || "";
+                state.footer.btn1.uri = btnBox.contents?.[0]?.action?.uri || "";
+                state.footer.btn1.color = btnBox.contents?.[0]?.color || "#000000";
+                state.footer.btn2.label = btnBox.contents?.[1]?.action?.label || "";
+                state.footer.btn2.uri = btnBox.contents?.[1]?.action?.uri || "";
+                state.footer.btn2.color = btnBox.contents?.[1]?.color || "#000000";
+            }
         }
 
         function exportJSON() {
