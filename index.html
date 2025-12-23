@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 旗艦分類聚合版 (v2.6.5)</title>
+    <title>FLEX Hub Pro - 旗艦分類聚合版 (v2.6.6)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -23,8 +23,6 @@
             display: flex; 
             flex-direction: column; 
         }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #06C755; border-radius: 50%; width: 32px; height: 32px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .toast { 
             position: fixed; top: 25px; left: 50%; transform: translateX(-50%); 
             background: #000; color: white; padding: 16px 32px; border-radius: 16px; 
@@ -35,21 +33,20 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #000; border-radius: 10px; }
         .chevron-rotate { transition: transform 0.3s ease; }
-        .chevron-down { transform: rotate(0deg); }
         .chevron-up { transform: rotate(180deg); }
+        .checkbox-custom { width: 24px; height: 24px; accent-color: #06C755; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, Fragment } = React;
+        const { useState, useEffect, useRef, Fragment, useCallback } = React;
 
-        const APP_VERSION = "v2.6.5";
+        const APP_VERSION = "v2.6.6";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
-        // --- 分類定義 ---
         const NAV_GROUPS = [
             {
                 name: "數位名片區",
@@ -82,7 +79,7 @@
                 copy: <Fragment><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></Fragment>,
                 trash: <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />,
                 send: <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />,
-                save: <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                save: <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2h11l5 5v11a2 2 0 0 1-2 2z" />
             };
             return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || null}</svg>;
         };
@@ -93,6 +90,7 @@
             const [activeModuleId, setActiveModuleId] = useState('CAROUSEL_PRO');
             const [activeFile, setActiveFile] = useState(null);
             const [userFiles, setUserFiles] = useState([]);
+            const [selectedIds, setSelectedIds] = useState(new Set());
             const [isLoading, setIsLoading] = useState(false);
             const [toast, setToast] = useState(null);
             const [collapsedGroups, setCollapsedGroups] = useState({ CARDS: false, TOOLS: false });
@@ -102,13 +100,14 @@
 
             const showMsg = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
-            const refreshFiles = async (uid) => {
+            const refreshFiles = useCallback(async (uid) => {
                 try {
                     const res = await fetch(`${GAS_URL}?userId=${uid}&action=getFiles`);
                     const data = await res.json();
                     setUserFiles(data || []);
+                    setSelectedIds(new Set()); // 刷新後清除選取
                 } catch (e) { setUserFiles([]); }
-            };
+            }, []);
 
             useEffect(() => {
                 const init = async () => {
@@ -126,7 +125,7 @@
                     } catch (e) { setViewState('LOGIN'); }
                 };
                 init();
-            }, []);
+            }, [refreshFiles]);
 
             useEffect(() => {
                 const handleMessage = (event) => {
@@ -147,40 +146,86 @@
                 try {
                     const res = await fetch(GAS_URL, { 
                         method: 'POST', 
-                        body: JSON.stringify({ action: 'saveFile', userId: user.uid, id: activeFile.id, name: activeFile.name || "未命名設計", content: currentJson }) 
+                        body: JSON.stringify({ action: 'saveFile', userId: user.uid, id: String(activeFile.id), name: activeFile.name || "未命名設計", content: currentJson }) 
                     });
-                    if ((await res.json()).success) { showMsg("✅ 儲存成功！"); await refreshFiles(user.uid); }
+                    const result = await res.json();
+                    if (result.success) { showMsg("✅ 儲存成功！"); await refreshFiles(user.uid); }
                 } catch (e) { showMsg("❌ 儲存失敗"); }
                 setIsLoading(false);
             };
 
-            const handleSend = async () => {
+            const handleSendSingle = async () => {
                 if (!currentJson) { alert("⚠️ 內容同步中，請稍候。"); return; }
                 try {
-                    const rawData = JSON.parse(currentJson);
-                    const altText = rawData.altText || "這是我的數位名片，請多指教";
-                    
-                    // --- 數據淨化：刪除隱藏欄位 ---
+                    const rawData = typeof currentJson === 'string' ? JSON.parse(currentJson) : currentJson;
                     const cleanPayload = JSON.parse(JSON.stringify(rawData));
-                    delete cleanPayload.altText;
-                    delete cleanPayload._pages;
-                    delete cleanPayload.pages;
-                    delete cleanPayload.isVisible;
-                    delete cleanPayload.template;
+                    // 淨化發送內容
+                    ["altText", "_pages", "pages", "isVisible", "template"].forEach(k => delete cleanPayload[k]);
 
-                    if (!liff.isLoggedIn()) { liff.login(); return; }
-                    const result = await liff.shareTargetPicker([{ type: "flex", altText, contents: cleanPayload }]);
+                    const result = await liff.shareTargetPicker([{ type: "flex", altText: "數位名片", contents: cleanPayload }]);
                     if (result) showMsg("✅ 發送成功！");
                 } catch (e) { alert("❌ 發送失敗：" + e.message); }
+            };
+
+            const handleSendSelected = async () => {
+                const selectedFiles = userFiles.filter(f => selectedIds.has(f.id));
+                if (selectedFiles.length === 0) return;
+                if (selectedFiles.length > 5) { alert("⚠️ LINE 批次發送上限為 5 則，請減少勾選數量。"); return; }
+
+                try {
+                    const messages = selectedFiles.map(f => {
+                        const content = typeof f.content === 'string' ? JSON.parse(f.content) : f.content;
+                        const clean = JSON.parse(JSON.stringify(content));
+                        ["altText", "_pages", "pages", "isVisible", "template"].forEach(k => delete clean[k]);
+                        return { type: "flex", altText: f.name || "數位名片", contents: clean };
+                    });
+
+                    const result = await liff.shareTargetPicker(messages);
+                    if (result) showMsg("✅ 批次發送成功！");
+                } catch (e) { alert("❌ 發送失敗：" + e.message); }
+            };
+
+            const handleDelete = async (id) => {
+                if(!confirm("確定要刪除？數據將無法還原。")) return;
+                setIsLoading(true);
+                try {
+                    const res = await fetch(GAS_URL, { 
+                        method: 'POST', 
+                        body: JSON.stringify({ action: 'deleteFile', userId: user.uid, id: String(id) }) 
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        showMsg("🗑️ 已刪除專案");
+                        await refreshFiles(user.uid);
+                    } else {
+                        showMsg("❌ 刪除失敗: " + (result.message || "未知錯誤"));
+                    }
+                } catch (e) { showMsg("❌ 通訊錯誤"); }
+                setIsLoading(false);
             };
 
             const handleClone = async (file) => {
                 setIsLoading(true);
                 const newName = `${file.name} (複製)`;
-                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveFile', userId: user.uid, id: String(Date.now()), name: newName, content: file.content }) });
+                await fetch(GAS_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'saveFile', userId: user.uid, id: String(Date.now()), name: newName, content: file.content }) 
+                });
                 await refreshFiles(user.uid);
                 setIsLoading(false);
                 showMsg("📋 已複製專案");
+            };
+
+            const toggleSelect = (id) => {
+                const next = new Set(selectedIds);
+                if (next.has(id)) next.delete(id);
+                else next.add(id);
+                setSelectedIds(next);
+            };
+
+            const toggleSelectAll = () => {
+                if (selectedIds.size === userFiles.length) setSelectedIds(new Set());
+                else setSelectedIds(new Set(userFiles.map(f => f.id)));
             };
 
             if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white font-black italic animate-pulse">數據載入中...</div>;
@@ -193,31 +238,23 @@
                     {isLoading && <div className="fixed inset-0 bg-white/80 z-[10001] flex items-center justify-center font-black text-xl italic animate-pulse">處理中...</div>}
                     {toast && <div className="toast">{toast}</div>}
                     
-                    <aside className="line-sidebar border-r border-slate-300 w-72 shrink-0 bg-white">
-                        <div className="h-24 flex items-center px-8 border-b border-slate-300 bg-white shrink-0 shadow-sm">
+                    <aside className="line-sidebar border-r border-slate-300 w-72 shrink-0 bg-white shadow-xl">
+                        <div className="h-24 flex items-center px-8 border-b border-slate-300 bg-white shrink-0">
                             <span className="text-[#06C755] mr-4"><Icon name="menu" className="w-8 h-8" /></span>
-                            <div className="flex flex-col"><span className="font-black text-[#06C755] text-2xl uppercase italic leading-none">FLEX HUB PRO</span><span className="text-[10px] opacity-40 mt-1 tracking-widest">{APP_VERSION}</span></div>
+                            <div className="flex flex-col"><span className="font-black text-[#06C755] text-2xl uppercase italic leading-none">FLEX HUB</span><span className="text-[10px] opacity-40 mt-1 tracking-widest">{APP_VERSION}</span></div>
                         </div>
                         
                         <nav className="flex-1 overflow-y-auto pt-6 px-3 custom-scrollbar">
                             {NAV_GROUPS.map(group => (
                                 <div key={group.id} className="mb-4">
-                                    <button 
-                                        onClick={() => setCollapsedGroups(p => ({...p, [group.id]: !p[group.id]}))}
-                                        className="w-full flex items-center justify-between px-5 py-3 text-xs text-slate-400 uppercase tracking-[0.2em] font-black hover:text-black transition-colors"
-                                    >
+                                    <button onClick={() => setCollapsedGroups(p => ({...p, [group.id]: !p[group.id]}))} className="w-full flex items-center justify-between px-5 py-3 text-xs text-slate-400 uppercase tracking-[0.2em] font-black hover:text-black transition-colors">
                                         <span>{group.name}</span>
-                                        <span className={`chevron-rotate ${collapsedGroups[group.id] ? 'chevron-up' : 'chevron-down'}`}><Icon name="chevron" className="w-3 h-3" /></span>
+                                        <span className={`chevron-rotate ${collapsedGroups[group.id] ? '' : 'chevron-up'}`}><Icon name="chevron" className="w-3 h-3" /></span>
                                     </button>
-                                    
                                     {!collapsedGroups[group.id] && (
-                                        <div className="flex flex-col gap-1.5 mt-1 animate-in slide-in-from-top-1 duration-200">
+                                        <div className="flex flex-col gap-1.5 mt-1">
                                             {group.items.map(item => (
-                                                <button 
-                                                    key={item.id} 
-                                                    onClick={()=>{setActiveModuleId(item.id); setActiveFile(null);}} 
-                                                    className={`w-full flex items-center px-6 py-4 gap-4 rounded-2xl transition-all ${activeModuleId === item.id && !activeFile ? 'sidebar-item-active' : 'hover:bg-slate-50 text-slate-500'}`}
-                                                >
+                                                <button key={item.id} onClick={()=>{setActiveModuleId(item.id); setActiveFile(null);}} className={`w-full flex items-center px-6 py-4 gap-4 rounded-2xl transition-all ${activeModuleId === item.id && !activeFile ? 'sidebar-item-active shadow-lg' : 'hover:bg-slate-50 text-slate-500'}`}>
                                                     <Icon name={item.icon} />
                                                     <span className="text-sm font-black truncate">{item.name}</span>
                                                 </button>
@@ -236,7 +273,7 @@
                                     <button onClick={()=>setActiveFile(null)} className="font-black text-black flex items-center gap-3 hover:text-[#06C755] transition-colors shrink-0 text-lg"><span>← Back</span></button>
                                     <input type="text" value={activeFile.name} onChange={e=>setActiveFile({...activeFile, name: e.target.value})} className="bg-slate-100 border-2 border-black rounded-2xl px-6 py-3 font-black text-center max-w-xl mx-8 outline-none text-xl focus:bg-white transition-all shadow-inner" />
                                     <div className="flex items-center gap-4 shrink-0">
-                                        <button onClick={handleSend} className="bg-[#06C755] text-white px-8 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-[#05b34c]"><Icon name="send" /> <span>發送</span></button>
+                                        <button onClick={handleSendSingle} className="bg-[#06C755] text-white px-8 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-[#05b34c]"><Icon name="send" /> <span>發送</span></button>
                                         <button onClick={handleSave} className="bg-black text-white px-8 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-slate-800"><Icon name="save" /> <span>儲存</span></button>
                                     </div>
                                 </div>
@@ -244,22 +281,40 @@
                             </div>
                         ) : (
                             <div className="p-12 h-full overflow-y-auto font-black custom-scrollbar">
-                                <div className="flex justify-between items-end border-b-4 border-slate-100 pb-8 mb-10">
+                                <div className="flex justify-between items-center border-b-4 border-slate-100 pb-8 mb-10">
                                     <div className="flex flex-col"><h2 className="text-4xl font-black uppercase text-slate-800 tracking-tighter">{currentProject.name}</h2><p className="text-base text-slate-400 mt-2 italic font-bold">Manage your exclusive designs.</p></div>
-                                    <button onClick={()=>setActiveFile({id: String(Date.now()), name:"", content: null})} className="bg-[#06C755] text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl active:scale-95 transition-all hover:-translate-y-1">＋ 建立新設計</button>
+                                    <div className="flex gap-4">
+                                        {selectedIds.size > 0 && (
+                                            <button onClick={handleSendSelected} className="bg-blue-600 text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl active:scale-95 transition-all hover:bg-blue-700 animate-bounce">
+                                                <Icon name="send" /> 發送已選 ({selectedIds.size})
+                                            </button>
+                                        )}
+                                        <button onClick={()=>setActiveFile({id: String(Date.now()), name:"", content: null})} className="bg-[#06C755] text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl active:scale-95 transition-all hover:-translate-y-1">＋ 建立新設計</button>
+                                    </div>
                                 </div>
                                 <div className="bg-white border-2 border-slate-100 rounded-[40px] overflow-hidden shadow-2xl">
                                     <table className="w-full text-left">
-                                        <thead className="bg-slate-50 border-b-2 border-slate-100 font-black text-slate-400 uppercase text-xs tracking-widest"><tr><th className="p-8">專案名稱</th><th className="p-8 text-center">操作管理</th></tr></thead>
+                                        <thead className="bg-slate-50 border-b-2 border-slate-100 font-black text-slate-400 uppercase text-xs tracking-widest">
+                                            <tr>
+                                                <th className="p-8 w-16">
+                                                    <input type="checkbox" checked={userFiles.length > 0 && selectedIds.size === userFiles.length} onChange={toggleSelectAll} className="checkbox-custom" />
+                                                </th>
+                                                <th className="p-8">專案名稱</th>
+                                                <th className="p-8 text-center">操作管理</th>
+                                            </tr>
+                                        </thead>
                                         <tbody className="divide-y-2 divide-slate-50">
-                                            {userFiles.length === 0 ? <tr><td colSpan="2" className="p-32 text-center text-slate-200 italic text-2xl">目前尚無數據</td></tr> : userFiles.map(f => (
-                                                <tr key={String(f.id)} className="hover:bg-slate-50/50 transition-all">
-                                                    <td className="p-8 text-xl font-black text-black">{f.name}</td>
+                                            {userFiles.length === 0 ? <tr><td colSpan="3" className="p-32 text-center text-slate-200 italic text-2xl">目前尚無數據</td></tr> : userFiles.map(f => (
+                                                <tr key={String(f.id)} className={`transition-all ${selectedIds.has(f.id) ? 'bg-green-50' : 'hover:bg-slate-50/50'}`}>
+                                                    <td className="p-8">
+                                                        <input type="checkbox" checked={selectedIds.has(f.id)} onChange={()=>toggleSelect(f.id)} className="checkbox-custom" />
+                                                    </td>
+                                                    <td className="p-8 text-xl font-black text-black cursor-pointer" onClick={()=>toggleSelect(f.id)}>{f.name || "未命名設計"}</td>
                                                     <td className="p-8 text-center">
                                                         <div className="flex justify-center items-center gap-10">
                                                             <button onClick={()=>setActiveFile(f)} className="text-[#06C755] hover:underline font-black text-lg uppercase italic tracking-tighter">Edit</button>
                                                             <button onClick={()=>handleClone(f)} className="text-amber-500 flex items-center gap-2 hover:underline font-black text-lg uppercase italic tracking-tighter"><Icon name="copy" /> Clone</button>
-                                                            <button onClick={async ()=>{ if(!confirm("確定要刪除？數據將無法還原。")) return; setIsLoading(true); await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteFile', userId: user.uid, id: String(f.id) }) }); await refreshFiles(user.uid); setIsLoading(false); }} className="text-red-500 transition-all hover:scale-110"><Icon name="trash" className="w-8 h-8" /></button>
+                                                            <button onClick={() => handleDelete(f.id)} className="text-red-500 transition-all hover:scale-110"><Icon name="trash" className="w-8 h-8" /></button>
                                                         </div>
                                                     </td>
                                                 </tr>
