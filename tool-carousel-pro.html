@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Carousel Pro - P1 間距優化版 v5.2.7</title>
+    <title>FLEX Carousel Pro - P2 功能修復版 v5.2.8</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -41,12 +41,14 @@
             bottom: 0;
             left: 0;
             right: 0;
-            height: 80px;
+            min-height: 80px;
             z-index: 50;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             border-top: 1px solid rgba(0,0,0,0.05);
+            padding: 10px;
         }
 
         input, select, textarea { font-size: 13px !important; border-radius: 8px; border: 1px solid #e2e8f0; padding: 8px; width: 100%; outline: none; transition: border 0.2s; }
@@ -103,9 +105,7 @@
             name: "張志明", nameTop: 140, nameColor: "#000000", nameWeight: "bold", nameAlign: "center",
             socialTop: 170, 
             icons: [{ type: "PHONE", uri: "tel:0912345678" }, { type: "LINE", uri: "https://line.me" }],
-            desc: "致力協助企業數位轉型\n提供最專業的品牌顧問服務", 
-            descTop: 230, // 已拉開距離 (原本為 205)
-            descColor: "#000000", descWeight: "regular", descAlign: "center",
+            desc: "致力協助企業數位轉型\n提供最專業的品牌顧問服務", descTop: 230, descColor: "#000000", descWeight: "regular", descAlign: "center",
             footerBg: "#111111", footerLabel: "聯繫我了解更多", footerUri: "https://line.me", footerThemeColor: "#06C755", footerTextColor: "#FFFFFF"
         };
 
@@ -151,18 +151,21 @@
                 const [w, h] = d.media.aspectRatio.split(':').map(Number);
                 const mediaH = Math.min((h / w) * 300, 180);
                 const avatarOff = d.mediaType === 'video' ? mediaH + 10 : mediaH - 45;
-                const txtPad = d.avatar.show ? 50 : 15;
                 return (
                     <div className="preview-bubble flex flex-col font-black relative bg-white">
                         <div className="relative bg-black shrink-0" style={{ height: `${mediaH}px` }}>
                             {d.mediaType === 'image' ? <img src={d.media.url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-slate-900"><i data-lucide="play" className="w-10 h-10 text-white opacity-60"></i></div>}
+                            <div className="absolute px-3 text-white font-bold text-[10px] flex items-center justify-center" style={{ top: '10px', [d.media.badgePos === 'left' ? 'left' : 'right']: '10px', backgroundColor: d.media.badgeBg, borderRadius: '15px', height: '25px', minWidth: '50px' }}>{d.media.badgeText}</div>
                         </div>
-                        <div className="flex-1 p-4 overflow-hidden relative bg-white" style={{ paddingTop: `${txtPad}px` }}>
+                        <div className="flex-1 p-4 overflow-hidden relative bg-white" style={{ paddingTop: d.avatar.show ? '50px' : '15px' }}>
                             <div className="font-bold text-lg" style={{ textAlign: d.content.nameAlign, color: d.content.nameColor }}>{d.content.name}</div>
                             <div className="mt-1 text-[13px] leading-snug text-slate-500 overflow-hidden" style={{ textAlign: d.content.descAlign }}>{d.content.desc}</div>
                         </div>
                         {d.avatar.show && <div className="absolute w-full flex justify-center transition-all" style={{ top: `${avatarOff}px`, zIndex: 30 }}><img src={d.avatar.url} className="w-20 h-20 rounded-full border-[3px] border-white shadow-xl object-cover bg-white" style={{ borderRadius: d.avatar.cornerRadius === '100px' ? '50%' : '12px' }} /></div>}
-                        <div className="preview-footer-fixed flex-col justify-center px-4 gap-1 bg-white">{(d.footer.longBtns || []).slice(0,1).map((btn, i) => <div key={i} className="w-full py-2 text-center rounded-md font-bold text-xs" style={{ backgroundColor: btn.isSolid ? btn.themeColor : 'transparent', border: `1px solid ${btn.themeColor}`, color: btn.textColor }}>{btn.label}</div>)}</div>
+                        <div className="preview-footer-fixed flex-col justify-center px-4 gap-2 bg-white">
+                            <div className="flex gap-2 w-full justify-center">{(d.footer.shortBtns || []).map((btn, i) => <div key={i} className="w-8 h-8 p-1.5 border rounded-full bg-slate-50 flex items-center justify-center"><img src={SOCIAL_DATA[btn.type]?.url} className="w-full h-full object-contain" /></div>)}</div>
+                            {(d.footer.longBtns || []).slice(0,1).map((btn, i) => <div key={i} className="w-full py-2 text-center rounded-md font-bold text-xs" style={{ backgroundColor: btn.isSolid ? btn.themeColor : 'transparent', border: `1px solid ${btn.themeColor}`, color: btn.textColor }}>{btn.label}</div>)}
+                        </div>
                     </div>
                 );
             }
@@ -203,7 +206,7 @@
             const buildJson = useCallback(() => {
                 const contents = pages.map(d => {
                     const totalH = "500px"; 
-                    const footH = "80px";   
+                    const footH = "100px"; // 增加 Footer 高度以容納 P2 快捷
 
                     if (d.model === 'BUSINESS_CORE') {
                         const base = [];
@@ -213,21 +216,28 @@
                         base.push({ type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.nameTop), offsetStart: "0px", offsetEnd: "0px", contents: [{ type: "text", text: d.name, weight: "bold", size: "lg", color: d.nameColor, align: d.nameAlign }] });
                         base.push({ type: "box", layout: "horizontal", position: "absolute", offsetTop: Utils.toPx(d.socialTop), offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md", contents: d.icons.map(icon => ({ type: "box", layout: "vertical", width: "45px", height: "45px", cornerRadius: "100px", backgroundColor: "#ffffff1a", paddingAll: "8px", action: { type: "uri", uri: icon.uri || "https://line.me" }, contents: [{ type: "image", url: SOCIAL_DATA[icon.type]?.url, size: "full", aspectRatio: "1:1" }] })) });
                         base.push({ type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.descTop), offsetStart: "15px", offsetEnd: "15px", contents: [{ type: "text", text: d.desc, wrap: true, size: "xs", color: d.descColor, align: d.descAlign }] });
-                        base.push({ type: "box", layout: "vertical", position: "absolute", offsetBottom: "0px", offsetStart: "0px", offsetEnd: "0px", height: footH, backgroundColor: d.footerBg, paddingAll: "15px", justifyContent: "center", contents: [{ type: "box", layout: "vertical", backgroundColor: d.footerThemeColor, paddingAll: "10px", cornerRadius: "md", action: { type: "uri", uri: d.footerUri || "https://line.me" }, contents: [{ type: "text", text: d.footerLabel, color: d.footerTextColor, align: "center", weight: "bold", size: "sm" }] }] });
+                        base.push({ type: "box", layout: "vertical", position: "absolute", offsetBottom: "0px", offsetStart: "0px", offsetEnd: "0px", height: footH, backgroundColor: d.footerBg, paddingAll: "15px", justifyContent: "center", contents: [{ type: "box", layout: "vertical", backgroundColor: d.footerThemeColor, paddingAll: "12px", cornerRadius: "md", action: { type: "uri", uri: d.footerUri || "https://line.me" }, contents: [{ type: "text", text: d.footerLabel, color: d.footerTextColor, align: "center", weight: "bold", size: "sm" }] }] });
                         return { type: "bubble", body: { type: "box", layout: "vertical", paddingAll: "0px", height: totalH, contents: base } };
                     }
 
                     if (d.model === 'PERSONAL_CORE') {
                         const [w, h] = d.media.aspectRatio.split(':').map(Number);
                         const mediaH = Math.round((h/w)*300);
+                        const footerContents = [];
+                        footerContents.push({ type: "separator", color: "#f0f0f0" });
+                        // 補回社群快捷按鈕到 JSON
+                        if (d.footer.shortBtns && d.footer.shortBtns.length > 0) {
+                            footerContents.push({ type: "box", layout: "horizontal", spacing: "md", justifyContent: "center", margin: "md", contents: d.footer.shortBtns.map(b => ({
+                                type: "box", layout: "vertical", width: "35px", height: "35px", cornerRadius: "100px", backgroundColor: "#f8fafc", paddingAll: "8px", action: { type: "uri", uri: b.uri || "https://line.me" }, contents: [{ type: "image", url: SOCIAL_DATA[b.type]?.url || SOCIAL_DATA.WEB.url, size: "full", aspectRatio: "1:1" }]
+                            })) });
+                        }
+                        footerContents.push({ type: "box", layout: "vertical", paddingAll: "10px", margin: "sm", borderWidth: "1px", borderColor: d.footer.longBtns[0].themeColor, backgroundColor: d.footer.longBtns[0].isSolid ? d.footer.longBtns[0].themeColor : undefined, cornerRadius: "md", action: { type: "uri", uri: d.footer.longBtns[0].uri }, contents: [{ type: "text", text: d.footer.longBtns[0].label, align: "center", color: d.footer.longBtns[0].textColor, size: "sm", weight: "bold" }] });
+
                         const items = [
                             { type: "image", url: d.media.url, size: "full", aspectRatio: d.media.aspectRatio, aspectMode: "cover" },
                             { type: "box", layout: "vertical", paddingAll: "15px", paddingTop: d.avatar.show ? "55px" : "15px", contents: [{ type: "text", text: d.content.name, weight: "bold", size: "lg", color: d.content.nameColor, align: d.content.nameAlign }, { type: "text", text: d.content.desc, wrap: true, color: d.content.descColor, size: "xs", margin: "md", align: d.content.descAlign }] },
                             ...(d.avatar.show ? [{ type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(mediaH - 45), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "80px", height: "80px", cornerRadius: d.avatar.cornerRadius, borderWidth: "3px", borderColor: d.avatar.borderColor, contents: [{ type: "image", url: d.avatar.url, size: "full", aspectRatio: "1:1" }] }] }] : []),
-                            { type: "box", layout: "vertical", position: "absolute", offsetBottom: "0px", offsetStart: "0px", offsetEnd: "0px", height: footH, paddingAll: "15px", justifyContent: "center", backgroundColor: "#ffffff", contents: [
-                                { type: "separator", color: "#f0f0f0" },
-                                { type: "box", layout: "vertical", paddingAll: "10px", margin: "md", borderWidth: "1px", borderColor: d.footer.longBtns[0].themeColor, backgroundColor: d.footer.longBtns[0].isSolid ? d.footer.longBtns[0].themeColor : undefined, cornerRadius: "md", action: { type: "uri", uri: d.footer.longBtns[0].uri }, contents: [{ type: "text", text: d.footer.longBtns[0].label, align: "center", color: d.footer.longBtns[0].textColor, size: "sm", weight: "bold" }] }
-                            ]}
+                            { type: "box", layout: "vertical", position: "absolute", offsetBottom: "0px", offsetStart: "0px", offsetEnd: "0px", height: footH, paddingAll: "5px", justifyContent: "center", backgroundColor: "#ffffff", contents: footerContents }
                         ];
                         return { type: "bubble", body: { type: "box", layout: "vertical", paddingAll: "0px", height: totalH, contents: items } };
                     }
@@ -262,7 +272,7 @@
                 <div className="flex h-screen bg-slate-100 font-black overflow-hidden text-slate-900">
                     <div className="w-2/3 bg-white border-r flex flex-col shadow-2xl z-10">
                         <div className="sticky-section flex flex-col gap-4 bg-white shadow-sm shrink-0">
-                            <h1 className="text-xl flex items-center gap-2 text-green-600 uppercase tracking-tighter italic font-black"><i data-lucide="layers"></i> Carousel Pro v5.2.7</h1>
+                            <h1 className="text-xl flex items-center gap-2 text-green-600 uppercase tracking-tighter italic font-black"><i data-lucide="layers"></i> Carousel Pro v5.2.8</h1>
                             <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
                                 {pages.map((p, i) => (
                                     <div key={i} className="relative group shrink-0">
@@ -274,7 +284,7 @@
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar text-slate-800">
                             {/* P1 面板 */}
                             {activePage.model === 'BUSINESS_CORE' && (
                                 <>
@@ -309,7 +319,7 @@
                                     <ControlPanel title="01. 媒體模式" icon="image">
                                         <div className="flex bg-slate-100 p-1 rounded-lg border mb-3">{['image', 'video'].map(t => <button key={t} onClick={() => updateActivePage('mediaType', t)} className={`flex-1 py-1.5 text-xs font-bold rounded ${activePage.mediaType === t ? 'bg-white shadow text-emerald-600' : ''}`}>{t === 'image' ? '圖片' : '影片'}</button>)}</div>
                                         <input type="text" value={activePage.media.url} onChange={e => updateActivePage('media.url', e.target.value)} className="text-xs font-mono" />
-                                        <div className="mt-2"><label className="text-[10px] text-slate-400 block mb-1 font-bold uppercase tracking-widest">顯示比例</label><select value={activePage.media.aspectRatio} onChange={e => updateActivePage('media.aspectRatio', e.target.value)} className="text-xs"><option value="16:9">16:9</option><option value="20:13">20:13</option><option value="1:1">1:1</option><option value="4:3">4:3</option></select></div>
+                                        <div className="mt-2"><label className="text-[10px] text-slate-400 block mb-1 font-bold uppercase">顯示比例</label><select value={activePage.media.aspectRatio} onChange={e => updateActivePage('media.aspectRatio', e.target.value)} className="text-xs"><option value="16:9">16:9</option><option value="20:13">20:13</option><option value="1:1">1:1</option><option value="4:3">4:3</option></select></div>
                                     </ControlPanel>
                                     <ControlPanel title="02. 姓名排版" icon="type"><div className="flex gap-2 mb-2"><input type="text" value={activePage.content.name} onChange={e => updateActivePage('content.name', e.target.value)} className="flex-1 p-2 border rounded font-bold" /><input type="color" value={activePage.content.nameColor} onChange={e => updateActivePage('content.nameColor', e.target.value)} className="w-12 h-10" /></div><AlignButtons value={activePage.content.nameAlign} onChange={v => updateActivePage('content.nameAlign', v)} /></ControlPanel>
                                     <ControlPanel title="03. 說明排版" icon="align-left"><textarea value={activePage.content.desc} onChange={e => updateActivePage('content.desc', e.target.value)} className="h-20 text-xs mb-2 leading-relaxed" /><div className="grid grid-cols-2 gap-3"><AlignButtons value={activePage.content.descAlign} onChange={v => updateActivePage('content.descAlign', v)} /><input type="color" value={activePage.content.descColor} onChange={e => updateActivePage('content.descColor', e.target.value)} /></div></ControlPanel>
@@ -323,7 +333,7 @@
                                             <div key={idx} className="bg-slate-50 p-2 border rounded-xl mb-2 relative group font-black"><button onClick={() => {const n=activePage.footer.longBtns.filter((_,i)=>i!==idx); updateActivePage('footer.longBtns', n);}} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] shadow-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-md">×</button>
                                             <div className="grid grid-cols-2 gap-2 mb-2"><input type="text" value={b.label} onChange={e => {const n=[...activePage.footer.longBtns]; n[idx].label=e.target.value; updateActivePage('footer.longBtns', n);}} className="p-2 font-bold border rounded text-xs" /><button onClick={() => {const n=[...activePage.footer.longBtns]; n[idx].isSolid=!b.isSolid; updateActivePage('footer.longBtns', n);}} className={`text-[10px] font-black rounded border transition-colors ${b.isSolid ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50'}`}>{b.isSolid ? '實心' : '空心'}</button></div>
                                             <div className="grid grid-cols-2 gap-2 mb-2"><div><label className="text-[9px] text-slate-400 block mb-1">背景</label><input type="color" value={b.themeColor} onChange={e => {const n=[...activePage.footer.longBtns]; n[idx].themeColor=e.target.value; updateActivePage('footer.longBtns', n);}} /></div><div><label className="text-[9px] text-slate-400 block mb-1">文字</label><input type="color" value={b.textColor} onChange={e => {const n=[...activePage.footer.longBtns]; n[idx].textColor=e.target.value; updateActivePage('footer.longBtns', n);}} /></div></div>
-                                            <input type="text" value={b.uri} onChange={e => {const n=[...activePage.footer.longBtns]; n[idx].uri=e.target.value; updateActivePage('footer.longBtns', n);}} className="text-[10px] font-mono border rounded p-2" placeholder="跳轉連結" /></div>
+                                            <input type="text" value={b.uri} onChange={e => {const n=[...activePage.footer.longBtns]; n[idx].uri=e.target.value; updateActivePage('footer.longBtns', n);}} className="text-[10px] font-mono border rounded p-2" placeholder="連結" /></div>
                                         ))}
                                     </ControlPanel>
                                     <ControlPanel title="06. 社群快捷" icon="share-2">
@@ -352,7 +362,7 @@
                                     <ControlPanel title="3. 底部行為按鈕" icon="external-link">
                                         <div className="flex justify-center mb-3"><div className="w-full text-center"><label className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">區域背景顏色</label><input type="color" value={activePage.footer.bg} onChange={e => updateActivePage('footer.bg', e.target.value)} className="h-8" /></div></div>
                                         {['btn1', 'btn2'].map(k => (
-                                            <div key={k} className="p-3 bg-slate-50 rounded-xl border border-slate-100 mb-2 space-y-2 font-black">
+                                            <div key={k} className="p-3 bg-slate-50 rounded-xl border border-slate-100 mb-2 space-y-2 font-black text-slate-800">
                                                 <input type="text" value={activePage.footer[k].label} onChange={e => updateActivePage(`footer.${k}.label`, e.target.value)} className="p-2 font-bold text-xs" placeholder="按鈕文字" />
                                                 <div className="grid grid-cols-2 gap-2"><div><label className="text-[8px] text-slate-400 uppercase font-bold">背景</label><input type="color" value={activePage.footer[k].color} onChange={e => updateActivePage(`footer.${k}.color`, e.target.value)} className="h-7" /></div><div><label className="text-[8px] text-slate-400 uppercase font-bold">文字</label><input type="color" value={activePage.footer[k].textColor} onChange={e => updateActivePage(`footer.${k}.textColor`, e.target.value)} className="h-7" /></div></div>
                                                 <input type="text" value={activePage.footer[k].uri} onChange={e => updateActivePage(`footer.${k}.uri`, e.target.value)} className="p-1.5 text-[9px] font-mono border rounded w-full bg-white" placeholder="連結" />
@@ -376,7 +386,7 @@
                                 <div className="py-12 flex flex-col items-center min-h-full font-black">
                                     <div className="mb-8 px-6 py-2 bg-slate-900/90 text-white rounded-full text-[10px] tracking-[0.2em] uppercase flex items-center gap-3 shadow-2xl">
                                         <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                                        FIXED 500px RATIO
+                                        STRICT 500px LOCKED
                                     </div>
                                     <FlexPreview data={activePage} />
                                     <div className="mt-8 flex gap-2">{pages.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full transition-all ${activeIdx === i ? 'w-8 bg-white shadow-lg' : 'bg-white/30'}`}></div>)}</div>
