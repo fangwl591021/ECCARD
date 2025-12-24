@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Hub Pro - 旗艦分類聚合版 (v2.7.4)</title>
+    <title>FLEX Hub Pro - 旗艦分類聚合版 (v2.7.5)</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -15,24 +15,11 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f5f7; margin: 0; overflow: hidden; color: #000; font-weight: 700; }
         .sidebar-item-active { background-color: #ffffff !important; color: #06C755 !important; border-right: 6px solid #06C755; font-weight: 900; }
-        .line-sidebar { 
-            background-color: #F4F5F7; 
-            border-right: 1px solid #E5E7EB; 
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
-        }
-        .toast { 
-            position: fixed; top: 25px; left: 50%; transform: translateX(-50%); 
-            background: #000; color: white; padding: 16px 32px; border-radius: 16px; 
-            z-index: 10000; font-weight: 900; box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
-            border: 2px solid #06C755; animation: slideDown 0.3s ease-out; 
-        }
+        .line-sidebar { background-color: #F4F5F7; border-right: 1px solid #E5E7EB; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; display: flex; flex-direction: column; }
+        .toast { position: fixed; top: 25px; left: 50%; transform: translateX(-50%); background: #000; color: white; padding: 16px 32px; border-radius: 16px; z-index: 10000; font-weight: 900; box-shadow: 0 20px 40px rgba(0,0,0,0.5); border: 2px solid #06C755; animation: slideDown 0.3s ease-out; }
         @keyframes slideDown { from { top: -60px; opacity: 0; } to { top: 20px; opacity: 1; } }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #000; border-radius: 10px; }
-        .chevron-rotate { transition: transform 0.3s ease; }
         .checkbox-custom { width: 22px; height: 22px; accent-color: #06C755; cursor: pointer; }
     </style>
 </head>
@@ -42,7 +29,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, Fragment, useCallback } = React;
 
-        const APP_VERSION = "v2.7.4";
+        const APP_VERSION = "v2.7.5";
         const LIFF_ID = "2008541971-XPIDtaaj";
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzIwDiSspAT03CePvj3oGkb05uFjYo2TzhR-zLu1iLA51f9pXsrG_gXyGYilq384SMF/exec"; 
 
@@ -56,13 +43,6 @@
                     { id: 'PERSONAL', name: "單頁個人名片", url: "./tool-personal.html", icon: 'user' },
                     { id: 'ECOMMERCE', name: "單頁電商名片", url: "./tool-ecommerce.html", icon: 'shopping' }
                 ]
-            },
-            {
-                name: "系統工具",
-                id: "TOOLS",
-                items: [
-                    { id: 'MEDIA', name: "媒體擷取工具", url: "./tool-media.html", icon: 'tool' }
-                ]
             }
         ];
 
@@ -74,7 +54,6 @@
                 user: <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />,
                 award: <circle cx="12" cy="8" r="7" />,
                 shopping: <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" />,
-                tool: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />,
                 trash: <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />,
                 send: <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />,
                 save: <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
@@ -91,9 +70,7 @@
             const [selectedIds, setSelectedIds] = useState(new Set());
             const [isLoading, setIsLoading] = useState(false);
             const [toast, setToast] = useState(null);
-            const [collapsedGroups, setCollapsedGroups] = useState({ CARDS: false, TOOLS: false });
-
-            // 使用 Ref 確保在監聽器中永遠抓到最新值
+            
             const [currentJson, setCurrentJson] = useState("");
             const currentJsonRef = useRef("");
             const iframeRef = useRef(null);
@@ -106,87 +83,65 @@
 
             const showMsg = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
-            const refreshFiles = useCallback(async (uid, keepSelection = true) => {
+            const checkLiffToken = async () => {
+                if (!liff.isLoggedIn()) {
+                    showMsg("⚠️ 登入逾期，重新導向...");
+                    setTimeout(() => liff.login(), 1000);
+                    return false;
+                }
+                return true;
+            };
+
+            const refreshFiles = useCallback(async (uid) => {
                 try {
                     const res = await fetch(`${GAS_URL}?userId=${uid}&action=getFiles`);
                     const data = await res.json();
                     setUserFiles(data || []);
-                    if (!keepSelection) setSelectedIds(new Set());
                 } catch (e) { setUserFiles([]); }
             }, []);
 
-            // 初始化與環境偵測
             useEffect(() => {
                 const init = async () => {
                     try {
                         const url = window.location.href;
-                        const isDev = url.includes('usercontent.goog') || url.includes('localhost');
-                        if (isDev) {
+                        if (url.includes('usercontent.goog')) {
                             setUser({ uid: 'DEBUG_USER', displayName: '管理員' });
-                            await refreshFiles('DEBUG_USER', false); setViewState('MAIN'); return;
+                            await refreshFiles('DEBUG_USER'); setViewState('MAIN'); return;
                         }
                         await liff.init({ liffId: LIFF_ID });
                         if (!liff.isLoggedIn()) { setViewState('LOGIN'); return; }
                         const lp = await liff.getProfile();
                         setUser({ uid: lp.userId, displayName: lp.displayName });
-                        await refreshFiles(lp.userId, false); setViewState('MAIN');
+                        await refreshFiles(lp.userId); setViewState('MAIN');
                     } catch (e) { setViewState('LOGIN'); }
                 };
                 init();
             }, [refreshFiles]);
 
-            // 【核心修正】獨立的訊息監聽邏輯
             useEffect(() => {
                 const handleMessage = (event) => {
-                    if (event.data?.type === 'SYNC_FLEX_DATA') {
-                        updateCurrentJson(event.data.json);
-                    }
-                    if (event.data?.type === 'CHILD_READY' && iframeRef.current) {
-                        // 當編輯器告知準備好了，如果我們有舊數據，塞給它
-                        if (activeFile && activeFile.content) {
-                            iframeRef.current.contentWindow.postMessage({ type: 'LOAD_FLEX_DATA', json: activeFile.content }, '*');
-                        }
-                        // 無論是否有舊數據，都要求它回傳一次目前的數據狀態 (Sync Check)
-                        setTimeout(() => {
-                            iframeRef.current?.contentWindow.postMessage({ type: 'GET_FLEX_DATA_REQUEST' }, '*');
-                        }, 500);
+                    if (event.data?.type === 'SYNC_FLEX_DATA') updateCurrentJson(event.data.json);
+                    if (event.data?.type === 'CHILD_READY' && iframeRef.current && activeFile?.content) {
+                        iframeRef.current.contentWindow.postMessage({ type: 'LOAD_FLEX_DATA', json: activeFile.content }, '*');
                     }
                 };
                 window.addEventListener('message', handleMessage);
                 return () => window.removeEventListener('message', handleMessage);
             }, [activeFile]);
 
-            // 切換專案時的初始化
-            useEffect(() => {
-                if (activeFile) {
-                    updateCurrentJson(activeFile.content || "");
-                } else {
-                    updateCurrentJson("");
-                }
-            }, [activeFile]);
-
-            useEffect(() => { setSelectedIds(new Set()); }, [activeModuleId]);
-
-            // 強制數據同步函數
             const requestLatestData = () => {
                 return new Promise((resolve) => {
                     if (iframeRef.current) {
                         iframeRef.current.contentWindow.postMessage({ type: 'GET_FLEX_DATA_REQUEST' }, '*');
-                        // 給予 300ms 緩衝時間等待 iframe 回傳 SYNC_FLEX_DATA
-                        setTimeout(() => resolve(currentJsonRef.current), 300);
-                    } else {
-                        resolve(currentJsonRef.current);
-                    }
+                        setTimeout(() => resolve(currentJsonRef.current), 350);
+                    } else resolve(currentJsonRef.current);
                 });
             };
 
             const handleSave = async () => {
                 if (!activeFile) return;
                 setIsLoading(true);
-                
-                // 儲存前強制要求同步一次
                 const latestData = await requestLatestData();
-                
                 try {
                     const res = await fetch(GAS_URL, { 
                         method: 'POST', 
@@ -196,70 +151,41 @@
                     if (result.success) { 
                         showMsg("✅ 儲存成功！"); 
                         setActiveFile(prev => ({ ...prev, content: latestData }));
-                        await refreshFiles(user.uid, true); 
+                        await refreshFiles(user.uid); 
                     }
                 } catch (e) { showMsg("❌ 儲存失敗"); }
                 setIsLoading(false);
             };
 
             const handleTestSend = async () => {
-                // 發送前強制要求同步一次
+                if (!(await checkLiffToken())) return;
                 const latestData = await requestLatestData();
-
-                if (!latestData || latestData === "") { 
-                    alert("⚠️ 尚未產生 Flex 數據，請稍後再試或隨意編輯內容以觸發同步。"); 
-                    return; 
-                }
-
+                if (!latestData) { alert("尚未產生數據，請稍後。"); return; }
                 try {
-                    const content = typeof latestData === 'string' ? JSON.parse(latestData) : latestData;
-                    const clean = JSON.parse(JSON.stringify(content));
-                    ["altText", "_pages", "pages", "isVisible", "template"].forEach(k => delete clean[k]);
-                    
-                    const result = await liff.shareTargetPicker([{
-                        type: "flex",
-                        altText: activeFile?.name || "測試發送",
-                        contents: clean
-                    }]);
+                    const content = JSON.parse(latestData);
+                    const result = await liff.shareTargetPicker([{ type: "flex", altText: activeFile?.name || "測試發送", contents: content }]);
                     if (result) showMsg("✅ 測試發送成功！");
-                } catch (e) { alert("❌ 發送失敗：" + e.message); }
+                } catch (e) { 
+                    if (e.message.includes('expired')) {
+                        alert("憑證已過期，請重新登入系統。");
+                        liff.login();
+                    } else alert("❌ 發送失敗：" + e.message); 
+                }
             };
 
             const handleSendSelected = async () => {
+                if (!(await checkLiffToken())) return;
                 const selectedFiles = userFiles.filter(f => selectedIds.has(f.id));
-                if (selectedFiles.length === 0) return;
-                if (selectedFiles.length > 5) { alert("⚠️ LINE 批次發送上限為 5 則"); return; }
+                if (selectedFiles.length > 5) { alert("LINE 批次上限 5 則"); return; }
                 try {
-                    const messages = selectedFiles.map(f => {
-                        const content = typeof f.content === 'string' ? JSON.parse(f.content) : f.content;
-                        const clean = JSON.parse(JSON.stringify(content));
-                        ["altText", "_pages", "pages", "isVisible", "template"].forEach(k => delete clean[k]);
-                        return { type: "flex", altText: f.name || "數位名片", contents: clean };
-                    });
+                    const messages = selectedFiles.map(f => ({ type: "flex", altText: f.name || "名片", contents: JSON.parse(f.content) }));
                     const result = await liff.shareTargetPicker(messages);
                     if (result) showMsg("✅ 批次發送成功！");
-                } catch (e) { alert("❌ 發送失敗：" + e.message); }
+                } catch (e) { alert("❌ 發送失敗"); }
             };
 
-            const handleDelete = async (id) => {
-                if(!confirm("確定要刪除？此操作不可還原。")) return;
-                setIsLoading(true);
-                try {
-                    const response = await fetch(GAS_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: 'deleteFile', userId: user.uid, id: String(id) })
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        showMsg("🗑️ 已刪除");
-                        await refreshFiles(user.uid, true);
-                    }
-                } catch (e) { showMsg("❌ 通訊失敗"); }
-                setIsLoading(false);
-            };
-
-            if (viewState === 'LOADING') return <div className="h-screen w-screen flex flex-col items-center justify-center bg-white font-black italic animate-pulse">系統數據載入中...</div>;
-            if (viewState === 'LOGIN') return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-3xl font-black shadow-2xl active:scale-95">登入系統</button></div>;
+            if (viewState === 'LOADING') return <div className="h-screen flex items-center justify-center bg-white font-black italic">系統數據載入中...</div>;
+            if (viewState === 'LOGIN') return <div className="h-screen flex items-center justify-center bg-slate-50 font-black"><button onClick={()=>liff.login()} className="bg-[#06C755] text-white px-12 py-5 rounded-3xl font-black shadow-2xl active:scale-95">登入系統</button></div>;
 
             const currentProject = NAV_GROUPS.flatMap(g => g.items).find(i => i.id === activeModuleId);
 
@@ -269,29 +195,16 @@
                     {toast && <div className="toast">{toast}</div>}
                     
                     <aside className="line-sidebar border-r border-slate-300 w-72 shrink-0 bg-white">
-                        <div className="h-24 flex items-center px-8 border-b border-slate-300 bg-white shrink-0">
+                        <div className="h-24 flex items-center px-8 border-b border-slate-300 shrink-0">
                             <span className="text-[#06C755] mr-4"><Icon name="menu" className="w-8 h-8" /></span>
                             <div className="flex flex-col"><span className="font-black text-[#06C755] text-2xl uppercase italic leading-none">FLEX HUB</span><span className="text-[10px] opacity-40 mt-1 tracking-widest">{APP_VERSION}</span></div>
                         </div>
-                        
                         <nav className="flex-1 overflow-y-auto pt-6 px-3 custom-scrollbar">
-                            {NAV_GROUPS.map(group => (
-                                <div key={group.id} className="mb-4">
-                                    <button onClick={() => setCollapsedGroups(p => ({...p, [group.id]: !p[group.id]}))} className="w-full flex items-center justify-between px-5 py-3 text-xs text-slate-400 uppercase tracking-[0.2em] font-black hover:text-black transition-colors">
-                                        <span>{group.name}</span>
-                                        <span className={`chevron-rotate ${collapsedGroups[group.id] ? 'rotate-180' : ''}`}><Icon name="chevron" className="w-3 h-3" /></span>
-                                    </button>
-                                    {!collapsedGroups[group.id] && (
-                                        <div className="flex flex-col gap-1.5 mt-1">
-                                            {group.items.map(item => (
-                                                <button key={item.id} onClick={()=>{setActiveModuleId(item.id); setActiveFile(null);}} className={`w-full flex items-center px-6 py-4 gap-4 rounded-2xl transition-all ${activeModuleId === item.id && !activeFile ? 'sidebar-item-active shadow-sm' : 'hover:bg-slate-50 text-slate-500'}`}>
-                                                    <Icon name={item.icon} />
-                                                    <span className="text-sm font-black truncate">{item.name}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
+                            {NAV_GROUPS[0].items.map(item => (
+                                <button key={item.id} onClick={()=>{setActiveModuleId(item.id); setActiveFile(null);}} className={`w-full flex items-center px-6 py-4 gap-4 rounded-2xl transition-all ${activeModuleId === item.id && !activeFile ? 'sidebar-item-active shadow-sm' : 'hover:bg-slate-50 text-slate-500'}`}>
+                                    <Icon name={item.icon} />
+                                    <span className="text-sm font-black truncate">{item.name}</span>
+                                </button>
                             ))}
                         </nav>
                         <div className="p-4 border-t text-[10px] text-slate-300 text-center uppercase tracking-widest">Nexus Platform Service</div>
@@ -299,15 +212,13 @@
 
                     <main className="flex-1 bg-white relative flex flex-col shadow-inner">
                         {activeFile ? (
-                            <div className="h-full flex flex-col animate-in fade-in duration-500">
+                            <div className="h-full flex flex-col">
                                 <div className="h-24 border-b flex items-center px-10 justify-between bg-white shadow-md z-10">
-                                    <button onClick={()=>setActiveFile(null)} className="font-black text-black flex items-center gap-3 hover:text-[#06C755] transition-colors shrink-0 text-lg"><span>← 返回清單</span></button>
-                                    <div className="flex-1 flex justify-center"><input type="text" value={activeFile.name} onChange={e=>setActiveFile({...activeFile, name: e.target.value})} className="bg-slate-100 border-2 border-black rounded-2xl px-6 py-3 font-black text-center w-full max-w-lg outline-none text-xl focus:bg-white transition-all shadow-inner" placeholder="專案名稱" /></div>
+                                    <button onClick={()=>setActiveFile(null)} className="font-black flex items-center gap-3 hover:text-[#06C755] transition-colors shrink-0 text-lg"><span>← 返回</span></button>
+                                    <input type="text" value={activeFile.name} onChange={e=>setActiveFile({...activeFile, name: e.target.value})} className="bg-slate-100 border-2 border-black rounded-2xl px-6 py-3 font-black text-center w-full max-w-sm outline-none text-xl mx-4" placeholder="專案名稱" />
                                     <div className="flex items-center gap-4 shrink-0">
-                                        <button onClick={handleTestSend} className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-blue-700">
-                                            <Icon name="send" /> <span>測試發送</span>
-                                        </button>
-                                        <button onClick={handleSave} className="bg-black text-white px-10 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl active:scale-95 transition-all font-black hover:bg-slate-800"><Icon name="save" /> <span>儲存專案</span></button>
+                                        <button onClick={handleTestSend} className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl font-black hover:bg-blue-700 active:scale-95 transition-all"><Icon name="send" /> <span>發送</span></button>
+                                        <button onClick={handleSave} className="bg-black text-white px-8 py-3.5 rounded-2xl text-lg flex items-center gap-3 shadow-xl font-black hover:bg-slate-800 active:scale-95 transition-all"><Icon name="save" /> <span>儲存</span></button>
                                     </div>
                                 </div>
                                 <iframe ref={iframeRef} src={currentProject.url} className="flex-1 border-none shadow-inner"></iframe>
@@ -315,47 +226,27 @@
                         ) : (
                             <div className="p-12 h-full overflow-y-auto font-black custom-scrollbar">
                                 <div className="flex justify-between items-center border-b-4 border-slate-100 pb-8 mb-10">
-                                    <div className="flex flex-col"><h2 className="text-4xl font-black uppercase text-slate-800 tracking-tighter">{currentProject.name}</h2><p className="text-base text-slate-400 mt-2 italic font-bold">管理您的專屬設計方案</p></div>
+                                    <h2 className="text-4xl font-black uppercase text-slate-800 tracking-tighter">{currentProject.name}</h2>
                                     <div className="flex gap-4">
-                                        {selectedIds.size > 0 && (
-                                            <button onClick={handleSendSelected} className="bg-blue-600 text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl active:scale-95 transition-all hover:bg-blue-700 animate-bounce">
-                                                <Icon name="send" /> 批次發送 ({selectedIds.size})
-                                            </button>
-                                        )}
-                                        <button onClick={()=>{setActiveFile({id: String(Date.now()), name:"新專案", content: null});}} className="bg-[#06C755] text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl active:scale-95 transition-all hover:-translate-y-1">＋ 建立新設計</button>
+                                        {selectedIds.size > 0 && <button onClick={handleSendSelected} className="bg-blue-600 text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl animate-bounce"><Icon name="send" /> 批次發送 ({selectedIds.size})</button>}
+                                        <button onClick={()=>{setActiveFile({id: String(Date.now()), name:"新專案", content: null});}} className="bg-[#06C755] text-white px-10 py-5 rounded-[25px] font-black text-lg flex items-center gap-4 shadow-2xl active:scale-95 transition-all">＋ 建立設計</button>
                                     </div>
                                 </div>
                                 <div className="bg-white border-2 border-slate-100 rounded-[40px] overflow-hidden shadow-2xl">
                                     <table className="w-full text-left">
-                                        <thead className="bg-slate-50 border-b-2 border-slate-100 font-black text-slate-400 uppercase text-xs tracking-widest">
+                                        <thead className="bg-slate-50 border-b-2 border-slate-100 text-slate-400 uppercase text-xs tracking-widest">
                                             <tr>
-                                                <th className="p-8 w-16 text-center">
-                                                    <input type="checkbox" checked={userFiles.length > 0 && selectedIds.size === userFiles.length} onChange={()=>{
-                                                        if (selectedIds.size === userFiles.length) setSelectedIds(new Set());
-                                                        else setSelectedIds(new Set(userFiles.map(f => f.id)));
-                                                    }} className="checkbox-custom" />
-                                                </th>
-                                                <th className="p-8">專案名稱</th>
-                                                <th className="p-8 text-center">操作管理</th>
+                                                <th className="p-8 w-16 text-center"><input type="checkbox" checked={userFiles.length > 0 && selectedIds.size === userFiles.length} onChange={()=>{if (selectedIds.size === userFiles.length) setSelectedIds(new Set()); else setSelectedIds(new Set(userFiles.map(f => f.id)));}} className="checkbox-custom" /></th>
+                                                <th className="p-8 text-xl">專案名稱</th>
+                                                <th className="p-8 text-center">操作</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y-2 divide-slate-50">
                                             {userFiles.length === 0 ? <tr><td colSpan="3" className="p-32 text-center text-slate-200 italic text-2xl">目前尚無數據</td></tr> : userFiles.map(f => (
                                                 <tr key={String(f.id)} className={`transition-all ${selectedIds.has(f.id) ? 'bg-green-50' : 'hover:bg-slate-50/50'}`}>
-                                                    <td className="p-8 text-center">
-                                                        <input type="checkbox" checked={selectedIds.has(f.id)} onChange={()=>{
-                                                            const n = new Set(selectedIds);
-                                                            if (n.has(f.id)) n.delete(f.id); else n.add(f.id);
-                                                            setSelectedIds(n);
-                                                        }} className="checkbox-custom" />
-                                                    </td>
+                                                    <td className="p-8 text-center"><input type="checkbox" checked={selectedIds.has(f.id)} onChange={()=>{const n = new Set(selectedIds); if (n.has(f.id)) n.delete(f.id); else n.add(f.id); setSelectedIds(n);}} className="checkbox-custom" /></td>
                                                     <td className="p-8 text-xl font-black text-black cursor-pointer" onClick={()=>setActiveFile(f)}>{f.name || "未命名設計"}</td>
-                                                    <td className="p-8 text-center">
-                                                        <div className="flex justify-center items-center gap-10">
-                                                            <button onClick={()=>setActiveFile(f)} className="text-[#06C755] hover:underline font-black text-lg uppercase italic tracking-tighter">編輯內容</button>
-                                                            <button onClick={() => handleDelete(f.id)} className="text-red-500 transition-all hover:scale-110"><Icon name="trash" className="w-8 h-8" /></button>
-                                                        </div>
-                                                    </td>
+                                                    <td className="p-8 text-center"><div className="flex justify-center items-center gap-10"><button onClick={()=>setActiveFile(f)} className="text-[#06C755] hover:underline font-black text-lg">編輯</button><button onClick={() => {if(confirm("確定刪除？")) fetch(GAS_URL, {method:'POST', body:JSON.stringify({action:'deleteFile', userId:user.uid, id:String(f.id)})}).then(()=>refreshFiles(user.uid));}} className="text-red-500"><Icon name="trash" className="w-8 h-8" /></button></div></td>
                                                 </tr>
                                             ))}
                                         </tbody>
