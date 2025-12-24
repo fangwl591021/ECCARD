@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sequential Pro - 業務終極修正版 v3.1.3</title>
+    <title>Sequential Pro - 業務旗艦同步版 v3.1.4</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -52,17 +52,17 @@
             },
             DEFAULT_DATA: {
                 url: "https://aiwe.cc/wp-content/uploads/2025/12/cf75e54791dd1f49f918345fdfe2430b.png",
-                badgeText: "HOT ITEM", badgeBg: "#FF0000", badgeRadius: "15px", badgeTop: 20, badgePos: "offsetEnd",
+                badgeText: "HOT ITEM", badgeBg: "#FF0000", badgeRadius: "15px", badgeTop: 10, badgePos: "offsetEnd", // 同步個人版 10px
                 avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
                 avatarTop: 60,
                 name: "張志明", nameTop: 155, nameColor: "#000000", nameWeight: "bold", nameAlign: "center",
-                socialTop: 205, // 靠近一點
+                socialTop: 200, // 再縮短一點
                 icons: [
                     { type: "PHONE", uri: "tel:0912345678" },
                     { type: "LINE", uri: "https://line.me" }
                 ],
                 desc: "致力於協助企業品牌數位轉型\n擁有超過 15 年的跨國行銷經驗",
-                descTop: 265, descColor: "#000000", descWeight: "regular", descAlign: "center",
+                descTop: 260, descColor: "#000000", descWeight: "regular", descAlign: "center",
                 footerBg: "#111111", footerLabel: "聯繫我了解更多", footerUri: "https://line.me",
                 footerThemeColor: "#06C755", footerTextColor: "#FFFFFF", footerWeight: "bold"
             }
@@ -86,8 +86,8 @@
                         <div className="relative h-[450px] overflow-hidden bg-white">
                             {d.url !== 'none' && <img src={d.url} className="w-full h-full object-cover" alt="背景" />}
                             <div className="absolute px-3 text-white font-bold shadow-sm text-[10px] flex items-center justify-center whitespace-nowrap overflow-hidden" style={{ 
-                                top: '15px', 
-                                [d.badgePos === 'offsetStart' ? 'left' : 'right']: '15px', 
+                                top: '10px', // 同步個人版
+                                [d.badgePos === 'offsetStart' ? 'left' : 'right']: '10px', 
                                 backgroundColor: d.badgeBg, 
                                 borderRadius: '15px',
                                 height: '25px',
@@ -147,15 +147,10 @@
                 const SOCIAL = CONSTANTS.SOCIAL_DATA;
                 const baseContents = [];
 
-                // 只有在背景不為 none 時才加入背景圖片
-                if (d.url !== 'none') {
-                    baseContents.push({ type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: true });
-                }
-
-                // 標籤強制固定規格
+                // 標籤強制固定規格 (25px, 15px 圓角, 同步 P2 高度)
                 baseContents.push({
                     type: "box", layout: "vertical", position: "absolute", 
-                    offsetTop: Utils.toPx(d.badgeTop), [d.badgePos]: "20px",
+                    offsetTop: "10px", [d.badgePos]: "10px",
                     height: "25px", 
                     backgroundColor: d.badgeBg, 
                     cornerRadius: "15px", 
@@ -195,10 +190,17 @@
                     contents: [{ type: "text", text: d.desc, wrap: true, size: "xs", color: d.descColor, align: d.descAlign, weight: d.descWeight }]
                 });
 
+                // 背景圖片 (非 none 則加入)
+                if (d.url !== 'none') {
+                    baseContents.unshift({ type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: true });
+                }
+
                 const bubble = {
                     type: "bubble", size: "mega",
                     body: {
                         type: "box", layout: "vertical", paddingAll: "0px",
+                        // 重要修正：無背景時必須設定實體高度，否則絕對定位會坍塌
+                        height: d.url === 'none' ? "450px" : undefined, 
                         contents: baseContents
                     },
                     footer: {
@@ -222,7 +224,7 @@
             // 接收指令
             useEffect(() => {
                 const handleParentMsg = (event) => {
-                    const { type, json } = event.data;
+                    const { type } = event.data;
                     if (type === 'GET_FLEX_DATA_REQUEST') {
                         window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify(buildJson()) }, '*');
                     }
@@ -265,14 +267,14 @@
                     <div className="w-1/2 bg-white border-r flex flex-col shadow-xl z-10">
                         <div className="sticky-section flex items-center gap-3 bg-white">
                             <i data-lucide="award" className="w-8 h-8 text-[#06C755]"></i>
-                            <h1 className="text-xl tracking-tighter uppercase italic">業務編輯器 v3.1.3</h1>
+                            <h1 className="text-xl tracking-tighter uppercase italic">業務同步版 v3.1.4</h1>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                             <ControlPanel title="1. 背景與標籤" icon="image">
                                 <label className="control-label block mb-2">背景網址</label>
                                 <div className="flex gap-2 mb-4">
                                     <input type="text" value={data.url === 'none' ? '' : data.url} onChange={e => updateField('url', e.target.value || 'none')} className="flex-1 p-3 border rounded-xl bg-slate-50 font-mono text-xs" />
-                                    <button onClick={() => updateField('url', data.url === 'none' ? CONSTANTS.DEFAULT_DATA.url : 'none')} className={`px-4 rounded-xl border-2 font-black transition-all text-xs ${data.url === 'none' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-400 border-slate-200'}`}>{data.url === 'none' ? '啟用' : '無'}</button>
+                                    <button onClick={() => updateField('url', data.url === 'none' ? CONSTANTS.DEFAULT_DATA.url : 'none')} className={`px-4 rounded-xl border-2 font-black transition-all text-xs ${data.url === 'none' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-400 border-slate-200'}`}>{data.url === 'none' ? '啟用背景' : '無背景'}</button>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
@@ -292,7 +294,7 @@
                                 </div>
                                 <div className="mt-4">
                                     <label className="control-label block mb-2">標籤底色</label>
-                                    <input type="color" value={data.badgeBg} onChange={e => updateField('badgeBg', e.target.value)} className="w-full h-11 border rounded-xl bg-white" />
+                                    <input type="color" value={data.badgeBg} onChange={e => updateField('badgeBg', e.target.value)} className="w-full h-11 border rounded-xl bg-white shadow-sm" />
                                 </div>
                             </ControlPanel>
 
@@ -345,7 +347,7 @@
                                         {['start', 'center', 'end'].map(a => <button key={a} onClick={() => updateField('descAlign', a)} className={`flex-1 py-2 rounded-md ${data.descAlign === a ? 'bg-white shadow text-[#06C755]' : 'text-slate-400'}`}><i data-lucide={a==='start'?'align-left':a==='center'?'align-center':'align-right'} className="w-4 h-4 mx-auto"></i></button>)}
                                     </div>
                                     <div className="flex items-center gap-2 border p-1 rounded-lg bg-white">
-                                        <label className="text-[10px] text-slate-400 font-bold uppercase ml-2">顏色</label>
+                                        <label className="text-[10px] text-slate-400 font-bold uppercase ml-2">文字色</label>
                                         <input type="color" value={data.descColor} onChange={e => updateField('descColor', e.target.value)} className="flex-1 h-8 rounded border p-0 cursor-pointer shadow-sm" />
                                     </div>
                                 </div>
