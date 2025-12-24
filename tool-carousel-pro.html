@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX Carousel Pro - 旗艦核心全移植版 v5.1.4</title>
+    <title>FLEX Carousel Pro - 旗艦核心全移植版 v5.1.5</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -25,6 +25,7 @@
         .page-tab-active { border-color: #06C755 !important; color: #06C755 !important; background: #f0fdf4 !important; transform: scale(1.05); z-index: 10; }
         .amber-header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; }
         .blue-header { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; }
+        .emerald-header { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; }
         input, select, textarea { font-size: 13px !important; border-radius: 8px; border: 1px solid #e2e8f0; padding: 8px; width: 100%; outline: none; transition: border 0.2s; }
         input:focus { border-color: #06C755; }
         input[type="color"] { height: 38px; padding: 2px; cursor: pointer; }
@@ -38,7 +39,7 @@
     <script type="text/babel">
         const { useState, useEffect, useCallback, useRef, memo } = React;
 
-        // --- 全局資料定義 ---
+        // --- 全局資料與工具 ---
         const SOCIAL_DATA = {
             NONE: { url: "https://vos.line-scdn.net/bot-designer-template-images/bot-designer-icon.png", label: "無圖示", defaultUri: "https://" },
             FB: { url: "https://cdn-icons-png.flaticon.com/512/733/733547.png", label: "Facebook", defaultUri: "https://facebook.com/" },
@@ -52,21 +53,22 @@
         const Utils = {
             toPx: (v) => {
                 const num = parseFloat(v);
+                // 核心修正：強制取整數，避免小數點導致 LINE 發送失敗
                 return isNaN(num) ? v : `${Math.round(num)}px`;
             },
             deepCopy: (o) => JSON.parse(JSON.stringify(o))
         };
 
-        // --- 核心初始模板 (強制固定 P1/P2/P3 基礎座標與比例) ---
+        // --- 三大核心原始模板 (同步最新間距) ---
         const TEMPLATE_P1 = {
             model: "BUSINESS_CORE",
             url: "https://aiwe.cc/wp-content/uploads/2025/12/cf75e54791dd1f49f918345fdfe2430b.png",
             badgeText: "HOT ITEM", badgeBg: "#FF0000", badgeTop: 10, badgePos: "offsetEnd",
             avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200", avatarTop: 60,
             name: "張志明", nameTop: 155, nameColor: "#000000", nameWeight: "bold", nameAlign: "center",
-            socialTop: 195, // 靠近一點
+            socialTop: 195, // 已調整：靠近姓名
             icons: [{ type: "PHONE", uri: "tel:0912345678" }, { type: "LINE", uri: "https://line.me" }],
-            desc: "協助企業品牌數位轉型\n提供最專業的顧問服務", descTop: 260, descColor: "#000000", descWeight: "regular", descAlign: "center",
+            desc: "致力協助企業數位轉型\n提供最專業的品牌顧問服務", descTop: 255, descColor: "#000000", descWeight: "regular", descAlign: "center",
             footerBg: "#111111", footerLabel: "聯繫我了解更多", footerUri: "https://line.me", footerThemeColor: "#06C755", footerTextColor: "#FFFFFF", footerWeight: "bold"
         };
 
@@ -76,17 +78,17 @@
             media: { url: "https://lihi.cc/5OXMZ", uri: "https://line.me", aspectRatio: "16:9", badgeText: "精選推薦", badgeBg: "#10b981", badgePos: "left", badgeUri: "https://line.me" },
             avatar: { show: true, url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200", borderColor: "#ffffff", cornerRadius: "100px" },
             content: { name: "陳大文", nameAlign: "start", nameColor: "#0f172a", desc: "專業 LINE Bot 解決方案\n提供最流暢的互動體驗", descAlign: "start", descColor: "#475569" },
-            footer: { longBtns: [{ label: "立即預約", uri: "https://line.me", themeColor: "#10b981", textColor: "#ffffff", isSolid: true }], shortBtns: [{ type: "PHONE", label: "電話", uri: "tel:0912345678", themeColor: "#f1f5f9", textColor: "#444444", isSolid: true }] }
+            footer: { longBtns: [{ label: "立即預約", uri: "https://line.me", themeColor: "#10b981", textColor: "#ffffff", isSolid: true }], shortBtns: [{ type: "PHONE", label: "電話", uri: "tel:0912345678", themeColor: "#f1f5f9", textColor: "#444444", isSolid: true }, { type: "LINE", label: "LINE", uri: "https://line.me", themeColor: "#f1f5f9", textColor: "#444444", isSolid: true }] }
         };
 
         const TEMPLATE_P3 = {
             model: "ECOMMERCE_CORE",
-            hero: { type: 'image', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "", link: "https://line.me" },
+            hero: { type: 'video', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "https://lihi.cc/YsmAp", link: "https://line.me" },
             body: { columns: 3, bubbleSize: "mega", bgColor: "#F8F8F8", tagBgColor: "#0D0D0D", tagTextColor: "#FFFFFF", items: [{ title: "商品 A", img: "https://lihi.cc/mwMvo", url: "https://line.me" }, { title: "商品 B", img: "https://lihi.cc/2Nu8G", url: "https://line.me" }, { title: "商品 C", img: "https://lihi.cc/yRfpn", url: "https://line.me" }] },
             footer: { bg: "#ffffff", textEnabled: false, text: "", textColor: "#666666", textAlign: "center", btn1: { label: "品牌故事", color: "#000000", textColor: "#FFFFFF", uri: "https://line.me" }, btn2: { label: "好友分享", color: "#000000", textColor: "#FFFFFF", uri: "line://nv/recommendOA/@754tjssx" } }
         };
 
-        // --- 子組件 ---
+        // --- 共用組件 ---
         const ControlPanel = ({ title, icon, children, headerClass = "" }) => (
             <div className="control-panel shadow-sm">
                 <div className={`panel-header ${headerClass}`}><i data-lucide={icon} className="w-4 h-4"></i><span>{title}</span></div>
@@ -104,7 +106,7 @@
             </div>
         );
 
-        // --- 視覺渲染引擎 ---
+        // --- 視覺渲染引擎 (預覽同步 450px 高度) ---
         const FlexPreview = memo(({ data }) => {
             const d = data;
             const scale = 300 / 400;
@@ -141,7 +143,7 @@
                             <div className="mt-1 text-[13px] leading-snug whitespace-pre-wrap" style={{ color: d.content.descColor, textAlign: d.content.descAlign }}>{d.content.desc}</div>
                         </div>
                         {d.avatar.show && <div className="absolute w-full flex justify-center transition-all duration-500" style={{ top: `${avatarOff}px`, zIndex: 30 }}><img src={d.avatar.url} className="w-20 h-20 rounded-full border-[3px] border-white shadow-xl object-cover bg-white" style={{ borderRadius: d.avatar.cornerRadius.includes('px') ? d.avatar.cornerRadius : '12px' }} /></div>}
-                        <div className="p-3 flex flex-col gap-2 bg-white">{(d.footer.longBtns || []).map((btn, i) => <div key={i} className="py-2.5 text-center rounded-md border font-bold text-[13px]" style={{ borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : 'transparent', color: btn.textColor }}>{btn.label}</div>)}</div>
+                        <div className="p-3 pt-0 flex flex-col gap-2 bg-white">{(d.footer.longBtns || []).map((btn, i) => <div key={i} className="py-2.5 text-center rounded-md border font-bold text-[13px]" style={{ borderColor: btn.themeColor, backgroundColor: btn.isSolid ? btn.themeColor : 'transparent', color: btn.textColor }}>{btn.label}</div>)}</div>
                     </div>
                 );
             }
@@ -155,7 +157,7 @@
                                 <div key={i} className="bg-white rounded-[10px] p-1 shadow-sm border border-slate-100 flex flex-col"><div className="aspect-square rounded-sm overflow-hidden mb-1"><img src={item.img} className="w-full h-full object-cover" /></div><div style={{ backgroundColor: d.body.tagBgColor, color: d.body.tagTextColor }} className="text-[8px] font-bold text-center py-1 rounded-sm truncate">{item.title}</div></div>
                             ))}</div>
                         </div>
-                        <div className="p-4 border-t bg-white flex gap-2" style={{ backgroundColor: d.footer.bg }}>{['btn1', 'btn2'].map(k => <div key={k} className="flex-1 py-3 rounded-xl text-center font-bold text-[11px] text-white shadow-md" style={{ backgroundColor: d.footer[k].color, color: d.footer[k].textColor }}>{d.footer[k].label}</div>)}</div>
+                        <div className="p-4 border-t bg-white flex gap-2" style={{ backgroundColor: d.footer.bg }}>{['btn1', 'btn2'].map(k => <div key={k} className="flex-1 py-3 rounded-xl text-center font-bold text-[11px] text-white shadow-md transition-opacity hover:opacity-90" style={{ backgroundColor: d.footer[k].color, color: d.footer[k].textColor }}>{d.footer[k].label}</div>)}</div>
                     </div>
                 );
             }
@@ -181,20 +183,21 @@
                 });
             };
 
+            // --- 核心修正：強制高度與整數座標產生器 ---
             const buildJson = useCallback(() => {
                 const contents = pages.map(d => {
-                    // P1: 業務版 JSON (固定 450px)
+                    // P1: 業務版 JSON (強制固定 Body 高度為 450px)
                     if (d.model === 'BUSINESS_CORE') {
                         const baseContents = [];
                         if (d.url !== 'none') baseContents.push({ type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: true });
                         baseContents.push({ type: "box", layout: "vertical", position: "absolute", offsetTop: "10px", [d.badgePos]: "10px", height: "25px", backgroundColor: d.badgeBg, cornerRadius: "15px", paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px", justifyContent: "center", contents: [{ type: "text", text: d.badgeText, color: "#ffffff", size: "xxs", weight: "bold" }] });
                         baseContents.push({ type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.avatarTop), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "85px", height: "85px", cornerRadius: "100px", borderWidth: "3px", borderColor: "#ffffff", contents: [{ type: "image", url: d.avatar, size: "full", aspectMode: "cover", animated: true }] }] });
                         baseContents.push({ type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.nameTop), offsetStart: "0px", offsetEnd: "0px", contents: [{ type: "text", text: d.name, weight: "bold", size: "lg", color: d.nameColor, align: d.nameAlign }] });
-                        baseContents.push({ type: "box", layout: "horizontal", position: "absolute", offsetTop: Utils.toPx(d.socialTop), offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md", contents: (d.icons || []).map(icon => ({ type: "box", layout: "vertical", width: "45px", height: "45px", cornerRadius: "100px", backgroundColor: "#ffffff1a", paddingAll: "8px", action: { type: "uri", uri: icon.uri || "https://line.me" }, contents: [{ type: "image", url: SOCIAL_DATA[icon.type]?.url || SOCIAL_DATA.NONE.url, size: "full", aspectRatio: "1:1", animated: true }] })) });
+                        baseContents.push({ type: "box", layout: "horizontal", position: "absolute", offsetTop: Utils.toPx(d.socialTop), offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md", contents: d.icons.map(icon => ({ type: "box", layout: "vertical", width: "45px", height: "45px", cornerRadius: "100px", backgroundColor: "#ffffff1a", paddingAll: "8px", action: { type: "uri", uri: icon.uri || "https://line.me" }, contents: [{ type: "image", url: SOCIAL_DATA[icon.type]?.url || SOCIAL_DATA.NONE.url, size: "full", aspectRatio: "1:1", animated: true }] })) });
                         baseContents.push({ type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.descTop), offsetStart: "15px", offsetEnd: "15px", contents: [{ type: "text", text: d.desc, wrap: true, size: "xs", color: d.descColor, align: d.descAlign }] });
                         return { type: "bubble", body: { type: "box", layout: "vertical", paddingAll: "0px", height: "450px", contents: baseContents }, footer: { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: d.footerBg, contents: [{ type: "box", layout: "vertical", backgroundColor: d.footerThemeColor, paddingAll: "12px", cornerRadius: "md", action: { type: "uri", uri: d.footerUri || "https://line.me" }, contents: [{ type: "text", text: d.footerLabel, color: d.footerTextColor, align: "center", weight: "bold", size: "sm" }] }] } };
                     }
-                    // P2: 個人版 JSON (固定 450px)
+                    // P2: 個人版 JSON (強制固定 Body 高度為 450px)
                     if (d.model === 'PERSONAL_CORE') {
                         const [w, h] = d.media.aspectRatio.split(':').map(Number);
                         const mediaH = (h / w) * 300;
@@ -203,11 +206,11 @@
                         else bubble.body.contents.push({ type: "box", layout: "vertical", contents: [{ type: "image", url: d.media.url, size: "full", aspectRatio: d.media.aspectRatio, aspectMode: "cover", animated: true, action: d.media.uri ? { type: "uri", uri: d.media.uri } : undefined }, { type: "box", layout: "vertical", position: "absolute", backgroundColor: d.media.badgeBg, cornerRadius: "15px", height: "25px", paddingAll: "4px", paddingStart: "10px", paddingEnd: "10px", offsetTop: "10px", [d.media.badgePos === 'left' ? 'offsetStart' : 'offsetEnd']: "10px", justifyContent: "center", contents: [{ type: "text", text: d.media.badgeText, color: "#ffffff", size: "xs", weight: "bold" }] }] });
                         bubble.body.contents.push({ type: "box", layout: "vertical", paddingAll: "15px", paddingTop: d.avatar.show ? (d.mediaType === 'video' ? "95px" : "45px") : "15px", contents: [{ type: "text", text: d.content.name, weight: "bold", size: "lg", color: d.content.nameColor, align: d.content.nameAlign }, { type: "text", text: d.content.desc, wrap: true, color: d.content.descColor, size: "xs", margin: "md", align: d.content.descAlign }] });
                         if (d.avatar.show) bubble.body.contents.push({ type: "box", layout: "vertical", position: "absolute", offsetTop: d.mediaType === 'video' ? "10px" : Utils.toPx(mediaH - 45), offsetStart: "0px", offsetEnd: "0px", alignItems: "center", contents: [{ type: "box", layout: "vertical", width: "80px", height: "80px", cornerRadius: d.avatar.cornerRadius, borderWidth: "3px", borderColor: d.avatar.borderColor, contents: [{ type: "image", url: d.avatar.url, size: "full", aspectRatio: "1:1", aspectMode: "cover", animated: true }] }] });
-                        bubble.footer = { type: "box", layout: "vertical", spacing: "md", paddingAll: "10px", contents: d.footer.longBtns.map(b => ({ type: "box", layout: "vertical", contents: [{ type: "text", text: b.label, align: "center", color: b.textColor, size: "sm", weight: "bold" }], paddingAll: "10px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "md", action: { type: "uri", uri: b.uri } })) };
+                        bubble.footer = { type: "box", layout: "vertical", spacing: "md", paddingAll: "10px", contents: (d.footer.longBtns || []).map(b => ({ type: "box", layout: "vertical", contents: [{ type: "text", text: b.label, align: "center", color: b.textColor, size: "sm", weight: "bold" }], paddingAll: "10px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "md", action: { type: "uri", uri: b.uri } })) };
                         if (d.footer.shortBtns && d.footer.shortBtns.length > 0) bubble.footer.contents.push({ type: "box", layout: "horizontal", spacing: "md", contents: d.footer.shortBtns.map(b => ({ type: "box", layout: "vertical", spacing: "xs", paddingAll: "8px", borderWidth: "1px", borderColor: b.themeColor, backgroundColor: b.isSolid ? b.themeColor : undefined, cornerRadius: "sm", action: { type: "uri", uri: b.uri }, contents: [{ type: "image", url: SOCIAL_DATA[b.type]?.url || SOCIAL_DATA.WEB.url, size: "xxs", aspectRatio: "1:1", animated: true }, { type: "text", text: b.label, align: "center", color: b.textColor, size: "xxs" }] })) });
                         return bubble;
                     }
-                    // P3: 電商版 JSON (固定 450px)
+                    // P3: 電商版 JSON (強制固定 Body 高度為 450px)
                     if (d.model === 'ECOMMERCE_CORE') {
                         const chunk = (a, size) => Array.from({ length: Math.ceil(a.length / size) }, (v, i) => a.slice(i * size, i * size + size));
                         const items = chunk(d.body.items || [], d.body.columns).map((row, idx) => ({ type: "box", layout: "horizontal", margin: idx === 0 ? "none" : "md", contents: row.map((item, cidx) => ({ type: "box", layout: "vertical", width: d.body.columns === 3 ? "32%" : "23%", margin: cidx === 0 ? "none" : "md", backgroundColor: "#FFFFFF", cornerRadius: "10px", action: { type: "uri", uri: item.url }, contents: [{ type: "image", url: item.img, aspectRatio: "1:1", size: "full", aspectMode: "cover" }, { type: "box", layout: "vertical", backgroundColor: d.body.tagBgColor, cornerRadius: "sm", paddingAll: "xs", margin: "xs", contents: [{ type: "text", text: item.title, size: "xxs", color: d.body.tagTextColor, align: "center", weight: "bold", wrap: true }] }] })) }));
@@ -240,7 +243,7 @@
                 <div className="flex h-screen bg-slate-100 font-black overflow-hidden text-slate-900">
                     <div className="w-[480px] bg-white border-r flex flex-col shadow-2xl z-10">
                         <div className="sticky-section flex flex-col gap-4 bg-white shadow-sm shrink-0">
-                            <h1 className="text-xl flex items-center gap-2 text-green-600 uppercase tracking-tighter italic font-black"><i data-lucide="layers"></i> Carousel Pro v5.1.4</h1>
+                            <h1 className="text-xl flex items-center gap-2 text-green-600 uppercase tracking-tighter italic font-black"><i data-lucide="layers"></i> Carousel Pro v5.1.5</h1>
                             <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
                                 {pages.map((p, i) => (
                                     <div key={i} className="relative group shrink-0">
@@ -253,7 +256,6 @@
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                            {/* P1 業務模組面板 */}
                             {activePage.model === 'BUSINESS_CORE' && (
                                 <>
                                     <ControlPanel title="1. 背景與標籤" icon="image">
@@ -286,7 +288,7 @@
                                         <button onClick={() => updateActivePage('icons', [...activePage.icons, {type:'LINE', uri:'https://line.me'}])} className="w-full bg-[#06C755] text-white py-2 rounded-xl mb-4 font-black text-xs shadow-md">+ 新增按鈕</button>
                                         {(activePage.icons || []).map((icon, idx) => (
                                             <div key={idx} className="bg-slate-50 p-3 border border-slate-200 rounded-xl mb-3 relative group font-black">
-                                                <button onClick={() => updateActivePage('icons', activePage.icons.filter((_,i)=>i!==idx))} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] shadow-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">×</button>
+                                                <button onClick={() => updateActivePage('icons', activePage.icons.filter((_,i)=>i!==idx))} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">×</button>
                                                 <select value={icon.type} onChange={e => {const n=[...activePage.icons]; n[idx].type=e.target.value; n[idx].uri=SOCIAL_DATA[e.target.value].defaultUri; updateActivePage('icons', n);}} className="mb-2 text-xs">{Object.keys(SOCIAL_DATA).map(k => <option key={k} value={k}>{SOCIAL_DATA[k].label}</option>)}</select>
                                                 <input type="text" value={icon.uri} onChange={e => {const n=[...activePage.icons]; n[idx].uri=e.target.value; updateActivePage('icons', n);}} className="text-[10px] font-mono border-slate-100" />
                                             </div>
