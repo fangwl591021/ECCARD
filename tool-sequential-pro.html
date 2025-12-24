@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sequential Pro - 業務終極修正版 v3.1.2</title>
+    <title>Sequential Pro - 業務終極修正版 v3.1.3</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -56,20 +56,23 @@
                 avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
                 avatarTop: 60,
                 name: "張志明", nameTop: 155, nameColor: "#000000", nameWeight: "bold", nameAlign: "center",
-                socialTop: 215,
+                socialTop: 205, // 靠近一點
                 icons: [
                     { type: "PHONE", uri: "tel:0912345678" },
                     { type: "LINE", uri: "https://line.me" }
                 ],
                 desc: "致力於協助企業品牌數位轉型\n擁有超過 15 年的跨國行銷經驗",
-                descTop: 275, descColor: "#000000", descWeight: "regular", descAlign: "center",
+                descTop: 265, descColor: "#000000", descWeight: "regular", descAlign: "center",
                 footerBg: "#111111", footerLabel: "聯繫我了解更多", footerUri: "https://line.me",
                 footerThemeColor: "#06C755", footerTextColor: "#FFFFFF", footerWeight: "bold"
             }
         };
 
         const Utils = {
-            toPx: (val) => String(val).endsWith('px') ? val : `${val}px`
+            toPx: (val) => {
+                const num = parseFloat(val);
+                return isNaN(num) ? val : `${Math.round(num)}px`;
+            }
         };
 
         const FlexPreview = memo(({ data }) => {
@@ -80,8 +83,8 @@
             return (
                 <div className="flex justify-center p-4 min-h-full">
                     <div className="rounded-[45px] shadow-2xl overflow-hidden relative border-[10px] border-black bg-white w-[300px]">
-                        <div className="relative h-[450px] overflow-hidden">
-                            <img src={d.url} className="w-full h-full object-cover" alt="背景" />
+                        <div className="relative h-[450px] overflow-hidden bg-white">
+                            {d.url !== 'none' && <img src={d.url} className="w-full h-full object-cover" alt="背景" />}
                             <div className="absolute px-3 text-white font-bold shadow-sm text-[10px] flex items-center justify-center whitespace-nowrap overflow-hidden" style={{ 
                                 top: '15px', 
                                 [d.badgePos === 'offsetStart' ? 'left' : 'right']: '15px', 
@@ -92,7 +95,7 @@
                             }}>{d.badgeText}</div>
                             
                             <div className="absolute w-full flex justify-center" style={{ top: (d.avatarTop * scale) + 'px' }}>
-                                <img src={d.avatar} className="w-16 h-16 rounded-full border-2 border-white shadow-xl" alt="頭像" />
+                                <img src={d.avatar} className="w-16 h-16 rounded-full border-2 border-white shadow-xl object-cover" alt="頭像" />
                             </div>
 
                             <div className="absolute w-full px-4" style={{ 
@@ -101,7 +104,7 @@
                             }}>{d.name}</div>
                             
                             <div className="absolute w-full flex justify-center gap-3" style={{ top: (d.socialTop * scale) + 'px' }}>
-                                {d.icons.map((icon, i) => (
+                                {(d.icons || []).map((icon, i) => (
                                     <div key={i} className="w-10 h-10 p-2 bg-white/25 rounded-full border border-white/40 flex items-center justify-center shadow-md backdrop-blur-sm">
                                         <img src={SOCIAL[icon.type]?.url || SOCIAL.NONE.url} className="w-full h-full object-contain" alt="icon" />
                                     </div>
@@ -142,46 +145,61 @@
             // --- 產生符合 LINE 規格的 JSON ---
             const buildJson = useCallback((d = data) => {
                 const SOCIAL = CONSTANTS.SOCIAL_DATA;
+                const baseContents = [];
+
+                // 只有在背景不為 none 時才加入背景圖片
+                if (d.url !== 'none') {
+                    baseContents.push({ type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: true });
+                }
+
+                // 標籤強制固定規格
+                baseContents.push({
+                    type: "box", layout: "vertical", position: "absolute", 
+                    offsetTop: Utils.toPx(d.badgeTop), [d.badgePos]: "20px",
+                    height: "25px", 
+                    backgroundColor: d.badgeBg, 
+                    cornerRadius: "15px", 
+                    paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px",
+                    justifyContent: "center", 
+                    contents: [{ type: "text", text: d.badgeText, color: "#ffffff", size: "xxs", weight: "bold" }]
+                });
+
+                // 頭像
+                baseContents.push({
+                    type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.avatarTop), offsetStart: "0px", offsetEnd: "0px", alignItems: "center",
+                    contents: [{
+                        type: "box", layout: "vertical", width: "85px", height: "85px", cornerRadius: "100px", borderWidth: "3px", borderColor: "#ffffff",
+                        contents: [{ type: "image", url: d.avatar, size: "full", aspectMode: "cover", animated: true }]
+                    }]
+                });
+
+                // 姓名
+                baseContents.push({
+                    type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.nameTop), offsetStart: "0px", offsetEnd: "0px",
+                    contents: [{ type: "text", text: d.name, weight: d.nameWeight, size: "lg", color: d.nameColor, align: d.nameAlign }]
+                });
+
+                // 社群按鈕
+                baseContents.push({
+                    type: "box", layout: "horizontal", position: "absolute", offsetTop: Utils.toPx(d.socialTop), offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md",
+                    contents: (d.icons || []).map(icon => ({
+                        type: "box", layout: "vertical", width: "45px", height: "45px", cornerRadius: "100px", backgroundColor: "#ffffff1a", paddingAll: "8px",
+                        action: { type: "uri", uri: icon.uri || "https://line.me" },
+                        contents: [{ type: "image", url: SOCIAL[icon.type]?.url || SOCIAL.NONE.url, size: "full", aspectRatio: "1:1", animated: true }]
+                    }))
+                });
+
+                // 簡介
+                baseContents.push({
+                    type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.descTop), offsetStart: "15px", offsetEnd: "15px",
+                    contents: [{ type: "text", text: d.desc, wrap: true, size: "xs", color: d.descColor, align: d.descAlign, weight: d.descWeight }]
+                });
+
                 const bubble = {
                     type: "bubble", size: "mega",
                     body: {
                         type: "box", layout: "vertical", paddingAll: "0px",
-                        contents: [
-                            { type: "image", url: d.url, size: "full", aspectRatio: "2:3", aspectMode: "cover", animated: true },
-                            {
-                                type: "box", layout: "vertical", position: "absolute", 
-                                offsetTop: Utils.toPx(d.badgeTop), [d.badgePos]: "20px",
-                                height: "25px", 
-                                backgroundColor: d.badgeBg, 
-                                cornerRadius: "15px", 
-                                paddingAll: "2px", paddingStart: "8px", paddingEnd: "8px",
-                                justifyContent: "center", 
-                                contents: [{ type: "text", text: d.badgeText, color: "#ffffff", size: "xxs", weight: "bold" }]
-                            },
-                            {
-                                type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.avatarTop), offsetStart: "0px", offsetEnd: "0px", alignItems: "center",
-                                contents: [{
-                                    type: "box", layout: "vertical", width: "85px", height: "85px", cornerRadius: "100px", borderWidth: "3px", borderColor: "#ffffff",
-                                    contents: [{ type: "image", url: d.avatar, size: "full", aspectMode: "cover", animated: true }]
-                                }]
-                            },
-                            {
-                                type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.nameTop), offsetStart: "0px", offsetEnd: "0px",
-                                contents: [{ type: "text", text: d.name, weight: d.nameWeight, size: "lg", color: d.nameColor, align: d.nameAlign }]
-                            },
-                            {
-                                type: "box", layout: "horizontal", position: "absolute", offsetTop: Utils.toPx(d.socialTop), offsetStart: "0px", offsetEnd: "0px", justifyContent: "center", spacing: "md",
-                                contents: (d.icons || []).map(icon => ({
-                                    type: "box", layout: "vertical", width: "45px", height: "45px", cornerRadius: "100px", backgroundColor: "#ffffff1a", paddingAll: "8px",
-                                    action: { type: "uri", uri: icon.uri || "https://line.me" },
-                                    contents: [{ type: "image", url: SOCIAL[icon.type]?.url || SOCIAL.NONE.url, size: "full", animated: true }]
-                                }))
-                            },
-                            {
-                                type: "box", layout: "vertical", position: "absolute", offsetTop: Utils.toPx(d.descTop), offsetStart: "15px", offsetEnd: "15px",
-                                contents: [{ type: "text", text: d.desc, wrap: true, size: "xs", color: d.descColor, align: d.descAlign, weight: d.descWeight }]
-                            }
-                        ]
+                        contents: baseContents
                     },
                     footer: {
                         type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: d.footerBg,
@@ -195,21 +213,16 @@
                 return bubble;
             }, [data]);
 
-            // 與主介面同步的 Effect
+            // 與主介面同步
             useEffect(() => {
                 const json = buildJson();
                 window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify(json) }, '*');
             }, [data, buildJson]);
 
-            // 接收主介面指令
+            // 接收指令
             useEffect(() => {
                 const handleParentMsg = (event) => {
                     const { type, json } = event.data;
-                    if (type === 'LOAD_FLEX_DATA' && json) {
-                        try {
-                            // 這裡可以加入 Parser 將載入的 JSON 還原回 Data 狀態
-                        } catch(e) {}
-                    }
                     if (type === 'GET_FLEX_DATA_REQUEST') {
                         window.parent.postMessage({ type: 'SYNC_FLEX_DATA', json: JSON.stringify(buildJson()) }, '*');
                     }
@@ -250,26 +263,50 @@
             return (
                 <div className="flex h-screen overflow-hidden bg-slate-100 font-black text-black">
                     <div className="w-1/2 bg-white border-r flex flex-col shadow-xl z-10">
-                        <div className="sticky-section flex items-center gap-3">
+                        <div className="sticky-section flex items-center gap-3 bg-white">
                             <i data-lucide="award" className="w-8 h-8 text-[#06C755]"></i>
-                            <h1 className="text-xl tracking-tighter uppercase">業務版編輯器 v3.1.2</h1>
+                            <h1 className="text-xl tracking-tighter uppercase italic">業務編輯器 v3.1.3</h1>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                             <ControlPanel title="1. 背景與標籤" icon="image">
                                 <label className="control-label block mb-2">背景網址</label>
-                                <input type="text" value={data.url} onChange={e => updateField('url', e.target.value)} className="w-full p-3 border rounded-xl bg-slate-50 font-mono text-xs mb-4" />
+                                <div className="flex gap-2 mb-4">
+                                    <input type="text" value={data.url === 'none' ? '' : data.url} onChange={e => updateField('url', e.target.value || 'none')} className="flex-1 p-3 border rounded-xl bg-slate-50 font-mono text-xs" />
+                                    <button onClick={() => updateField('url', data.url === 'none' ? CONSTANTS.DEFAULT_DATA.url : 'none')} className={`px-4 rounded-xl border-2 font-black transition-all text-xs ${data.url === 'none' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-400 border-slate-200'}`}>{data.url === 'none' ? '啟用' : '無'}</button>
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><label className="control-label block mb-2">標籤內容</label><input type="text" maxLength={10} value={data.badgeText} onChange={e => updateField('badgeText', e.target.value)} className="w-full p-3 border rounded-xl" /></div>
-                                    <div><label className="control-label block mb-2">標籤顏色</label><input type="color" value={data.badgeBg} onChange={e => updateField('badgeBg', e.target.value)} className="w-full h-11 border rounded-xl bg-white" /></div>
+                                    <div>
+                                        <label className="control-label block mb-2">標籤文字 (限10字)</label>
+                                        <input type="text" maxLength={10} value={data.badgeText} onChange={e => updateField('badgeText', e.target.value)} className="w-full p-3 border rounded-xl" />
+                                    </div>
+                                    <div>
+                                        <label className="control-label block mb-2">標籤對齊</label>
+                                        <div className="flex gap-1 bg-slate-50 p-1 rounded-lg border">
+                                            {['offsetStart', 'offsetEnd'].map(pos => (
+                                                <button key={pos} onClick={() => updateField('badgePos', pos)} className={`flex-1 py-2 rounded-md ${data.badgePos === pos ? 'bg-white shadow text-[#06C755]' : 'text-slate-400'}`}>
+                                                    <i data-lucide={pos === 'offsetStart' ? 'align-left' : 'align-right'} className="w-4 h-4 mx-auto"></i>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-4">
+                                    <label className="control-label block mb-2">標籤底色</label>
+                                    <input type="color" value={data.badgeBg} onChange={e => updateField('badgeBg', e.target.value)} className="w-full h-11 border rounded-xl bg-white" />
                                 </div>
                             </ControlPanel>
 
-                            <ControlPanel title="2. 垂直位置調整" icon="move-vertical" headerClass="amber-header">
-                                <div className="flex justify-between mb-2"><label className="control-label">連動位移</label><span className="slider-value-display">{data.avatarTop}px</span></div>
-                                <input type="range" min="0" max="600" value={data.avatarTop} onChange={e => handleMasterMove(parseInt(e.target.value))} className="w-full master-slider" />
+                            <ControlPanel title="2. 個人頭像" icon="user-circle">
+                                <label className="control-label block mb-2">頭像網址</label>
+                                <input type="text" value={data.avatar} onChange={e => updateField('avatar', e.target.value)} className="w-full p-3 border rounded-xl bg-slate-50 font-mono text-xs" />
                             </ControlPanel>
 
-                            <ControlPanel title="3. 姓名設定" icon="user">
+                            <ControlPanel title="3. 垂直位置調整" icon="move-vertical" headerClass="amber-header">
+                                <div className="flex justify-between mb-2"><label className="control-label">連動位移</label><span className="slider-value-display">{data.avatarTop}px</span></div>
+                                <input type="range" min="0" max="600" value={data.avatarTop} onChange={e => handleMasterMove(parseInt(e.target.value))} className="w-full master-slider cursor-pointer" />
+                            </ControlPanel>
+
+                            <ControlPanel title="4. 姓名設定" icon="user">
                                 <div className="flex gap-2 mb-3">
                                     <input type="text" value={data.name} onChange={e => updateField('name', e.target.value)} className="flex-1 p-3 border rounded-xl font-bold" />
                                     <input type="color" value={data.nameColor} onChange={e => updateField('nameColor', e.target.value)} className="w-12 h-12 border rounded-xl" />
@@ -279,42 +316,48 @@
                                 </div>
                             </ControlPanel>
 
-                            <ControlPanel title="4. 社群按鈕" icon="share-2">
-                                <button onClick={() => updateField('icons', [...data.icons, { type: 'LINE', uri: 'https://line.me' }])} className="w-full bg-[#06C755] text-white py-3 rounded-xl mb-4 font-black">+ 新增按鈕</button>
+                            <ControlPanel title="5. 社群按鈕" icon="share-2">
+                                <button onClick={() => updateField('icons', [...data.icons, { type: 'LINE', uri: 'https://line.me' }])} className="w-full bg-[#06C755] text-white py-3 rounded-xl mb-4 font-black shadow-md">+ 新增按鈕</button>
                                 {data.icons.map((icon, idx) => (
                                     <div key={idx} className="bg-slate-50 p-4 border rounded-xl mb-4 relative group">
-                                        <button onClick={() => updateField('icons', data.icons.filter((_, i) => i !== idx))} className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full">×</button>
+                                        <button onClick={() => updateField('icons', data.icons.filter((_, i) => i !== idx))} className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg">×</button>
                                         <select value={icon.type} onChange={e => {
                                             const newList = [...data.icons];
                                             newList[idx].type = e.target.value;
                                             newList[idx].uri = CONSTANTS.SOCIAL_DATA[e.target.value].defaultUri;
                                             updateField('icons', newList);
-                                        }} className="w-full p-2 border rounded-lg mb-2">
+                                        }} className="w-full p-2 border rounded-lg mb-2 text-xs">
                                             {Object.keys(CONSTANTS.SOCIAL_DATA).map(k => <option key={k} value={k}>{CONSTANTS.SOCIAL_DATA[k].label}</option>)}
                                         </select>
                                         <input type="text" value={icon.uri} onChange={e => {
                                             const n = [...data.icons];
                                             n[idx].uri = e.target.value;
                                             updateField('icons', n);
-                                        }} className="w-full p-2 border rounded-lg text-xs font-mono" />
+                                        }} className="w-full p-2 border rounded-lg text-[10px] font-mono" />
                                     </div>
                                 ))}
                             </ControlPanel>
 
-                            <ControlPanel title="5. 簡介內容" icon="align-left">
-                                <textarea value={data.desc} onChange={e => updateField('desc', e.target.value)} className="w-full p-3 border rounded-xl h-24 mb-2" />
-                                <div className="flex bg-slate-50 p-1 rounded-lg border">
-                                    {['start', 'center', 'end'].map(a => <button key={a} onClick={() => updateField('descAlign', a)} className={`flex-1 py-2 rounded-md ${data.descAlign === a ? 'bg-white shadow text-[#06C755]' : 'text-slate-400'}`}><i data-lucide={a==='start'?'align-left':a==='center'?'align-center':'align-right'} className="w-4 h-4 mx-auto"></i></button>)}
+                            <ControlPanel title="6. 簡介內容" icon="align-left">
+                                <textarea value={data.desc} onChange={e => updateField('desc', e.target.value)} className="w-full p-3 border rounded-xl h-24 mb-3 text-xs leading-relaxed" />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="flex bg-slate-50 p-1 rounded-lg border">
+                                        {['start', 'center', 'end'].map(a => <button key={a} onClick={() => updateField('descAlign', a)} className={`flex-1 py-2 rounded-md ${data.descAlign === a ? 'bg-white shadow text-[#06C755]' : 'text-slate-400'}`}><i data-lucide={a==='start'?'align-left':a==='center'?'align-center':'align-right'} className="w-4 h-4 mx-auto"></i></button>)}
+                                    </div>
+                                    <div className="flex items-center gap-2 border p-1 rounded-lg bg-white">
+                                        <label className="text-[10px] text-slate-400 font-bold uppercase ml-2">顏色</label>
+                                        <input type="color" value={data.descColor} onChange={e => updateField('descColor', e.target.value)} className="flex-1 h-8 rounded border p-0 cursor-pointer shadow-sm" />
+                                    </div>
                                 </div>
                             </ControlPanel>
 
-                            <ControlPanel title="6. 底部行為按鈕" icon="external-link">
-                                <input type="text" value={data.footerLabel} onChange={e => updateField('footerLabel', e.target.value)} className="w-full p-3 border rounded-xl mb-2" placeholder="按鈕文字" />
-                                <input type="text" value={data.footerUri} onChange={e => updateField('footerUri', e.target.value)} className="w-full p-3 border rounded-xl mb-4 text-xs font-mono" placeholder="按鈕連結" />
+                            <ControlPanel title="7. 底部行為按鈕" icon="external-link">
+                                <input type="text" value={data.footerLabel} onChange={e => updateField('footerLabel', e.target.value)} className="w-full p-3 border rounded-xl mb-2 font-bold" placeholder="按鈕文字" />
+                                <input type="text" value={data.footerUri} onChange={e => updateField('footerUri', e.target.value)} className="w-full p-3 border rounded-xl mb-4 text-[10px] font-mono" placeholder="按鈕連結" />
                                 <div className="grid grid-cols-3 gap-2 mt-3">
-                                    <div><label className="text-[10px] text-slate-400 block mb-1">區域背景</label><input type="color" value={data.footerBg} onChange={e => updateField('footerBg', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white cursor-pointer shadow-sm" /></div>
-                                    <div><label className="text-[10px] text-slate-400 block mb-1">按鈕背景</label><input type="color" value={data.footerThemeColor} onChange={e => updateField('footerThemeColor', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white cursor-pointer shadow-sm" /></div>
-                                    <div><label className="text-[10px] text-slate-400 block mb-1">文字顏色</label><input type="color" value={data.footerTextColor} onChange={e => updateField('footerTextColor', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white cursor-pointer shadow-sm" /></div>
+                                    <div><label className="text-[9px] text-slate-400 block mb-1 uppercase font-bold">區域背景</label><input type="color" value={data.footerBg} onChange={e => updateField('footerBg', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white shadow-sm" /></div>
+                                    <div><label className="text-[9px] text-slate-400 block mb-1 uppercase font-bold">按鈕背景</label><input type="color" value={data.footerThemeColor} onChange={e => updateField('footerThemeColor', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white shadow-sm" /></div>
+                                    <div><label className="text-[9px] text-slate-400 block mb-1 uppercase font-bold">文字顏色</label><input type="color" value={data.footerTextColor} onChange={e => updateField('footerTextColor', e.target.value)} className="w-full h-10 p-1 border rounded-lg bg-white shadow-sm" /></div>
                                 </div>
                             </ControlPanel>
                         </div>
@@ -325,17 +368,17 @@
                             <button onClick={() => setActiveTab('editor')} className={`text-sm tracking-widest ${activeTab === 'editor' ? 'text-[#06C755] border-b-4 border-[#06C755]' : 'text-slate-400'}`}>視覺預覽</button>
                             <button onClick={() => setActiveTab('json')} className={`text-sm tracking-widest ${activeTab === 'json' ? 'text-[#06C755] border-b-4 border-[#06C755]' : 'text-slate-400'}`}>JSON 代碼</button>
                         </div>
-                        <div className="flex-1 overflow-y-auto">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
                             {activeTab === 'editor' ? (
                                 <div className="py-12 flex flex-col items-center min-h-full">
-                                    <div className="mb-6 px-4 py-1.5 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase flex items-center gap-2">
+                                    <div className="mb-6 px-4 py-1.5 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase flex items-center gap-2 tracking-[0.2em] shadow-2xl">
                                         <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
                                         FLEX PREVIEW ACTIVE
                                     </div>
                                     <FlexPreview data={data} />
                                 </div>
                             ) : (
-                                <div className="p-10"><pre className="bg-slate-900 text-emerald-400 p-8 rounded-[32px] text-xs overflow-x-auto">{JSON.stringify(buildJson(), null, 2)}</pre></div>
+                                <div className="p-10"><pre className="bg-slate-900 text-emerald-400 p-8 rounded-[32px] text-xs overflow-x-auto leading-relaxed border-4 border-slate-800 shadow-2xl font-mono">{JSON.stringify(buildJson(), null, 2)}</pre></div>
                             )}
                         </div>
                     </div>
