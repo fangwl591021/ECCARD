@@ -23,7 +23,7 @@
         .submenu-item-active { color: #00B900; font-weight: bold; }
         .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* 預覽模擬器核心樣式 (完全保留原始畫面) */
+        /* 預覽模擬器核心樣式 */
         .preview-window { width: 300px; height: 560px; background: #0F0F10; border: 10px solid #333; border-radius: 32px; overflow-y: auto; position: relative; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); }
         .preview-window::-webkit-scrollbar { width: 0px; }
         .flex-bubble { background: #FFFFFF; border-radius: 12px; overflow: hidden; width: 250px; margin: 0 auto; border: 1px solid #333; }
@@ -45,7 +45,6 @@
         .ratio-btn { @apply px-3 py-1 text-xs border border-gray-200 rounded-md transition-all cursor-pointer hover:bg-gray-50 bg-white; }
         .ratio-btn-active { @apply border-line-green bg-green-50 text-line-green font-bold; }
 
-        /* 比例設定 */
         .aspect-1-1 { aspect-ratio: 1 / 1; }
         .aspect-16-9 { aspect-ratio: 16 / 9; }
         .aspect-4-3 { aspect-ratio: 4 / 3; }
@@ -110,8 +109,8 @@
                 <ecommerce-editor v-if="currentSubTab === 'ecommerce'" :initial-data="ecomState" @save="handleSave" @push="handlePush"></ecommerce-editor>
             </div>
 
-            <div v-if="currentTab === 'dashboard'" class="p-10">
-                <h3 class="text-2xl font-bold">歡迎回來</h3>
+            <div v-if="currentTab === 'dashboard'" class="p-10 text-center">
+                <h3 class="text-2xl font-bold text-gray-700">歡迎回來</h3>
                 <p class="text-gray-400 mt-2">請從左側菜單選擇功能模組開始設計。</p>
             </div>
         </div>
@@ -125,9 +124,18 @@
 <div class="flex h-full w-full overflow-hidden">
     <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
         <div class="max-w-4xl mx-auto">
-            <editor-header title="文章型 Flex 開發" @save="$emit('save', data)" @push="$emit('push', flexJson)"></editor-header>
+            <editor-header title="文章型 Flex 開發" @save="$emit('save', data)" @push="$emit('push', { json: flexJson, altText: data.altText })"></editor-header>
             
             <div class="space-y-6 mt-8">
+                <!-- 推播設定欄位 -->
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-sm">
+                    <h4 class="text-sm font-bold text-blue-800 mb-4 flex items-center"><i class="fas fa-paper-plane mr-2"></i> 推播訊息設定</h4>
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-blue-600 uppercase">聊天室顯示文字 (altText)</label>
+                        <input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-300 outline-none shadow-sm" placeholder="這會顯示在手機通知與聊天清單中">
+                    </div>
+                </div>
+
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                     <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-image mr-2 text-line-green"></i> 視覺內容設定</h4>
                     <div class="space-y-4">
@@ -168,7 +176,7 @@
             <div class="p-4">
                 <div class="flex-bubble shadow-xl relative">
                     <div class="relative">
-                        <img :src="data.imageUrl" :style="{ aspectRatio: data.aspectRatio.replace(':', '/') }" class="w-full object-cover transition-all" onerror="this.src='https://via.placeholder.com/250x160?text=Image'">
+                        <img :src="data.imageUrl" :style="{ aspectRatio: data.aspectRatio.replace(':', '/') }" class="w-full object-cover">
                         <div v-if="data.showBadge" class="flex-badge shadow-md" :style="{ backgroundColor: data.badgeColor }">分享</div>
                     </div>
                     <div class="p-4 text-center">
@@ -192,14 +200,25 @@
 <div class="flex h-full w-full overflow-hidden">
     <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
         <div class="max-w-4xl mx-auto">
-            <editor-header title="影片名片開發" @save="$emit('save', data)" @push="$emit('push', flexJson)"></editor-header>
+            <editor-header title="影片名片開發" @save="$emit('save', data)" @push="$emit('push', { json: flexJson, altText: data.altText })"></editor-header>
             
             <div class="space-y-6 mt-8">
+                <!-- 推播設定欄位 -->
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-sm">
+                    <h4 class="text-sm font-bold text-blue-800 mb-4 flex items-center"><i class="fas fa-paper-plane mr-2"></i> 推播訊息設定</h4>
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-blue-600 uppercase">聊天室顯示文字 (altText)</label>
+                        <input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-300 outline-none shadow-sm" placeholder="這會顯示在手機通知與聊天清單中">
+                    </div>
+                </div>
+
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                     <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> Header 設定</h4>
                     <div class="grid grid-cols-2 gap-4">
                         <input type="text" v-model="data.headerName" class="px-4 py-2 border rounded-lg text-sm focus:border-line-green" placeholder="姓名">
                         <input type="text" v-model="data.headerTitle" class="px-4 py-2 border rounded-lg text-sm focus:border-line-green" placeholder="職位">
+                        <input type="text" v-model="data.headerDescription" class="col-span-2 px-4 py-2 border rounded-lg text-sm focus:border-line-green" placeholder="描述（如：系統開發）">
+                        <input type="text" v-model="data.headerImg" class="col-span-2 px-4 py-2 border rounded-lg text-sm focus:border-line-green" placeholder="大頭照 URL">
                         <input type="text" v-model="data.videoUrl" class="col-span-2 px-4 py-2 border rounded-lg text-sm focus:border-line-green" placeholder="影片網址">
                         <input type="text" v-model="data.previewUrl" class="col-span-2 px-4 py-2 border rounded-lg text-sm focus:border-line-green" placeholder="預覽圖">
                     </div>
@@ -215,17 +234,30 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
+                    <h4 class="text-sm font-bold text-gray-700 mb-4">底部主按鈕</h4>
+                    <div class="space-y-3">
+                        <div v-for="(vBtn, idx) in data.videoFooterButtons" :key="idx" class="flex gap-3 items-center bg-white p-3 rounded-xl border">
+                            <input v-if="idx === 0" type="color" v-model="vBtn.color">
+                            <input type="text" v-model="vBtn.label" class="w-32 px-4 py-2 border rounded-lg text-sm" placeholder="文字">
+                            <input type="text" v-model="vBtn.uri" class="flex-grow px-4 py-2 border rounded-lg text-sm" placeholder="URL">
+                        </div>
+                    </div>
+                </div>
             </div>
             <json-viewer :json="flexJson"></json-viewer>
         </div>
     </div>
-    <!-- 預覽視窗 (深色風格) -->
     <div class="w-[360px] shrink-0 bg-gray-50 flex items-center justify-center py-8 shadow-inner overflow-y-auto no-scrollbar">
         <div class="preview-window">
             <div class="flex-bubble flex-bubble-dark shadow-2xl mt-8">
                 <div class="header-box">
                     <img :src="data.headerImg" class="w-10 h-10 rounded-full object-cover border border-gray-700">
-                    <span class="text-[11px] font-bold" style="color:#D4AF37">{{ data.headerName }}</span>
+                    <div class="flex flex-col">
+                        <span class="text-[11px] font-bold uppercase" style="color:#D4AF37">{{ data.headerName }}</span>
+                        <span class="text-[8px] text-gray-400">{{ data.headerTitle }}</span>
+                    </div>
                 </div>
                 <div class="video-hero">
                     <img :src="data.previewUrl" class="w-full h-full object-cover opacity-60">
@@ -256,9 +288,18 @@
 <div class="flex h-full w-full overflow-hidden">
     <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
         <div class="max-w-4xl mx-auto">
-            <editor-header title="電商型插件開發" @save="$emit('save', state)" @push="$emit('push', flexJson)"></editor-header>
+            <editor-header title="電商型插件開發" @save="$emit('save', state)" @push="$emit('push', { json: flexJson, altText: state.altText })"></editor-header>
             
             <div class="space-y-6 mt-8">
+                <!-- 推播設定欄位 -->
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-sm">
+                    <h4 class="text-sm font-bold text-blue-800 mb-4 flex items-center"><i class="fas fa-paper-plane mr-2"></i> 推播訊息設定</h4>
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-blue-600 uppercase">聊天室顯示文字 (altText)</label>
+                        <input type="text" v-model="state.altText" class="w-full px-4 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-300 outline-none shadow-sm" placeholder="這會顯示在手機通知與聊天清單中">
+                    </div>
+                </div>
+
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                     <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-image mr-2 text-line-green"></i> 頂部 Hero 視覺</h4>
                     <div class="space-y-4">
@@ -269,8 +310,8 @@
                             <select v-model="state.hero.aspectRatio" class="w-full text-xs p-2.5 border rounded-lg focus:ring-2 focus:ring-line-green outline-none">
                                 <option v-for="a in ['16:9','1:1','4:3','1.91:1','3:4']" :value="a">{{ a }}</option>
                             </select>
-                            <input type="text" v-model="state.hero.url" class="w-full text-xs p-2.5 border rounded-lg focus:ring-2 focus:ring-line-green outline-none" placeholder="圖片/預覽圖 URL">
-                            <input v-if="state.hero.type === 'video'" type="text" v-model="state.hero.videoUrl" class="col-span-2 text-xs p-2.5 border rounded-lg focus:ring-2 focus:ring-line-green outline-none" placeholder="影片 .mp4 URL">
+                            <input type="text" v-model="state.hero.url" class="w-full text-xs p-2.5 border rounded-lg shadow-sm" placeholder="圖片/預覽圖 URL">
+                            <input v-if="state.hero.type === 'video'" type="text" v-model="state.hero.videoUrl" class="col-span-2 text-xs p-2.5 border rounded-lg shadow-sm" placeholder="影片 .mp4 URL">
                         </div>
                     </div>
                 </div>
@@ -282,14 +323,14 @@
                     </h4>
                     <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-3">
-                            <select v-model="state.body.columns" class="text-xs p-2 border rounded-lg focus:ring-2 focus:ring-line-green outline-none"><option :value="3">3 欄位</option><option :value="4">4 欄位</option></select>
-                            <select v-model="state.body.bubbleSize" class="text-xs p-2 border rounded-lg focus:ring-2 focus:ring-line-green outline-none"><option value="mega">MEGA</option><option value="giga">GIGA</option></select>
+                            <select v-model="state.body.columns" class="text-xs p-2 border rounded-lg"><option :value="3">3 欄位</option><option :value="4">4 欄位</option></select>
+                            <select v-model="state.body.bubbleSize" class="text-xs p-2 border rounded-lg"><option value="mega">MEGA</option><option value="giga">GIGA</option></select>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div v-for="(item, idx) in state.body.items" :key="idx" class="p-3 bg-white border rounded-xl flex items-center gap-3 relative shadow-sm transition-all hover:border-line-green">
-                                <img :src="item.img" class="w-10 h-10 rounded border object-cover bg-slate-50">
+                            <div v-for="(item, idx) in state.body.items" :key="idx" class="p-3 bg-white border rounded-xl flex items-center gap-3 relative shadow-sm hover:border-line-green">
+                                <img :src="item.img" class="w-10 h-10 rounded border object-cover">
                                 <div class="flex-1">
-                                    <input v-model="item.title" class="w-full text-xs font-bold border-b mb-1 focus:outline-none focus:border-line-green" placeholder="商品名稱">
+                                    <input v-model="item.title" class="w-full text-xs font-bold border-b mb-1 focus:outline-none focus:border-line-green">
                                     <input v-model="item.url" class="w-full text-[10px] text-gray-400 focus:outline-none" placeholder="https://...">
                                 </div>
                                 <button @click="state.body.items.splice(idx,1)" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-times"></i></button>
@@ -302,13 +343,12 @@
             <json-viewer :json="flexJson"></json-viewer>
         </div>
     </div>
-    <!-- 預覽視窗 (電商風格) -->
     <div class="w-[360px] shrink-0 bg-slate-100 relative overflow-hidden flex flex-col">
         <div class="chat-room-bg custom-scrollbar">
             <div class="text-center my-4"><span class="bg-black/20 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">Today</span></div>
             <div class="flex items-start gap-2 mb-8 w-full justify-center">
-                <div class="w-8 h-8 rounded-full bg-slate-400 shrink-0 self-start mt-1 shadow-sm"></div>
-                <div class="bg-white rounded-xl overflow-hidden flex-bubble-container flex flex-col">
+                <div class="w-8 h-8 rounded-full bg-slate-400 shrink-0 self-start mt-1"></div>
+                <div class="bg-white rounded-xl overflow-hidden flex-bubble-container flex flex-col shadow-xl">
                     <div v-show="state.hero.type !== 'none'" :class="getAspectClass(state.hero.aspectRatio)" class="relative w-full bg-black shrink-0">
                         <img v-show="state.hero.type === 'image'" :src="state.hero.url" class="w-full h-full object-cover">
                         <div v-show="state.hero.type === 'video'" class="absolute inset-0 flex items-center justify-center">
@@ -344,7 +384,7 @@ const EditorHeader = {
     props: ['title'],
     template: `
         <div class="flex items-center justify-between">
-            <div><h3 class="text-2xl font-bold text-gray-800">{{ title }}</h3><p class="text-sm text-gray-400 mt-1">即時編輯參數，右側預覽畫面會同步更新。</p></div>
+            <div><h3 class="text-2xl font-bold text-gray-800">{{ title }}</h3><p class="text-sm text-gray-400 mt-1">編輯完畢後，點擊推播測試即可發送。</p></div>
             <div class="flex gap-2">
                 <button @click="$emit('save')" class="px-6 py-2.5 bg-purple-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-purple-600 transition-all flex items-center gap-2"><i class="fas fa-save"></i> 儲存專案</button>
                 <button @click="$emit('push')" class="px-6 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 transition-all flex items-center gap-2"><i class="fas fa-paper-plane"></i> 🚀 推播測試</button>
@@ -373,12 +413,16 @@ const JsonViewer = {
     }
 };
 
+/** 模組 1: 文章型組件邏輯 */
 const ArticleEditor = {
     props: ['initialData'],
     template: '#article-editor-template',
     components: { 'editor-header': EditorHeader, 'json-viewer': JsonViewer },
     setup(props) {
-        const data = ref(JSON.parse(JSON.stringify(props.initialData)));
+        const data = ref({
+            ...JSON.parse(JSON.stringify(props.initialData)),
+            altText: props.initialData.altText || '您收到了一則精選文章訊息'
+        });
         const flexJson = computed(() => ({
             type: "bubble", body: { type: "box", layout: "vertical", paddingAll: "0px", contents: [
                 { type: "image", url: data.value.imageUrl, size: "full", aspectRatio: data.value.aspectRatio, aspectMode: "cover" },
@@ -388,42 +432,111 @@ const ArticleEditor = {
                 ]}
             ]},
             footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "15px", contents: data.value.buttons.map(b => ({
-                type: "button", style: "primary", color: b.color, height: "sm", action: { type: "uri", label: b.label, uri: b.uri || "https://line.me" }
+                type: "button", style: "primary", color: b.color, action: { type: "uri", label: b.label, uri: b.uri || "https://line.me" }
             }))}
         }));
         return { data, flexJson, addButton: () => data.value.buttons.push({ label: '新按鈕', color: '#00B900', uri: '' }) };
     }
 };
 
+/** 模組 2: 影片名片組件邏輯 */
 const VideoEditor = {
     props: ['initialData'],
     template: '#video-editor-template',
     components: { 'editor-header': EditorHeader, 'json-viewer': JsonViewer },
     setup(props) {
-        const data = ref(JSON.parse(JSON.stringify(props.initialData)));
+        const data = ref({
+            type: 'video',
+            altText: '您收到了一則影片名片訊息',
+            headerName: 'TONY',
+            headerTitle: 'LINE行銷達人',
+            headerDescription: '系統開發',
+            headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png',
+            videoUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/mp4',
+            previewUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/m800x1200',
+            gridButtons: [
+                { emoji: '🤖', label: 'AI 諮詢', uri: 'https://liff.line.me/2006625044-bPGxrB53/' },
+                { emoji: '🎥', label: '產品介紹', uri: 'https://example.com/video' },
+                { emoji: '🧾', label: '商品型錄', uri: 'https://example.com/catalog' },
+                { emoji: '📍', label: '門市資訊', uri: 'https://example.com/map' }
+            ],
+            videoFooterButtons: [
+                { label: '🚀 啟動 AI 小幫手', uri: 'https://liff.line.me/2006625044-bPGxrB53/index.php/colt_sp/6502/', color: '#C9A24D' },
+                { label: '📤 分享好友', uri: 'https://liff.line.me/2006625044-J42EzjkZ/index.php/linecard_12/6816/' }
+            ]
+        });
+
         const flexJson = computed(() => ({
-            type: "bubble", size: "mega",
-            header: { type: "box", layout: "horizontal", backgroundColor: "#1A1B1E", paddingAll: "10px", contents: [
-                { type: "image", url: data.value.headerImg, size: "xs", aspectRatio: "1:1", aspectMode: "cover" },
-                { type: "box", layout: "vertical", margin: "md", contents: [{ type: "text", text: data.value.headerName, weight: "bold", color: "#D4AF37" }, { type: "text", text: data.value.headerTitle, size: "xs", color: "#E6E6E6" }]}
-            ]},
-            hero: { type: "video", url: data.value.videoUrl, previewUrl: data.value.previewUrl, aspectRatio: "800:500", altContent: { type: "image", url: data.value.previewUrl, size: "full", aspectMode: "cover" } },
-            body: { type: "box", layout: "vertical", backgroundColor: "#0F0F10", paddingAll: "10px", contents: [{ type: "box", layout: "vertical", spacing: "sm", contents: [
-                { type: "box", layout: "horizontal", spacing: "sm", contents: data.value.gridButtons.slice(0,2).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: "#2A2C31", cornerRadius: "md", contents: [{ type: "text", text: g.emoji, align: "center" },{ type: "text", text: g.label, size: "xs", align: "center", color: "#E6E6E6" }], action: { type: "uri", uri: g.uri || "https://line.me" } })) },
-                { type: "box", layout: "horizontal", spacing: "sm", contents: data.value.gridButtons.slice(2,4).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: "#2A2C31", cornerRadius: "md", contents: [{ type: "text", text: g.emoji, align: "center" },{ type: "text", text: g.label, size: "xs", align: "center", color: "#E6E6E6" }], action: { type: "uri", uri: g.uri || "https://line.me" } })) }
-            ]}]},
-            footer: { type: "box", layout: "vertical", spacing: "sm", backgroundColor: "#0F0F10", paddingAll: "10px", contents: data.value.videoFooterButtons.map((b,i) => ({ type: "button", style: i===0?"primary":"secondary", color: i===0?b.color:null, height: "sm", action: { type: "uri", label: b.label, uri: b.uri || "https://line.me" } })) }
+            type: "bubble",
+            size: "mega",
+            header: {
+                type: "box", layout: "horizontal", spacing: "md", paddingAll: "8px", backgroundColor: "#1A1B1E",
+                contents: [
+                    { type: "image", url: data.value.headerImg, size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" },
+                    { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [
+                        { type: "text", text: data.value.headerName, weight: "bold", size: "lg", color: "#D4AF37" },
+                        { type: "text", text: data.value.headerTitle, size: "sm", color: "#E6E6E6" },
+                        { type: "text", text: data.value.headerDescription, size: "xs", color: "#A0A0A0", wrap: true }
+                    ]}
+                ]
+            },
+            hero: {
+                type: "video", url: data.value.videoUrl, previewUrl: data.value.previewUrl, aspectRatio: "800:500",
+                altContent: { type: "image", url: data.value.previewUrl, size: "full", aspectRatio: "800:500", aspectMode: "cover" }
+            },
+            body: {
+                type: "box", layout: "vertical", paddingAll: "8px",
+                contents: [{
+                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: "#1F2024", cornerRadius: "14px",
+                    contents: [
+                        {
+                            type: "box", layout: "horizontal", spacing: "sm",
+                            contents: data.value.gridButtons.slice(0, 2).map(g => ({
+                                type: "box", layout: "vertical", paddingAll: "12px", backgroundColor: "#2A2C31", cornerRadius: "12px",
+                                action: { type: "uri", label: g.label, uri: g.uri || "#" },
+                                contents: [
+                                    { type: "text", text: g.emoji, size: "xl", align: "center" },
+                                    { type: "text", text: g.label, size: "sm", align: "center", color: "#E6E6E6" }
+                                ]
+                            }))
+                        },
+                        {
+                            type: "box", layout: "horizontal", spacing: "sm",
+                            contents: data.value.gridButtons.slice(2, 4).map(g => ({
+                                type: "box", layout: "vertical", paddingAll: "12px", backgroundColor: "#2A2C31", cornerRadius: "12px",
+                                action: { type: "uri", label: g.label, uri: g.uri || "#" },
+                                contents: [
+                                    { type: "text", text: g.emoji, size: "xl", align: "center" },
+                                    { type: "text", text: g.label, size: "sm", align: "center", color: "#E6E6E6" }
+                                ]
+                            }))
+                        }
+                    ]
+                }]
+            },
+            footer: {
+                type: "box", layout: "vertical", spacing: "sm", paddingAll: "8px",
+                contents: data.value.videoFooterButtons.map((b, i) => ({
+                    type: "button", style: i === 0 ? "primary" : "secondary", color: i === 0 ? b.color : null, height: "sm",
+                    action: { type: "uri", label: b.label, uri: b.uri || "#" }
+                }))
+            },
+            styles: { body: { backgroundColor: "#0F0F10" }, footer: { backgroundColor: "#0F0F10" } }
         }));
         return { data, flexJson };
     }
 };
 
+/** 模組 3: 電商型組件邏輯 */
 const EcommerceEditor = {
     props: ['initialData'],
     template: '#ecommerce-editor-template',
     components: { 'editor-header': EditorHeader, 'json-viewer': JsonViewer },
     setup(props) {
-        const state = ref(JSON.parse(JSON.stringify(props.initialData)));
+        const state = ref({
+            ...JSON.parse(JSON.stringify(props.initialData)),
+            altText: props.initialData.altText || '快來看看最新的特惠商品！'
+        });
         const flexJson = computed(() => {
             const cols = state.value.body.columns;
             const width = cols === 3 ? "32%" : "23%";
@@ -468,31 +581,35 @@ createApp({
         const currentTab = ref('dashboard'); const currentSubTab = ref('single');
         const isLoggedIn = ref(false); const user = ref(null);
 
-        const flexData = ref({ type: 'standard', imageUrl: 'https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png', aspectRatio: '20:13', title: '經典咖啡', subtitle: '歡迎光臨本店享受！', showBadge: true, badgeColor: '#FF0000', buttons: [{ label: '了解更多', uri: '', color: '#00B900' }], headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png', headerName: 'TONY', headerTitle: 'LINE行銷達人', videoUrl: 'https://voom-obs.line-scdn.net/mp4-sample', previewUrl: 'https://voom-obs.line-scdn.net/preview-sample', gridButtons: [{ emoji: '🤖', label: 'AI 諮詢', uri: '' }, { emoji: '🎥', label: '產品介紹', uri: '' }, { emoji: '🧾', label: '商品型錄', uri: '' }, { emoji: '📍', label: '門市資訊', uri: '' }], videoFooterButtons: [{ label: '🚀 啟動 AI 小幫手', uri: '', color: '#C9A24D' }, { label: '📤 分享好友', uri: '' }] });
-        const ecomState = ref({ hero: { type: 'video', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "https://lihi.cc/YsmAp", link: "" }, body: { columns: 3, bubbleSize: "mega", bgType: "image", bgColor: "#F8F8F8", bg: "https://lihi.cc/l5qqU", tagBgColor: "#0D0D0D", tagTextColor: "#FFFFFF", items: [{ title: "商品 A", img: "https://lihi.cc/mwMvo", url: "" }, { title: "商品 B", img: "https://lihi.cc/2Nu8G", url: "" }, { title: "商品 C", img: "https://lihi.cc/yRfpn", url: "" }] }, footer: { bg: "#ffffff", btn1: { label: "品牌故事", color: "#000000", uri: "" }, btn2: { label: "好友分享", color: "#000000", uri: "" } } });
+        const flexData = ref({ type: 'standard', altText: '您收到了一則訊息', imageUrl: 'https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png', aspectRatio: '20:13', title: '經典咖啡', subtitle: '歡迎光臨本店享受！', showBadge: true, badgeColor: '#FF0000', buttons: [{ label: '了解更多', uri: '', color: '#00B900' }] });
+        const ecomState = ref({ altText: '快來逛逛吧！', hero: { type: 'video', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "https://lihi.cc/YsmAp", link: "" }, body: { columns: 3, bubbleSize: "mega", bgType: "image", bgColor: "#F8F8F8", bg: "https://lihi.cc/l5qqU", tagBgColor: "#0D0D0D", tagTextColor: "#FFFFFF", items: [{ title: "商品 A", img: "https://lihi.cc/mwMvo", url: "" }, { title: "商品 B", img: "https://lihi.cc/2Nu8G", url: "" }, { title: "商品 C", img: "https://lihi.cc/yRfpn", url: "" }] }, footer: { bg: "#ffffff", btn1: { label: "品牌故事", color: "#000000", uri: "" }, btn2: { label: "好友分享", color: "#000000", uri: "" } } });
 
         const pageTitle = computed(() => currentTab.value === 'dashboard' ? '儀表板總覽' : { single: '文章型 Flex', video: '影片名片插件', ecommerce: '電商型插件' }[currentSubTab.value]);
         const toggleMenu = () => { if (isSidebarCollapsed.value) isSidebarCollapsed.value = false; isMessageMenuOpen.value = !isMessageMenuOpen.value; };
         const switchSubTab = (t, s) => { currentTab.value = t; currentSubTab.value = s; };
         const login = () => liff.login();
 
-        const handlePush = (json) => {
-            if (!liff.isLoggedIn()) { alert("請先登入 LINE。"); login(); return; }
-            liff.shareTargetPicker([{ type: "flex", altText: "分享客製化插件訊息", contents: json }])
-            .then(res => { if (res) alert("推播成功！"); })
+        const handlePush = ({ json, altText }) => {
+            if (!liff.isLoggedIn()) { alert("請先登入 LINE 以執行測試。"); login(); return; }
+            liff.shareTargetPicker([{ 
+                type: "flex", 
+                altText: altText || "您收到了一則客製化插件訊息", 
+                contents: json 
+            }])
+            .then(res => { if (res) alert("推播發送成功！"); })
             .catch(err => alert("推播失敗：" + err));
         };
 
         onMounted(async () => {
             try { 
-                await liff.init({ liffId: "2008541971-Wgvz6gD8" }); // 已更新為新 ID
+                await liff.init({ liffId: "2008541971-Wgvz6gD8" });
                 isLoggedIn.value = liff.isLoggedIn(); 
                 if (isLoggedIn.value) user.value = await liff.getProfile(); 
                 if (window.lucide) window.lucide.createIcons(); 
             } catch (e) { console.error("LIFF Init failed", e); }
         });
 
-        return { isSidebarCollapsed, isMessageMenuOpen, currentTab, currentSubTab, isLoggedIn, user, flexData, ecomState, pageTitle, toggleMenu, switchSubTab, login, handleSave: (d) => alert("已模擬儲存邏輯"), handlePush };
+        return { isSidebarCollapsed, isMessageMenuOpen, currentTab, currentSubTab, isLoggedIn, user, flexData, ecomState, pageTitle, toggleMenu, switchSubTab, login, handleSave: (d) => alert("專案數據已模擬儲存"), handlePush };
     }
 }).mount('#app');
 </script>
