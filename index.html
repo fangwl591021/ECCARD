@@ -23,7 +23,7 @@
         .submenu-item-active { color: #00B900; font-weight: bold; }
         .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* 預覽模擬器核心樣式 (完全保留) */
+        /* 預覽模擬器核心樣式 (完全保留原始畫面) */
         .preview-window { width: 300px; height: 560px; background: #0F0F10; border: 10px solid #333; border-radius: 32px; overflow-y: auto; position: relative; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); }
         .preview-window::-webkit-scrollbar { width: 0px; }
         .flex-bubble { background: #FFFFFF; border-radius: 12px; overflow: hidden; width: 250px; margin: 0 auto; border: 1px solid #333; }
@@ -35,7 +35,7 @@
         .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; background: #0F0F10; }
         .grid-item { background: #2A2C31; padding: 10px; border-radius: 10px; text-align: center; }
 
-        /* 電商版專用樣式 (完全保留) */
+        /* 電商版專用樣式 */
         .chat-room-bg { background-color: #7988a0; width: 100%; height: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .flex-bubble-container { width: 100%; max-width: 350px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -93,7 +93,7 @@
                     <div class="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(0,185,0,0.6)]"></div>
                     <span class="text-[10px] text-green-700 font-bold uppercase">Connected</span>
                 </div>
-                <div v-else @click="login" class="flex items-center gap-2 px-4 py-1.5 bg-yellow-50 rounded-full border border-yellow-200 text-yellow-700 text-xs font-bold cursor-pointer hover:bg-yellow-100">
+                <div v-else @click="login" class="flex items-center gap-2 px-4 py-1.5 bg-yellow-50 rounded-full border border-yellow-200 text-yellow-700 text-xs font-bold cursor-pointer hover:bg-yellow-100 transition-all">
                     <i class="fas fa-sign-in-alt"></i> 登入 LINE
                 </div>
                 <div class="w-10 h-10 rounded-xl bg-line-green text-white flex items-center justify-center font-bold shadow-md">
@@ -112,7 +112,7 @@
 
             <div v-if="currentTab === 'dashboard'" class="p-10">
                 <h3 class="text-2xl font-bold">歡迎回來</h3>
-                <p class="text-gray-400">請從左側菜單選擇功能模組。</p>
+                <p class="text-gray-400 mt-2">請從左側菜單選擇功能模組開始設計。</p>
             </div>
         </div>
     </main>
@@ -158,7 +158,7 @@
             <json-viewer :json="flexJson"></json-viewer>
         </div>
     </div>
-    <!-- 預覽視窗 (完全保留) -->
+    <!-- 預覽視窗 -->
     <div class="w-[360px] shrink-0 bg-gray-50 flex items-center justify-center py-8 shadow-inner overflow-y-auto no-scrollbar">
         <div class="preview-window">
             <div class="p-3 border-b border-gray-800 bg-[#1A1B1E] flex items-center gap-2 sticky top-0 z-50">
@@ -229,7 +229,7 @@
                 </div>
                 <div class="video-hero">
                     <img :src="data.previewUrl" class="w-full h-full object-cover opacity-60">
-                    <div class="absolute inset-0 flex items-center justify-center"><i class="fas fa-play-circle text-white text-4xl opacity-90 drop-shadow-lg"></i></div>
+                    <i class="fas fa-play-circle text-white text-4xl absolute opacity-90 drop-shadow-lg"></i>
                 </div>
                 <div class="grid-box">
                     <div v-for="grid in data.gridButtons" class="grid-item">
@@ -302,7 +302,7 @@
             <json-viewer :json="flexJson"></json-viewer>
         </div>
     </div>
-    <!-- 預覽視窗 (完全保留) -->
+    <!-- 預覽視窗 (電商風格) -->
     <div class="w-[360px] shrink-0 bg-slate-100 relative overflow-hidden flex flex-col">
         <div class="chat-room-bg custom-scrollbar">
             <div class="text-center my-4"><span class="bg-black/20 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">Today</span></div>
@@ -340,27 +340,18 @@
 <script>
 const { createApp, ref, computed, onMounted } = Vue;
 
-/** * 通用子組件：編輯器標頭 
- */
 const EditorHeader = {
     props: ['title'],
     template: `
         <div class="flex items-center justify-between">
             <div><h3 class="text-2xl font-bold text-gray-800">{{ title }}</h3><p class="text-sm text-gray-400 mt-1">即時編輯參數，右側預覽畫面會同步更新。</p></div>
             <div class="flex gap-2">
-                <button @click="$emit('save')" class="px-6 py-2.5 bg-purple-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-purple-600 transition-all flex items-center gap-2">
-                    <i class="fas fa-save"></i> 儲存專案
-                </button>
-                <button @click="$emit('push')" class="px-6 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 transition-all flex items-center gap-2">
-                    <i class="fas fa-paper-plane"></i> 🚀 推播測試
-                </button>
+                <button @click="$emit('save')" class="px-6 py-2.5 bg-purple-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-purple-600 transition-all flex items-center gap-2"><i class="fas fa-save"></i> 儲存專案</button>
+                <button @click="$emit('push')" class="px-6 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 transition-all flex items-center gap-2"><i class="fas fa-paper-plane"></i> 🚀 推播測試</button>
             </div>
-        </div>
-    `
+        </div>`
 };
 
-/** * 通用子組件：JSON 檢視器 
- */
 const JsonViewer = {
     props: ['json'],
     template: `
@@ -372,20 +363,16 @@ const JsonViewer = {
             <div class="bg-[#1e2124] rounded-2xl p-6 border border-gray-700 shadow-xl overflow-hidden">
                 <pre class="text-[11px] text-green-400 font-mono leading-relaxed h-48 overflow-y-auto no-scrollbar">{{ JSON.stringify(json, null, 2) }}</pre>
             </div>
-        </div>
-    `,
+        </div>`,
     methods: {
         copy() {
-            const el = document.createElement('textarea');
-            el.value = JSON.stringify(this.json, null, 2);
-            document.body.appendChild(el); el.select();
-            document.execCommand('copy'); document.body.removeChild(el);
+            const el = document.createElement('textarea'); el.value = JSON.stringify(this.json, null, 2);
+            document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
             alert('JSON 已複製！');
         }
     }
 };
 
-/** 模組 1: 文章型編輯器邏輯 */
 const ArticleEditor = {
     props: ['initialData'],
     template: '#article-editor-template',
@@ -408,7 +395,6 @@ const ArticleEditor = {
     }
 };
 
-/** 模組 2: 影片名片編輯器邏輯 */
 const VideoEditor = {
     props: ['initialData'],
     template: '#video-editor-template',
@@ -432,7 +418,6 @@ const VideoEditor = {
     }
 };
 
-/** 模組 3: 電商型編輯器邏輯 (核心生成函數) */
 const EcommerceEditor = {
     props: ['initialData'],
     template: '#ecommerce-editor-template',
@@ -472,9 +457,6 @@ const EcommerceEditor = {
     }
 };
 
-/**
- * 主應用程式
- */
 createApp({
     components: {
         'sidebar-item': { props: ['icon', 'label', 'active'], template: `<a href="#" @click.prevent="$emit('click')" :class="active ? 'sidebar-item-active' : ''" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors sidebar-transition"><i :class="icon" class="w-8 text-center"></i><span class="ml-2 font-medium">{{label}}</span></a>` },
@@ -482,49 +464,35 @@ createApp({
         'article-editor': ArticleEditor, 'video-editor': VideoEditor, 'ecommerce-editor': EcommerceEditor
     },
     setup() {
-        const isSidebarCollapsed = ref(false);
-        const isMessageMenuOpen = ref(true);
-        const currentTab = ref('dashboard');
-        const currentSubTab = ref('single');
-        const isLoggedIn = ref(false);
-        const user = ref(null);
+        const isSidebarCollapsed = ref(false); const isMessageMenuOpen = ref(true);
+        const currentTab = ref('dashboard'); const currentSubTab = ref('single');
+        const isLoggedIn = ref(false); const user = ref(null);
 
-        // 初始化資料 (1:1 移植)
-        const flexData = ref({ type: 'standard', imageUrl: 'https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png', aspectRatio: '20:13', title: 'Brown Cafe', subtitle: '歡迎光臨！', showBadge: true, badgeColor: '#FF0000', buttons: [{ label: '了解更多', uri: '', color: '#00B900' }], headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png', headerName: 'TONY', headerTitle: 'LINE行銷達人', videoUrl: 'https://voom-obs.line-scdn.net/mp4-sample', previewUrl: 'https://voom-obs.line-scdn.net/preview-sample', gridButtons: [{ emoji: '🤖', label: 'AI 諮詢', uri: '' }, { emoji: '🎥', label: '產品介紹', uri: '' }, { emoji: '🧾', label: '商品型錄', uri: '' }, { emoji: '📍', label: '門市資訊', uri: '' }], videoFooterButtons: [{ label: '🚀 啟動 AI 小幫手', uri: '', color: '#C9A24D' }, { label: '📤 分享好友', uri: '' }] });
+        const flexData = ref({ type: 'standard', imageUrl: 'https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png', aspectRatio: '20:13', title: '經典咖啡', subtitle: '歡迎光臨本店享受！', showBadge: true, badgeColor: '#FF0000', buttons: [{ label: '了解更多', uri: '', color: '#00B900' }], headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png', headerName: 'TONY', headerTitle: 'LINE行銷達人', videoUrl: 'https://voom-obs.line-scdn.net/mp4-sample', previewUrl: 'https://voom-obs.line-scdn.net/preview-sample', gridButtons: [{ emoji: '🤖', label: 'AI 諮詢', uri: '' }, { emoji: '🎥', label: '產品介紹', uri: '' }, { emoji: '🧾', label: '商品型錄', uri: '' }, { emoji: '📍', label: '門市資訊', uri: '' }], videoFooterButtons: [{ label: '🚀 啟動 AI 小幫手', uri: '', color: '#C9A24D' }, { label: '📤 分享好友', uri: '' }] });
         const ecomState = ref({ hero: { type: 'video', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "https://lihi.cc/YsmAp", link: "" }, body: { columns: 3, bubbleSize: "mega", bgType: "image", bgColor: "#F8F8F8", bg: "https://lihi.cc/l5qqU", tagBgColor: "#0D0D0D", tagTextColor: "#FFFFFF", items: [{ title: "商品 A", img: "https://lihi.cc/mwMvo", url: "" }, { title: "商品 B", img: "https://lihi.cc/2Nu8G", url: "" }, { title: "商品 C", img: "https://lihi.cc/yRfpn", url: "" }] }, footer: { bg: "#ffffff", btn1: { label: "品牌故事", color: "#000000", uri: "" }, btn2: { label: "好友分享", color: "#000000", uri: "" } } });
 
         const pageTitle = computed(() => currentTab.value === 'dashboard' ? '儀表板總覽' : { single: '文章型 Flex', video: '影片名片插件', ecommerce: '電商型插件' }[currentSubTab.value]);
-
         const toggleMenu = () => { if (isSidebarCollapsed.value) isSidebarCollapsed.value = false; isMessageMenuOpen.value = !isMessageMenuOpen.value; };
         const switchSubTab = (t, s) => { currentTab.value = t; currentSubTab.value = s; };
-
         const login = () => liff.login();
 
         const handlePush = (json) => {
-            if (!liff.isLoggedIn()) {
-                alert("請先登入 LINE 以執行推播測試。");
-                login();
-                return;
-            }
-            liff.shareTargetPicker([{
-                type: "flex",
-                altText: "分享客製化插件訊息",
-                contents: json
-            }])
+            if (!liff.isLoggedIn()) { alert("請先登入 LINE。"); login(); return; }
+            liff.shareTargetPicker([{ type: "flex", altText: "分享客製化插件訊息", contents: json }])
             .then(res => { if (res) alert("推播成功！"); })
             .catch(err => alert("推播失敗：" + err));
         };
 
         onMounted(async () => {
             try { 
-                await liff.init({ liffId: "2008541971-XPIDtaaj" }); 
+                await liff.init({ liffId: "2008541971-Wgvz6gD8" }); // 已更新為新 ID
                 isLoggedIn.value = liff.isLoggedIn(); 
                 if (isLoggedIn.value) user.value = await liff.getProfile(); 
                 if (window.lucide) window.lucide.createIcons(); 
             } catch (e) { console.error("LIFF Init failed", e); }
         });
 
-        return { isSidebarCollapsed, isMessageMenuOpen, currentTab, currentSubTab, isLoggedIn, user, flexData, ecomState, pageTitle, toggleMenu, switchSubTab, login, handleSave: (d) => alert("專案數據已儲存到控制台"), handlePush };
+        return { isSidebarCollapsed, isMessageMenuOpen, currentTab, currentSubTab, isLoggedIn, user, flexData, ecomState, pageTitle, toggleMenu, switchSubTab, login, handleSave: (d) => alert("已模擬儲存邏輯"), handlePush };
     }
 }).mount('#app');
 </script>
