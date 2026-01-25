@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LINEOA 影片名片開發平台</title>
+    <title>video.html</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -13,7 +13,6 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f7f6; overflow: hidden; }
         .line-green { color: #00B900; }
         .bg-line-green { background-color: #00B900; }
-        
         .sidebar-container { background-color: #1e2124; height: 100vh; width: 256px; display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; }
         .sidebar-item-active { background-color: #374151; color: white; border-left: 4px solid #00B900; }
         .preview-window { width: 300px; height: 560px; background: #0F0F10; border: 10px solid #333; border-radius: 32px; overflow-y: auto; position: relative; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); }
@@ -38,7 +37,7 @@
             <span class="ml-4 text-white font-bold whitespace-nowrap uppercase font-mono">Video Pro</span>
         </div>
         <nav class="mt-6 flex-grow overflow-y-auto no-scrollbar">
-            <a href="index.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors"><i class="fas fa-home w-8 text-center"></i><span class="ml-2 font-medium">返回主頁</span></a>
+            <a href="index.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors"><i class="fas fa-home w-8 text-center"></i><span class="ml-2 font-medium">返回主儀表板</span></a>
             <div class="sidebar-item-active flex items-center py-4 px-6"><i class="fas fa-video w-8 text-center"></i><span class="ml-2 font-medium">影片名片開發</span></div>
             <a href="mix.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors"><i class="fas fa-clone w-8 text-center"></i><span class="ml-2 font-medium">混合多頁開發</span></a>
         </nav>
@@ -57,11 +56,11 @@
                 <div class="max-w-4xl mx-auto space-y-8 pb-20">
                     <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-sm">
                         <label class="input-label text-blue-800">聊天室通知文字 (altText)</label>
-                        <input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm outline-none shadow-sm focus:ring-2 focus:ring-blue-200">
+                        <input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-200">
                     </div>
 
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-6">
-                        <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> Header 與背景配色</h4>
+                        <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> Header 品牌與背景配色</h4>
                         <div class="grid grid-cols-2 gap-4">
                             <div><label class="input-label">姓名</label><input type="text" v-model="data.headerName" class="w-full px-4 py-2 border rounded-lg text-sm"></div>
                             <div><label class="input-label">敘述 (20字)</label><input type="text" v-model="data.headerDescription" maxlength="20" class="w-full px-4 py-2 border rounded-lg text-sm"></div>
@@ -72,10 +71,10 @@
                     </div>
 
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
-                        <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-film mr-2 text-line-green"></i> 視覺模式</h4>
+                        <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-film mr-2 text-line-green"></i> 視覺模式設定</h4>
                         <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-300">
-                            <button @click="data.visualMode = 'video'" :class="data.visualMode === 'video' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">影片播放</button>
-                            <button @click="data.visualMode = 'image'" :class="data.visualMode === 'image' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">靜態圖片</button>
+                            <button @click="data.visualMode = 'video'" :class="data.visualMode === 'video' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">影片模式</button>
+                            <button @click="data.visualMode = 'image'" :class="data.visualMode === 'image' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">圖片模式</button>
                         </div>
                         <div v-if="data.visualMode === 'video'" class="space-y-4 animate-in fade-in">
                             <div><label class="input-label">影片連結 (.mp4)</label><input type="text" v-model="data.videoUrl" class="w-full px-4 py-2 border rounded-lg text-sm"></div>
@@ -83,7 +82,7 @@
                         </div>
                         <div v-else class="space-y-4 animate-in fade-in">
                             <div><label class="input-label">圖片網址</label><input type="text" v-model="data.previewUrl" class="w-full px-4 py-2 border rounded-lg text-sm"></div>
-                            <div><label class="input-label">點擊跳轉網址</label><input type="text" v-model="data.imageActionUrl" class="w-full px-4 py-2 border rounded-lg text-sm" placeholder="https://..."></div>
+                            <div><label class="input-label">點擊跳轉</label><input type="text" v-model="data.imageActionUrl" class="w-full px-4 py-2 border rounded-lg text-sm" placeholder="https://..."></div>
                         </div>
                     </div>
 
@@ -101,7 +100,7 @@
                     </div>
 
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                        <h4 class="text-sm font-bold text-gray-700 mb-4">底部主按鈕 (固定高度 Sm)</h4>
+                        <h4 class="text-sm font-bold text-gray-700 mb-4">底部行為按鈕 (固定高度 Sm)</h4>
                         <div v-for="(vBtn, idx) in data.videoFooterButtons" :key="idx" class="flex gap-3 items-center mb-3 p-4 bg-white border rounded-xl shadow-sm">
                             <input type="color" v-model="vBtn.color">
                             <input type="text" v-model="vBtn.label" class="flex-1 border rounded p-2 text-sm font-bold">
@@ -113,6 +112,10 @@
 
             <div class="w-[360px] shrink-0 bg-gray-50 flex items-center justify-center py-8 no-scrollbar shadow-inner">
                 <div class="preview-window">
+                    <div class="p-3 border-b border-gray-800 bg-[#1A1B1E] flex items-center gap-2 sticky top-0 z-50">
+                        <i class="fas fa-chevron-left text-gray-600 text-xs"></i>
+                        <span class="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">LINE Preview</span>
+                    </div>
                     <div class="p-4 h-full" :style="{ backgroundColor: data.bodyBgColor }">
                         <div class="flex-bubble flex-bubble-dark shadow-2xl mt-4" :style="{ backgroundColor: data.bodyBgColor }">
                             <div class="header-box" :style="{ backgroundColor: data.headerBgColor }">
@@ -139,12 +142,12 @@ createApp({
     setup() {
         const isLoggedIn = ref(false);
         const data = ref({
-            altText: '您收到了一則影片名片訊息', visualMode: 'video', imageActionUrl: '', headerName: 'TONY', headerDescription: '系統開發', headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png',
+            altText: '名片訊息', visualMode: 'video', imageActionUrl: '', headerName: 'TONY', headerDescription: '系統開發', headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png',
             headerBgColor: '#1A1B1E', bodyBgColor: '#0F0F10', gridBgColor: 'rgba(255,255,255,0.1)',
             videoUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/mp4',
             previewUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/m800x1200',
             gridButtons: [ { emoji: '🤖', label: 'AI 諮詢', uri: 'https://liff.line.me/2006625044-bPGxrB53/' }, { emoji: '🎥', label: '產品介紹', uri: '' }, { emoji: '🧾', label: '商品型錄', uri: '' }, { emoji: '📍', label: '門市資訊', uri: '' } ],
-            videoFooterButtons: [ { label: '🚀 啟動 AI 小幫手', uri: '', color: '#C9A24D' }, { label: '📤 分享好友', uri: '', color: '#2A2C31' } ]
+            videoFooterButtons: [ { label: '🚀 啟動 AI 小幫手', uri: 'https://liff.line.me/2006625044-bPGxrB53/index.php/colt_sp/6502/', color: '#C9A24D' }, { label: '📤 分享好友', uri: '', color: '#2A2C31' } ]
         });
 
         const flexJson = computed(() => {
@@ -153,15 +156,14 @@ createApp({
                 type: "bubble", size: "mega",
                 header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "8px", backgroundColor: current.headerBgColor, contents: [ { type: "image", url: forceHttps(current.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [ { type: "text", text: current.headerName || "NAME", weight: "bold", size: "lg", color: "#D4AF37" }, { type: "text", text: "LINE行銷達人", size: "sm", color: "#E6E6E6" }, { type: "text", text: current.headerDescription || "DESCRIPTION", size: "xs", color: "#A0A0A0", wrap: true } ] } ] },
                 body: { type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: current.bodyBgColor, contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: "rgba(255,255,255,0.05)", cornerRadius: "14px", contents: [ { type: "box", layout: "horizontal", spacing: "sm", contents: current.gridButtons.slice(0, 2).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: current.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "link", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: "#E6E6E6" }] })) }, { type: "box", layout: "horizontal", spacing: "sm", contents: current.gridButtons.slice(2, 4).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: current.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "link", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: "#E6E6E6" }] })) } ] }] },
-                footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "8px", backgroundColor: current.bodyBgColor, contents: current.videoFooterButtons.map(b => ({ type: "button", style: "primary", height: "sm", color: b.color, action: { type: "uri", label: b.label || "OK", uri: forceHttps(b.uri) } })) },
-                styles: { body: { backgroundColor: current.bodyBgColor }, footer: { backgroundColor: current.bodyBgColor } }
+                footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "8px", backgroundColor: current.bodyBgColor, contents: current.videoFooterButtons.map(b => ({ type: "button", style: "primary", height: "sm", color: b.color, action: { type: "uri", label: b.label || "OK", uri: forceHttps(b.uri) } })) }
             };
-            if (current.visualMode === 'video') bubble.hero = { type: "video", url: forceHttps(current.videoUrl), previewUrl: forceHttps(current.previewUrl), aspectRatio: "800:500", altContent: { type: "image", url: forceHttps(current.previewUrl), size: "full", aspectMode: "cover" } };
-            else bubble.hero = { type: "image", url: forceHttps(current.previewUrl), size: "full", aspectRatio: "800:500", aspectMode: "cover", action: { type: "uri", label: "ImageLink", uri: forceHttps(current.imageActionUrl) } };
+            if (current.visualMode === 'video') bubble.hero = { type: "video", url: forceHttps(current.videoUrl), previewUrl: forceHttps(current.previewUrl), aspectRatio: "800:500", altContent: { type: "image", url: forceHttps(current.previewUrl), size: "full", aspectMode: "cover", aspectRatio: "800:500" } };
+            else bubble.hero = { type: "image", url: forceHttps(current.previewUrl), size: "full", aspectRatio: "800:500", aspectMode: "cover", action: { type: "uri", label: "Image", uri: forceHttps(current.imageActionUrl) } };
             return bubble;
         });
 
-        const pushVideoCard = () => { if (!liff.isLoggedIn()) { liff.login(); return; } liff.shareTargetPicker([{ type: "flex", altText: data.value.altText, contents: cleanJson(flexJson.value) }]).then(res => { if (res) alert("推播成功發送！"); }).catch(err => alert("發送失敗：請檢查所有連結網址皆為 HTTPS。")); };
+        const pushVideoCard = () => { if (!liff.isLoggedIn()) { liff.login(); return; } liff.shareTargetPicker([{ type: "flex", altText: data.value.altText, contents: cleanJson(flexJson.value) }]).then(res => { if (res) alert("推播成功發送！"); }).catch(err => alert("發送失敗：網址需為 HTTPS。")); };
         onMounted(async () => { try { await liff.init({ liffId: "2008541971-Wgvz6gD8" }); isLoggedIn.value = liff.isLoggedIn(); } catch (e) {} });
         return { data, flexJson, isLoggedIn, pushVideoCard, login: () => liff.login() };
     }
