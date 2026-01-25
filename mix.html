@@ -146,7 +146,7 @@
                             </div>
                         </div>
 
-                        <!-- 電商型內容 (完全恢復高級規格) -->
+                        <!-- 電商型內容 -->
                         <div v-if="activeBubble.type === 'ecommerce'" class="space-y-6">
                             <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                                 <h4 class="text-sm font-bold text-gray-700 mb-4 flex justify-between items-center"><span>商品網格配置</span><button @click="activeBubble.items.push({title:'新商品',img:'https://lihi.cc/mwMvo',url:''})" class="text-xs text-line-green font-bold">+ 新增商品</button></h4>
@@ -175,7 +175,7 @@
                             </div>
                         </div>
 
-                        <!-- 底部行為按鈕 (全模組支援獨立配色) -->
+                        <!-- 底部行為按鈕 -->
                         <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                             <h4 class="text-sm font-bold text-gray-700 mb-4 flex justify-between items-center"><span>分頁底部行為按鈕 (固定高度 Sm)</span><button v-if="activeBubble.buttons.length < 3" @click="activeBubble.buttons.push({label:'按鈕',uri:'',color:'#00B900'})" class="text-xs text-line-green font-bold">+ 新增按鈕</button></h4>
                             <div class="space-y-4">
@@ -187,6 +187,9 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- JSON 預覽 -->
+                        <json-viewer :json="fullFlexJson"></json-viewer>
                     </div>
                 </div>
             </div>
@@ -225,7 +228,7 @@
                                 </div>
                             </template>
 
-                            <!-- 預覽: 電商型 (高級復刻) -->
+                            <!-- 預覽: 電商型 -->
                             <template v-else-if="bubble.type === 'ecommerce'">
                                 <div class="w-full aspect-[16/9] bg-black shrink-0"><img :src="bubble.imageUrl" class="w-full h-full object-cover"></div>
                                 <div class="p-2 relative flex-grow" :style="{ backgroundColor: bubble.bgColor }">
@@ -286,7 +289,57 @@ const forceHttps = (u) => {
 };
 
 /* 安全清理：移除 JSON 中的 undefined 以避免 LINE 驗證失敗 */
-const cleanJson = (obj) => JSON.parse(JSON.stringify(obj));
+const cleanJson = (obj) => {
+    const clean = (obj) => {
+        if (Array.isArray(obj)) {
+            return obj.map(clean).filter(item => item !== undefined);
+        } else if (obj && typeof obj === 'object') {
+            const cleaned = {};
+            for (const key in obj) {
+                if (obj[key] !== undefined) {
+                    cleaned[key] = clean(obj[key]);
+                }
+            }
+            return cleaned;
+        }
+        return obj;
+    };
+    return JSON.parse(JSON.stringify(clean(obj)));
+};
+
+/* JSON Viewer 組件 */
+const JsonViewer = {
+    props: ['json'],
+    template: `
+        <div class="mt-8 mb-4">
+            <div class="flex items-center justify-between mb-2">
+                <span class="input-label">Carousel JSON 預覽 (多頁模式)</span>
+                <button @click="copyJson" class="text-xs text-blue-500 hover:text-blue-700 font-bold">
+                    <i class="fas fa-copy mr-1"></i>複製 JSON
+                </button>
+            </div>
+            <div class="bg-gray-900 rounded-xl p-4 border border-gray-700 overflow-hidden font-mono shadow-inner">
+                <pre class="text-[10px] text-green-400 h-48 overflow-y-auto no-scrollbar">{{ JSON.stringify(json, null, 2) }}</pre>
+            </div>
+            <div v-if="copyMessage" class="text-xs text-green-500 mt-2 text-center">{{ copyMessage }}</div>
+        </div>
+    `,
+    setup(props) {
+        const copyMessage = ref('');
+        
+        const copyJson = async () => {
+            try {
+                await navigator.clipboard.writeText(JSON.stringify(props.json, null, 2));
+                copyMessage.value = '✓ JSON 已複製到剪貼簿！';
+                setTimeout(() => copyMessage.value = '', 2000);
+            } catch (err) {
+                copyMessage.value = '複製失敗，請手動複製';
+            }
+        };
+        
+        return { copyJson, copyMessage };
+    }
+};
 
 createApp({
     setup() {
@@ -301,32 +354,61 @@ createApp({
                 aspectRatio: '20:13', 
                 title: '首頁精選', 
                 subtitle: '歡迎查看。', 
-                showBadge: true, badgeText: 'Hot', badgeColor: '#FF0000', badgeUri: '',
+                showBadge: true, 
+                badgeText: 'Hot', 
+                badgeColor: '#FF0000', 
+                badgeUri: '',
                 buttons: [{ label: '了解更多', uri: '', color: '#00B900' }] 
             }] 
         });
 
-        // 核心修正: 確保 activeBubble 正確宣告並被返回
+        // 確保 activeBubble 正確宣告
         const activeBubble = computed(() => carousel.value.bubbles[activeIndex.value] || null);
 
         const addNewBubble = (type) => {
             const b = { 
-                id: crypto.randomUUID(), type, 
+                id: crypto.randomUUID(), 
+                type, 
                 imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/a635f6d04823512343614d4ddc692545.jpg', 
                 buttons: [{ label: '了解更多', uri: '', color: '#00B900' }] 
             };
-            if (type==='article') { 
-                b.title='文章標題'; b.subtitle='詳細內容...'; b.aspectRatio='20:13'; b.showBadge=true; b.badgeText='分享'; b.badgeColor='#FF0000'; b.badgeUri=''; 
-            } else if (type==='card') { 
-                b.headerName='姓名'; b.headerDescription='職位描述內容'; 
-                b.headerImg='https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png'; 
-                b.headerBgColor='#1A1B1E'; b.bodyBgColor='#0F0F10';
-                b.gridButtons=[{emoji:'🤖',label:'AI',uri:''},{emoji:'🛒',label:'買',uri:''},{emoji:'🧾',label:'單',uri:''},{emoji:'📍',label:'圖',uri:''}]; 
-            } else if (type==='ecommerce') { 
-                b.items=[{title:'商品1',img:'https://lihi.cc/mwMvo',url:''},{title:'商品2',img:'https://lihi.cc/2Nu8G',url:''}]; 
-                b.columns=3; b.bgType='color'; b.bgMode='cover'; b.bgColor='#F8F8F8'; b.tagBgColor='#000000'; b.tagTextColor='#FFFFFF'; 
-                b.footer={textEnabled:false, text:'', textAlign:'center', textColor:'#666666'}; 
+            
+            if (type === 'article') { 
+                b.title = '文章標題'; 
+                b.subtitle = '詳細內容...'; 
+                b.aspectRatio = '20:13'; 
+                b.showBadge = true; 
+                b.badgeText = '分享'; 
+                b.badgeColor = '#FF0000'; 
+                b.badgeUri = ''; 
+            } else if (type === 'card') { 
+                b.headerName = '姓名'; 
+                b.headerDescription = '職位描述內容'; 
+                b.headerImg = 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png'; 
+                b.headerBgColor = '#1A1B1E'; 
+                b.bodyBgColor = '#0F0F10';
+                b.gridButtons = [
+                    {emoji:'🤖', label:'AI', uri:''},
+                    {emoji:'🛒', label:'買', uri:''},
+                    {emoji:'🧾', label:'單', uri:''},
+                    {emoji:'📍', label:'圖', uri:''}
+                ]; 
+            } else if (type === 'ecommerce') { 
+                b.items = [
+                    {title:'商品1', img:'https://lihi.cc/mwMvo', url:''},
+                    {title:'商品2', img:'https://lihi.cc/2Nu8G', url:''},
+                    {title:'商品3', img:'https://lihi.cc/mwMvo', url:''},
+                    {title:'商品4', img:'https://lihi.cc/2Nu8G', url:''}
+                ]; 
+                b.columns = 3; 
+                b.bgType = 'color'; 
+                b.bgMode = 'cover'; 
+                b.bgColor = '#F8F8F8'; 
+                b.tagBgColor = '#000000'; 
+                b.tagTextColor = '#FFFFFF'; 
+                b.footer = {textEnabled: false, text:'', textAlign:'center', textColor:'#666666'}; 
             }
+            
             carousel.value.bubbles.push(b);
             activeIndex.value = carousel.value.bubbles.length - 1;
             showAddModal.value = false;
@@ -357,59 +439,413 @@ createApp({
             } 
         };
 
+        // 修正後的完整 JSON 生成函數
         const fullFlexJson = computed(() => {
             const contents = carousel.value.bubbles.map(b => {
-                const bubble = { type: "bubble", size: "mega" };
+                const bubble = { 
+                    type: "bubble", 
+                    size: "mega" 
+                };
                 
-                if (b.type==='article') {
+                if (b.type === 'article') {
+                    // 文章型
                     const bodyContents = [
-                        {type:"image",url:forceHttps(b.imageUrl),size:"full",aspectRatio:b.aspectRatio,aspectMode:"cover"},
-                        {type:"box",layout:"vertical",paddingAll:"5px",contents:[
-                            {type:"text",text:b.title||"標題",weight:"bold",size:"xl",wrap:true,align:"center"},
-                            {type:"text",text:b.subtitle||"描述",size:"sm",margin:"sm",color:"#666666",wrap:true}
-                        ]}
+                        {
+                            type: "image",
+                            url: forceHttps(b.imageUrl),
+                            size: "full",
+                            aspectRatio: b.aspectRatio || "20:13",
+                            aspectMode: "cover"
+                        },
+                        {
+                            type: "box",
+                            layout: "vertical",
+                            paddingAll: "5px",
+                            contents: [
+                                {
+                                    type: "text",
+                                    text: b.title || "標題",
+                                    weight: "bold",
+                                    size: "xl",
+                                    wrap: true,
+                                    align: "center"
+                                },
+                                {
+                                    type: "text",
+                                    text: b.subtitle || "描述",
+                                    size: "sm",
+                                    margin: "sm",
+                                    color: "#666666",
+                                    wrap: true
+                                }
+                            ]
+                        }
                     ];
-                    if (b.showBadge) bodyContents.push({type:"box",layout:"vertical",position:"absolute",backgroundColor:b.badgeColor,cornerRadius:"xl",paddingTop:"2px",paddingBottom:"2px",paddingStart:"10px",paddingEnd:"10px",offsetTop:"10px",offsetEnd:"10px",action:{type:"uri",uri:forceHttps(b.badgeUri)},contents:[{type:"text",text:b.badgeText||"分享",color:"#ffffff",size:"10px",weight:"bold"}]});
-                    bubble.body={type:"box",layout:"vertical",paddingAll:"0px",contents:bodyContents};
+                    
+                    if (b.showBadge) {
+                        bodyContents.push({
+                            type: "box",
+                            layout: "vertical",
+                            position: "absolute",
+                            backgroundColor: b.badgeColor || "#FF0000",
+                            cornerRadius: "xl",
+                            paddingTop: "2px",
+                            paddingBottom: "2px",
+                            paddingStart: "10px",
+                            paddingEnd: "10px",
+                            offsetTop: "10px",
+                            offsetEnd: "10px",
+                            action: b.badgeUri ? { type: "uri", uri: forceHttps(b.badgeUri) } : undefined,
+                            contents: [
+                                {
+                                    type: "text",
+                                    text: b.badgeText || "分享",
+                                    color: "#ffffff",
+                                    size: "10px",
+                                    weight: "bold"
+                                }
+                            ]
+                        });
+                    }
+                    
+                    bubble.body = {
+                        type: "box",
+                        layout: "vertical",
+                        paddingAll: "0px",
+                        contents: bodyContents
+                    };
+                    
+                } else if (b.type === 'card') {
+                    // 修正名片型結構
+                    bubble.header = {
+                        type: "box",
+                        layout: "horizontal",
+                        paddingAll: "12px",
+                        backgroundColor: b.headerBgColor || "#1A1B1E",
+                        contents: [
+                            {
+                                type: "image",
+                                url: forceHttps(b.headerImg),
+                                size: "xs",
+                                aspectRatio: "1:1",
+                                aspectMode: "cover",
+                                gravity: "center"
+                            },
+                            {
+                                type: "box",
+                                layout: "vertical",
+                                flex: 3,
+                                margin: "md",
+                                contents: [
+                                    {
+                                        type: "text",
+                                        text: b.headerName || "姓名",
+                                        weight: "bold",
+                                        color: "#D4AF37",
+                                        size: "sm"
+                                    },
+                                    {
+                                        type: "text",
+                                        text: b.headerDescription || "描述",
+                                        size: "xs",
+                                        color: "#E6E6E6",
+                                        wrap: true
+                                    }
+                                ]
+                            }
+                        ]
+                    };
+                    
+                    bubble.hero = {
+                        type: "image",
+                        url: forceHttps(b.imageUrl),
+                        size: "full",
+                        aspectRatio: "800:500",
+                        aspectMode: "cover"
+                    };
+                    
+                    // 網格按鈕 - 修正為 button 組件
+                    const gridButtons = (b.gridButtons || []).slice(0, 4);
+                    
+                    bubble.body = {
+                        type: "box",
+                        layout: "vertical",
+                        backgroundColor: b.bodyBgColor || "#0F0F10",
+                        paddingAll: "12px",
+                        contents: [
+                            {
+                                type: "box",
+                                layout: "vertical",
+                                contents: [
+                                    {
+                                        type: "box",
+                                        layout: "horizontal",
+                                        contents: gridButtons.slice(0, 2).map(g => ({
+                                            type: "button",
+                                            flex: 1,
+                                            margin: "xs",
+                                            height: "sm",
+                                            style: "primary",
+                                            color: "#4CAF50",
+                                            action: {
+                                                type: "uri",
+                                                label: g.label || "按鈕",
+                                                uri: forceHttps(g.uri)
+                                            }
+                                        }))
+                                    },
+                                    {
+                                        type: "box",
+                                        layout: "horizontal",
+                                        margin: "sm",
+                                        contents: gridButtons.slice(2, 4).map(g => ({
+                                            type: "button",
+                                            flex: 1,
+                                            margin: "xs",
+                                            height: "sm",
+                                            style: "primary",
+                                            color: "#4CAF50",
+                                            action: {
+                                                type: "uri",
+                                                label: g.label || "按鈕",
+                                                uri: forceHttps(g.uri)
+                                            }
+                                        }))
+                                    }
+                                ]
+                            }
+                        ]
+                    };
+                    
+                } else if (b.type === 'ecommerce') {
+                    // 修正電商型結構
+                    const items = b.items || [];
+                    const columns = b.columns || 3;
+                    
+                    // 將商品分組為行
+                    const rows = [];
+                    for (let i = 0; i < items.length; i += columns) {
+                        const rowItems = items.slice(i, i + columns);
+                        const rowContents = rowItems.map(item => ({
+                            type: "box",
+                            layout: "vertical",
+                            flex: 1,
+                            margin: "xs",
+                            cornerRadius: "sm",
+                            borderWidth: "1px",
+                            borderColor: "#EEEEEE",
+                            contents: [
+                                {
+                                    type: "image",
+                                    url: forceHttps(item.img),
+                                    aspectRatio: "1:1",
+                                    aspectMode: "cover",
+                                    size: "full"
+                                },
+                                {
+                                    type: "box",
+                                    layout: "vertical",
+                                    backgroundColor: b.tagBgColor || "#000000",
+                                    paddingAll: "4px",
+                                    contents: [
+                                        {
+                                            type: "text",
+                                            text: item.title || "商品",
+                                            size: "xxs",
+                                            color: b.tagTextColor || "#FFFFFF",
+                                            align: "center",
+                                            wrap: true
+                                        }
+                                    ]
+                                }
+                            ],
+                            action: item.url ? {
+                                type: "uri",
+                                label: item.title || "商品",
+                                uri: forceHttps(item.url)
+                            } : undefined
+                        }));
+                        
+                        rows.push({
+                            type: "box",
+                            layout: "horizontal",
+                            spacing: "sm",
+                            margin: i === 0 ? "none" : "sm",
+                            contents: rowContents
+                        });
+                    }
+                    
+                    bubble.hero = {
+                        type: "image",
+                        url: forceHttps(b.imageUrl),
+                        size: "full",
+                        aspectRatio: b.aspectRatio || "16:9",
+                        aspectMode: "cover"
+                    };
+                    
+                    // 構建 body
+                    const bodyContents = [];
+                    
+                    if (b.bgType === 'image' && b.bg) {
+                        bodyContents.push({
+                            type: "image",
+                            url: forceHttps(b.bg),
+                            position: "absolute",
+                            size: "full",
+                            aspectMode: b.bgMode === 'top' ? "fitWidth" : "cover"
+                        });
+                    }
+                    
+                    bodyContents.push({
+                        type: "box",
+                        layout: "vertical",
+                        paddingAll: "12px",
+                        backgroundColor: b.bgType === 'color' ? b.bgColor || "#F8F8F8" : "transparent",
+                        contents: rows
+                    });
+                    
+                    bubble.body = {
+                        type: "box",
+                        layout: "vertical",
+                        paddingAll: "none",
+                        contents: bodyContents
+                    };
+                    
+                    if (b.footer && b.footer.textEnabled && b.footer.text) {
+                        bubble.body.contents.push({
+                            type: "text",
+                            text: b.footer.text,
+                            size: "xxs",
+                            wrap: true,
+                            align: b.footer.textAlign || "center",
+                            color: b.footer.textColor || "#666666",
+                            margin: "md"
+                        });
+                    }
                 }
-                else if (b.type==='card') {
-                    bubble.header={type:"box",layout:"horizontal",paddingAll:"8px",backgroundColor:b.headerBgColor,contents:[{type:"image",url:forceHttps(b.headerImg),size:"xs",aspectRatio:"1:1",aspectMode:"cover",gravity:"center"},{type:"box",layout:"vertical",flex:3,margin:"md",contents:[{type:"text",text:b.headerName||"姓名",weight:"bold",color:"#D4AF37"},{type:"text",text:b.headerDescription||"描述",size:"xs",color:"#E6E6E6",wrap:true}]}]};
-                    bubble.hero={type:"image",url:forceHttps(b.imageUrl),size:"full",aspectRatio:"800:500",aspectMode:"cover"};
-                    // 修正: 確保 2x2 共 4 個按鈕顯示
-                    bubble.body={type:"box",layout:"vertical",backgroundColor:b.bodyBgColor,paddingAll:"8px",contents:[
-                        {type:"box",layout:"horizontal",spacing:"sm",contents: (b.gridButtons || []).slice(0,2).map(g=>({type:"box",layout:"vertical",paddingAll:"8px",backgroundColor:"rgba(255,255,255,0.1)",cornerRadius:"md",action:{type:"uri",label:g.label||"grid",uri:forceHttps(g.uri)},contents:[{type:"text",text:g.emoji||"🔘",align:"center"},{type:"text",text:g.label||"選單",size:"xxs",align:"center",color:"#E6E6E6"}]}))},
-                        {type:"box",layout:"horizontal",spacing:"sm",margin:"sm",contents: (b.gridButtons || []).slice(2,4).map(g=>({type:"box",layout:"vertical",paddingAll:"8px",backgroundColor:"rgba(255,255,255,0.1)",cornerRadius:"md",action:{type:"uri",label:g.label||"grid",uri:forceHttps(g.uri)},contents:[{type:"text",text:g.emoji||"🔘",align:"center"},{type:"text",text:g.label||"選單",size:"xxs",align:"center",color:"#E6E6E6"}]}))}
-                    ]};
-                }
-                else if (b.type==='ecommerce') {
-                    const chunk=(a,s)=>Array.from({length:Math.ceil(a.length/s)},(v,i)=>a.slice(i*s,i*s+s)); 
-                    const prods={type:"box",layout:"vertical",contents:chunk(b.items||[], b.columns).map((row, rIdx)=>({type:"box",layout:"horizontal",margin:rIdx===0?"none":"sm",contents:row.map(item=>({type:"box",layout:"vertical",width:b.columns===3?"32%":"23%",contents:[{type:"image",url:forceHttps(item.img),aspectRatio:"1:1",aspectMode:"cover"},{type:"box",layout:"vertical",backgroundColor:b.tagBgColor||"#000",paddingAll:"xs",contents:[{type:"text",text:item.title||"商品",size:"xxxs",color:b.tagTextColor||"#fff",align:"center"}]}],action:{type:"uri",label:item.title||"商品",uri:forceHttps(item.url)}}))}))};
-                    bubble.hero={type:"image",url:forceHttps(b.imageUrl),size:"full",aspectRatio:b.aspectRatio||"16:9",aspectMode:"cover"};
-                    bubble.body={type:"box",layout:"vertical",paddingAll:"none",backgroundColor:b.bgColor||"#f8f8f8",contents: b.bgType==='image' ? [{type:"image",url:forceHttps(b.bg),position:"absolute",size:"full",aspectMode:b.bgMode==='top'?"width":"cover"},prods] : [prods]};
-                    if (b.footer && b.footer.textEnabled) bubble.body.contents.push({type:"text",text:b.footer.text,size:"xxs",wrap:true,align:b.footer.textAlign,color:b.footer.textColor,margin:"md"});
-                }
-
-                bubble.footer={type:"box",layout:"vertical",spacing:"sm",paddingAll: "15px",contents: (b.buttons || []).map(btn=>({type:"button",style:"primary",height:"sm",color:btn.color,action:{type:"uri",label:btn.label||"按鈕",uri:forceHttps(btn.uri)}}))};
+                
+                // 統一處理底部按鈕
+                bubble.footer = {
+                    type: "box",
+                    layout: "vertical",
+                    spacing: "sm",
+                    paddingAll: "12px",
+                    contents: (b.buttons || []).map(btn => ({
+                        type: "button",
+                        style: "primary",
+                        height: "sm",
+                        color: btn.color || "#00B900",
+                        action: {
+                            type: "uri",
+                            label: btn.label || "按鈕",
+                            uri: forceHttps(btn.uri)
+                        }
+                    }))
+                };
+                
                 return bubble;
             });
-            return { type: "carousel", contents: contents };
+            
+            return { 
+                type: "carousel", 
+                contents: contents 
+            };
         });
 
+        const validateFlexJson = (json) => {
+            try {
+                json.contents.forEach((bubble, idx) => {
+                    const validateUri = (obj) => {
+                        if (obj && obj.uri && obj.uri !== '' && !obj.uri.startsWith('https://') && !obj.uri.startsWith('line://')) {
+                            throw new Error(`第 ${idx + 1} 頁包含非 HTTPS 網址: ${obj.uri}`);
+                        }
+                    };
+                    
+                    const checkActions = (obj) => {
+                        if (obj && typeof obj === 'object') {
+                            if (obj.action) validateUri(obj.action);
+                            if (obj.contents && Array.isArray(obj.contents)) {
+                                obj.contents.forEach(checkActions);
+                            }
+                            if (obj.uri) validateUri(obj);
+                        }
+                    };
+                    
+                    checkActions(bubble);
+                });
+                return true;
+            } catch (error) {
+                alert(error.message);
+                return false;
+            }
+        };
+
         const pushMix = () => { 
-            if (!liff.isLoggedIn()) { liff.login(); return; } 
-            // 發送前清理 JSON 確保相容性
-            const payload = cleanJson(fullFlexJson.value);
-            liff.shareTargetPicker([{ type: "flex", altText: carousel.value.altText || "混合多頁訊息", contents: payload }]).then(res => { if (res) alert("多頁混合推播成功！"); })
-            .catch(err => alert("發送失敗：請確認所有分頁網址皆為 HTTPS。")); 
+            if (!liff.isLoggedIn()) { 
+                liff.login(); 
+                return; 
+            } 
+            
+            try {
+                // 驗證 JSON
+                if (!validateFlexJson(fullFlexJson.value)) {
+                    return;
+                }
+                
+                // 清理並準備發送內容
+                const payload = cleanJson(fullFlexJson.value);
+                console.log("發送內容:", JSON.stringify(payload, null, 2));
+                
+                liff.shareTargetPicker([
+                    { 
+                        type: "flex", 
+                        altText: carousel.value.altText || "混合多頁訊息", 
+                        contents: payload 
+                    }
+                ]).then(res => { 
+                    if (res) {
+                        alert("✓ 多頁混合推播成功！");
+                    }
+                })
+                .catch(err => {
+                    console.error("發送錯誤:", err);
+                    if (err.message && err.message.includes("invalid")) {
+                        alert("發送失敗：JSON 結構有問題，請檢查所有欄位是否正確填寫。\n\n可複製 JSON 到 LINE Developers 模擬器測試。");
+                    } else {
+                        alert("發送失敗：" + (err.message || "請確認所有分頁網址皆為 HTTPS。"));
+                    }
+                }); 
+            } catch (error) {
+                console.error("JSON 結構錯誤:", error);
+                alert("JSON 結構有問題，請檢查所有欄位是否正確填寫。\n錯誤：" + error.message);
+            }
         };
 
         onMounted(async () => { 
-            try { await liff.init({ liffId: "2008541971-Wgvz6gD8" }); if (window.lucide) window.lucide.createIcons(); } catch (e) {} 
+            try { 
+                await liff.init({ liffId: "2008541971-Wgvz6gD8" }); 
+                if (window.lucide) window.lucide.createIcons(); 
+            } catch (e) {
+                console.error("LIFF 初始化失敗:", e);
+            } 
         });
 
-        return { carousel, activeIndex, activeBubble, showAddModal, addNewBubble, removeBubble, moveLeft, moveRight, pushMix, getTypeName: (t) => ({'article':'文章型','card':'名片圖片','ecommerce':'電商商城'}[t]), getTypeIcon: (t) => ({'article':'fa-file-alt','card':'fa-id-card','ecommerce':'fa-shopping-cart'}[t]), fullFlexJson, getAspectClass: (a) => ({'1:1':'aspect-1-1','16:9':'aspect-16-9','20:13':'aspect-20-13'}[a] || 'aspect-16-9') };
+        return { 
+            carousel, 
+            activeIndex, 
+            activeBubble, 
+            showAddModal, 
+            addNewBubble, 
+            removeBubble, 
+            moveLeft, 
+            moveRight, 
+            pushMix, 
+            getTypeName: (t) => ({'article':'文章型','card':'名片圖片','ecommerce':'電商商城'}[t]), 
+            getTypeIcon: (t) => ({'article':'fa-file-alt','card':'fa-id-card','ecommerce':'fa-shopping-cart'}[t]), 
+            fullFlexJson 
+        };
     }
-}).component('json-viewer', { props: ['json'], template: `<div class="mt-8 mb-4"><span class="input-label">Carousel JSON 預覽 (多頁模式)</span><div class="bg-gray-50 rounded-xl p-4 border overflow-hidden font-mono shadow-inner"><pre class="text-[10px] text-gray-600 h-24 overflow-y-auto no-scrollbar">{{ JSON.stringify(json, null, 2) }}</pre></div></div>` }).mount('#app');
+}).component('json-viewer', JsonViewer).mount('#app');
 </script>
 </body>
 </html>
