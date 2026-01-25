@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>video.html</title>
+    <!-- 引入 LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -13,103 +14,164 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f7f6; overflow: hidden; }
         .line-green { color: #00B900; }
         .bg-line-green { background-color: #00B900; }
+        
+        /* 側邊欄 */
         .sidebar-container { background-color: #1e2124; height: 100vh; width: 256px; display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; }
         .sidebar-item-active { background-color: #374151; color: white; border-left: 4px solid #00B900; }
+        
+        /* 手機模擬器樣式 */
         .preview-window { width: 300px; height: 560px; background: #0F0F10; border: 10px solid #333; border-radius: 32px; overflow-y: auto; position: relative; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); }
         .preview-window::-webkit-scrollbar { width: 0px; }
         .flex-bubble { background: #FFFFFF; border-radius: 12px; overflow: hidden; width: 250px; margin: 0 auto; border: 1px solid #333; }
         .flex-bubble-dark { background: #1F2024; color: white; }
+        
         .header-box { padding: 10px; display: flex; align-items: center; gap: 10px; }
         .video-hero { position: relative; background: #000; width: 100%; aspect-ratio: 800/500; display: flex; align-items: center; justify-content: center; }
         .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
-        .grid-item { padding: 10px; border-radius: 10px; text-align: center; }
+        .grid-item { padding: 10px; border-radius: 10px; text-align: center; transition: background-color 0.3s; }
+
         .input-label { @apply block text-[11px] font-bold text-gray-500 uppercase mb-1 ml-1 tracking-wider; }
         input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; cursor: pointer; background: none; }
         input[type="color"]::-webkit-color-swatch { border-radius: 4px; border: 1px solid #ddd; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* 動畫 */
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div id="app" class="flex h-screen overflow-hidden text-gray-800">
+    <!-- 側邊欄 -->
     <aside class="sidebar-container text-gray-400 shadow-2xl">
         <div class="h-16 flex items-center px-6 border-b border-gray-700 shrink-0">
             <i class="fab fa-line text-3xl line-green"></i>
-            <span class="ml-4 text-white font-bold whitespace-nowrap uppercase font-mono">Video Pro</span>
+            <span class="ml-4 text-white font-bold whitespace-nowrap tracking-tighter uppercase font-mono">Video Pro</span>
         </div>
-        <nav class="mt-6 flex-grow overflow-y-auto no-scrollbar">
-            <a href="index.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors"><i class="fas fa-home w-8 text-center"></i><span class="ml-2 font-medium">返回主儀表板</span></a>
-            <div class="sidebar-item-active flex items-center py-4 px-6"><i class="fas fa-video w-8 text-center"></i><span class="ml-2 font-medium">影片名片開發</span></div>
-            <a href="mix.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors"><i class="fas fa-clone w-8 text-center"></i><span class="ml-2 font-medium">混合多頁開發</span></a>
+        <nav class="mt-6 flex-grow overflow-y-auto no-scrollbar whitespace-nowrap">
+            <a href="index.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors">
+                <i class="fas fa-home w-8 text-center"></i>
+                <span class="ml-2 font-medium">返回主儀表板</span>
+            </a>
+            <div class="sidebar-item-active flex items-center py-4 px-6">
+                <i class="fas fa-video w-8 text-center"></i>
+                <span class="ml-2 font-medium">影片名片開發</span>
+            </div>
+            <a href="mix.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors">
+                <i class="fas fa-clone w-8 text-center"></i>
+                <span class="ml-2 font-medium">混合多頁開發</span>
+            </a>
         </nav>
+        <div class="p-6 text-[10px] text-gray-500 border-t border-gray-700 font-mono text-center">
+            LIFF ID: Wgvz6gD8
+        </div>
     </aside>
 
+    <!-- 主要內容區 -->
     <main class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#f8fafc]">
         <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
-            <h2 class="text-xl font-bold text-gray-800">影片名片插件開發</h2>
-            <button @click="pushVideoCard" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2">
-                <i class="fas fa-paper-plane"></i> 🚀 推播發送測試
-            </button>
+            <div class="flex items-center gap-3">
+                <h2 class="text-xl font-bold text-gray-800">影片名片插件開發</h2>
+                <span class="px-2 py-0.5 bg-purple-100 text-purple-600 text-[10px] font-bold rounded">FIXED</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div v-if="isLoggedIn" class="flex items-center gap-2 px-4 py-1.5 bg-green-50 rounded-full border border-green-100 shadow-sm">
+                    <div class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-[10px] text-green-700 font-bold uppercase">Connected</span>
+                </div>
+                <div class="flex gap-2">
+                    <button @click="copyJson" class="px-5 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2 transition-all">
+                        <i class="fas fa-copy"></i> 複製 JSON
+                    </button>
+                    <button @click="pushVideoCard" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all">
+                        <i class="fas fa-paper-plane"></i> 🚀 推播發送測試
+                    </button>
+                </div>
+            </div>
         </header>
 
         <div class="flex-grow flex overflow-hidden">
+            <!-- 編輯區 -->
             <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
                 <div class="max-w-4xl mx-auto space-y-8 pb-20">
+                    
+                    <!-- 推播設定 -->
                     <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-sm">
                         <label class="input-label text-blue-800">聊天室通知文字 (altText)</label>
-                        <input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-200">
+                        <input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm outline-none shadow-sm focus:ring-2 focus:ring-blue-200">
                     </div>
 
+                    <!-- Header & 配色設定 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-6">
                         <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> Header 品牌與背景配色</h4>
                         <div class="grid grid-cols-2 gap-4">
-                            <div><label class="input-label">姓名</label><input type="text" v-model="data.headerName" class="w-full px-4 py-2 border rounded-lg text-sm"></div>
-                            <div><label class="input-label">敘述 (20字)</label><input type="text" v-model="data.headerDescription" maxlength="20" class="w-full px-4 py-2 border rounded-lg text-sm"></div>
-                            <div class="col-span-2"><label class="input-label">頭像網址</label><input type="text" v-model="data.headerImg" class="w-full px-4 py-2 border rounded-lg text-sm"></div>
-                            <div><label class="input-label">Header 背景</label><input type="color" v-model="data.headerBgColor" class="w-full"></div>
-                            <div><label class="input-label">Body 背景</label><input type="color" v-model="data.bodyBgColor" class="w-full"></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
-                        <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-film mr-2 text-line-green"></i> 視覺模式設定</h4>
-                        <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-300">
-                            <button @click="data.visualMode = 'video'" :class="data.visualMode === 'video' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">影片模式</button>
-                            <button @click="data.visualMode = 'image'" :class="data.visualMode === 'image' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">圖片模式</button>
-                        </div>
-                        <div v-if="data.visualMode === 'video'" class="space-y-4 animate-in fade-in">
-                            <div><label class="input-label">影片連結 (.mp4)</label><input type="text" v-model="data.videoUrl" class="w-full px-4 py-2 border rounded-lg text-sm"></div>
-                            <div><label class="input-label">預覽封面網址</label><input type="text" v-model="data.previewUrl" class="w-full px-4 py-2 border rounded-lg text-sm"></div>
-                        </div>
-                        <div v-else class="space-y-4 animate-in fade-in">
-                            <div><label class="input-label">圖片網址</label><input type="text" v-model="data.previewUrl" class="w-full px-4 py-2 border rounded-lg text-sm"></div>
-                            <div><label class="input-label">點擊跳轉</label><input type="text" v-model="data.imageActionUrl" class="w-full px-4 py-2 border rounded-lg text-sm" placeholder="https://..."></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="text-sm font-bold text-gray-700">網格按鈕 (同步配色)</h4>
-                            <input type="color" v-model="data.gridBgColor">
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div v-for="(grid, idx) in data.gridButtons" :key="idx" class="p-4 bg-white border rounded-xl shadow-sm space-y-2">
-                                <div class="flex gap-2 mb-1"><input type="text" v-model="grid.emoji" class="w-10 border rounded text-sm text-center"><input type="text" v-model="grid.label" class="flex-1 border rounded px-2 py-1 text-xs"></div>
-                                <input type="text" v-model="grid.uri" class="w-full border rounded px-2 py-1 text-[10px]" placeholder="HTTPS URL">
+                            <div><label class="input-label">姓名 / 品牌名</label><input type="text" v-model="data.headerName" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green outline-none"></div>
+                            <div><label class="input-label">敘述描述 (限20字)</label><input type="text" v-model="data.headerDescription" maxlength="20" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green outline-none"></div>
+                            <div class="col-span-2"><label class="input-label">頭像網址 (HTTPS)</label><input type="text" v-model="data.headerImg" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green outline-none"></div>
+                            <div>
+                                <label class="input-label">Header 背景色</label>
+                                <div class="flex items-center gap-2 bg-white p-1.5 border rounded-lg"><input type="color" v-model="data.headerBgColor"><span class="text-[10px] font-mono">{{data.headerBgColor}}</span></div>
+                            </div>
+                            <div>
+                                <label class="input-label">Body 背景色</label>
+                                <div class="flex items-center gap-2 bg-white p-1.5 border rounded-lg"><input type="color" v-model="data.bodyBgColor"><span class="text-[10px] font-mono">{{data.bodyBgColor}}</span></div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- 視覺內容模式 -->
+                    <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
+                        <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-film mr-2 text-line-green"></i> 視覺內容模式設定</h4>
+                        <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-300">
+                            <button @click="data.visualMode = 'video'" :class="data.visualMode === 'video' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">影片播放模式</button>
+                            <button @click="data.visualMode = 'image'" :class="data.visualMode === 'image' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">靜態圖片模式</button>
+                        </div>
+                        
+                        <div v-if="data.visualMode === 'video'" class="space-y-4 fade-in">
+                            <div><label class="input-label">影片連結 (Video MP4)</label><input type="text" v-model="data.videoUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green outline-none"></div>
+                            <div><label class="input-label">影片預覽封面網址 (Preview)</label><input type="text" v-model="data.previewUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green outline-none"></div>
+                        </div>
+                        <div v-else class="space-y-4 fade-in">
+                            <div><label class="input-label">展示圖片網址</label><input type="text" v-model="data.previewUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green outline-none"></div>
+                            <div><label class="input-label">圖片點擊跳轉網址</label><input type="text" v-model="data.imageActionUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green outline-none"></div>
+                        </div>
+                    </div>
+
+                    <!-- 網格按鈕 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                        <h4 class="text-sm font-bold text-gray-700 mb-4">底部行為按鈕 (固定高度 Sm)</h4>
-                        <div v-for="(vBtn, idx) in data.videoFooterButtons" :key="idx" class="flex gap-3 items-center mb-3 p-4 bg-white border rounded-xl shadow-sm">
-                            <input type="color" v-model="vBtn.color">
-                            <input type="text" v-model="vBtn.label" class="flex-1 border rounded p-2 text-sm font-bold">
-                            <input type="text" v-model="vBtn.uri" class="flex-[2] border rounded p-2 text-sm" placeholder="https://...">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-sm font-bold text-gray-700">網格功能按鈕 (同步配色)</h4>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">按鈕背景色</span>
+                                <input type="color" v-model="data.gridBgColor">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div v-for="(grid, idx) in data.gridButtons" :key="idx" class="p-4 bg-white border rounded-xl shadow-sm space-y-2">
+                                <div class="flex gap-2 mb-1">
+                                    <input type="text" v-model="grid.emoji" class="w-10 border rounded text-sm text-center">
+                                    <input type="text" v-model="grid.label" class="flex-1 border rounded px-2 py-1 text-xs">
+                                </div>
+                                <label class="input-label">跳轉網址</label>
+                                <input type="text" v-model="grid.uri" class="w-full border rounded px-2 py-1 text-[10px]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 底部按鈕 -->
+                    <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-700 mb-4">底部行為按鈕設定 (固定 Sm)</h4>
+                        <div v-for="(vBtn, idx) in data.videoFooterButtons" :key="idx" class="flex gap-3 items-center mb-3 p-4 bg-white border rounded-xl shadow-sm transition-all hover:border-green-100">
+                            <div class="shrink-0 text-center"><label class="text-[9px] block text-gray-400 font-bold uppercase tracking-tight">背景</label><input type="color" v-model="vBtn.color"></div>
+                            <div class="flex-1"><label class="input-label">按鈕名稱</label><input type="text" v-model="vBtn.label" class="w-full border rounded-lg p-2 text-sm font-bold"></div>
+                            <div class="flex-[2]"><label class="input-label">點擊連結</label><input type="text" v-model="vBtn.uri" class="w-full border rounded-lg p-2 text-sm"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- 右側預覽視窗 -->
             <div class="w-[360px] shrink-0 bg-gray-50 flex items-center justify-center py-8 no-scrollbar shadow-inner">
                 <div class="preview-window">
                     <div class="p-3 border-b border-gray-800 bg-[#1A1B1E] flex items-center gap-2 sticky top-0 z-50">
@@ -118,13 +180,30 @@
                     </div>
                     <div class="p-4 h-full" :style="{ backgroundColor: data.bodyBgColor }">
                         <div class="flex-bubble flex-bubble-dark shadow-2xl mt-4" :style="{ backgroundColor: data.bodyBgColor }">
+                            <!-- Header -->
                             <div class="header-box" :style="{ backgroundColor: data.headerBgColor }">
                                 <img :src="data.headerImg" class="w-10 h-10 rounded-full object-cover border border-gray-700 shadow-sm">
-                                <div class="flex flex-col overflow-hidden"><span class="text-[11px] font-bold uppercase truncate" style="color:#D4AF37">{{ data.headerName }}</span><span class="text-[8px] text-gray-400 truncate">{{ data.headerDescription }}</span></div>
+                                <div class="flex flex-col overflow-hidden"><span class="text-[11px] font-bold uppercase truncate" style="color:#D4AF37">{{ data.headerName }}</span><span class="text-[8px] text-gray-400 leading-tight truncate">{{ data.headerDescription }}</span></div>
                             </div>
-                            <div class="video-hero"><img :src="data.previewUrl" class="w-full h-full object-cover opacity-60"><i v-if="data.visualMode === 'video'" class="fas fa-play-circle text-white text-4xl absolute opacity-90 drop-shadow-xl"></i></div>
-                            <div class="grid-box" :style="{ backgroundColor: data.bodyBgColor }"><div v-for="grid in data.gridButtons" class="grid-item shadow-sm" :style="{ backgroundColor: data.gridBgColor }"><div class="text-xl mb-1">{{ grid.emoji }}</div><div class="text-[8px] text-gray-300 font-bold truncate uppercase">{{ grid.label }}</div></div></div>
-                            <div class="p-3 pt-0 space-y-2" :style="{ backgroundColor: data.bodyBgColor }"><button v-for="vBtn in data.videoFooterButtons" class="w-full py-2 text-[10px] font-bold rounded shadow-md" :style="{ backgroundColor: vBtn.color, color: '#fff' }">{{ vBtn.label }}</button></div>
+                            <!-- Hero -->
+                            <div class="video-hero">
+                                <img :src="data.previewUrl" class="w-full h-full object-cover opacity-60">
+                                <i v-if="data.visualMode === 'video'" class="fas fa-play-circle text-white text-4xl absolute opacity-90 drop-shadow-xl"></i>
+                            </div>
+                            <!-- Grid (同步背景色) -->
+                            <div class="grid-box" :style="{ backgroundColor: data.bodyBgColor }">
+                                <div v-for="grid in data.gridButtons" class="grid-item shadow-sm" :style="{ backgroundColor: data.gridBgColor }">
+                                    <div class="text-xl mb-1">{{ grid.emoji }}</div>
+                                    <div class="text-[8px] text-gray-300 font-bold uppercase truncate">{{ grid.label }}</div>
+                                </div>
+                            </div>
+                            <!-- Footer Buttons -->
+                            <div class="p-3 pt-0 space-y-2" :style="{ backgroundColor: data.bodyBgColor }">
+                                <button v-for="(vBtn, vI) in data.videoFooterButtons" class="w-full py-2 text-[10px] font-bold rounded shadow-md transition-all active:scale-95" 
+                                    :style="{ backgroundColor: vBtn.color, color: '#fff' }">
+                                    {{ vBtn.label }}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -135,37 +214,168 @@
 
 <script>
 const { createApp, ref, computed, onMounted } = Vue;
-const forceHttps = (u) => { if (!u || u.trim() === "" || u === "#") return "https://line.me"; let url = u.trim(); if (url.startsWith("http://")) return url.replace("http://", "https://"); if (!url.startsWith("https://") && !url.startsWith("line://")) return "https://" + url; return url; };
+
+/* 輔助函數：強迫網址 HTTPS，解決 LINE 發送失敗問題 */
+const forceHttps = (u) => {
+    if (!u || u.trim() === "" || u === "#") return "https://line.me";
+    let url = u.trim();
+    if (url.startsWith("http://")) return url.replace("http://", "https://");
+    if (!url.startsWith("https://") && !url.startsWith("line://")) return "https://" + url;
+    return url;
+};
+
+/* 安全清理機制：確保 JSON 沒有 Proxy 殘留或 undefined */
 const cleanJson = (obj) => JSON.parse(JSON.stringify(obj));
 
 createApp({
     setup() {
         const isLoggedIn = ref(false);
+
+        // 初始化資料：全連結已補上預設 HTTPS 網址
         const data = ref({
-            altText: '名片訊息', visualMode: 'video', imageActionUrl: '', headerName: 'TONY', headerDescription: '系統開發', headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png',
-            headerBgColor: '#1A1B1E', bodyBgColor: '#0F0F10', gridBgColor: 'rgba(255,255,255,0.1)',
+            altText: '名片訊息',
+            visualMode: 'video', 
+            imageActionUrl: 'https://line.me',
+            headerName: 'TONY',
+            headerDescription: '系統開發',
+            headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png',
+            headerBgColor: '#1A1B1E',
+            bodyBgColor: '#0F0F10',
+            gridBgColor: 'rgba(255,255,255,0.1)',
             videoUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/mp4',
             previewUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/m800x1200',
-            gridButtons: [ { emoji: '🤖', label: 'AI 諮詢', uri: 'https://liff.line.me/2006625044-bPGxrB53/' }, { emoji: '🎥', label: '產品介紹', uri: '' }, { emoji: '🧾', label: '商品型錄', uri: '' }, { emoji: '📍', label: '門市資訊', uri: '' } ],
-            videoFooterButtons: [ { label: '🚀 啟動 AI 小幫手', uri: 'https://liff.line.me/2006625044-bPGxrB53/index.php/colt_sp/6502/', color: '#C9A24D' }, { label: '📤 分享好友', uri: '', color: '#2A2C31' } ]
+            gridButtons: [ 
+                { emoji: '🤖', label: 'AI 諮詢', uri: 'https://liff.line.me/2006625044-bPGxrB53/' }, 
+                { emoji: '🎥', label: '產品介紹', uri: 'https://line.me' }, 
+                { emoji: '🧾', label: '商品型錄', uri: 'https://line.me' }, 
+                { emoji: '📍', label: '門市資訊', uri: 'https://line.me' } 
+            ], 
+            videoFooterButtons: [ 
+                { label: '🚀 啟動 AI 小幫手', uri: 'https://liff.line.me/2006625044-bPGxrB53/index.php/colt_sp/6502/', color: '#C9A24D' }, 
+                { label: '📤 分享好友', uri: 'https://liff.line.me/2006625044-J42EzjkZ/index.php/linecard_12/6816/', color: '#2A2C31' } 
+            ]
         });
 
         const flexJson = computed(() => {
             const current = data.value;
+            // 構建基礎 Bubble
             const bubble = {
-                type: "bubble", size: "mega",
-                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "8px", backgroundColor: current.headerBgColor, contents: [ { type: "image", url: forceHttps(current.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [ { type: "text", text: current.headerName || "NAME", weight: "bold", size: "lg", color: "#D4AF37" }, { type: "text", text: "LINE行銷達人", size: "sm", color: "#E6E6E6" }, { type: "text", text: current.headerDescription || "DESCRIPTION", size: "xs", color: "#A0A0A0", wrap: true } ] } ] },
-                body: { type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: current.bodyBgColor, contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: "rgba(255,255,255,0.05)", cornerRadius: "14px", contents: [ { type: "box", layout: "horizontal", spacing: "sm", contents: current.gridButtons.slice(0, 2).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: current.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "link", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: "#E6E6E6" }] })) }, { type: "box", layout: "horizontal", spacing: "sm", contents: current.gridButtons.slice(2, 4).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: current.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "link", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: "#E6E6E6" }] })) } ] }] },
-                footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "8px", backgroundColor: current.bodyBgColor, contents: current.videoFooterButtons.map(b => ({ type: "button", style: "primary", height: "sm", color: b.color, action: { type: "uri", label: b.label || "OK", uri: forceHttps(b.uri) } })) }
+                type: "bubble",
+                size: "mega",
+                header: {
+                    type: "box", layout: "horizontal", spacing: "md", paddingAll: "8px", backgroundColor: current.headerBgColor,
+                    contents: [
+                        { type: "image", url: forceHttps(current.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" },
+                        { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [
+                            { type: "text", text: current.headerName || "TONY", weight: "bold", size: "lg", color: "#D4AF37" },
+                            { type: "text", text: "LINE行銷達人", size: "sm", color: "#E6E6E6" },
+                            { type: "text", text: current.headerDescription || "系統開發", size: "xs", color: "#A0A0A0", wrap: true }
+                        ]}
+                    ]
+                },
+                body: {
+                    type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: current.bodyBgColor,
+                    contents: [{
+                        type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: "rgba(255,255,255,0.05)", cornerRadius: "14px",
+                        contents: [
+                            { type: "box", layout: "horizontal", spacing: "sm", contents: current.gridButtons.slice(0, 2).map(g => ({
+                                type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: current.gridBgColor, cornerRadius: "12px",
+                                action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) },
+                                contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "未命名", size: "sm", align: "center", color: "#E6E6E6" }]
+                            }))},
+                            { type: "box", layout: "horizontal", spacing: "sm", contents: current.gridButtons.slice(2, 4).map(g => ({
+                                type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: current.gridBgColor, cornerRadius: "12px",
+                                action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) },
+                                contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "未命名", size: "sm", align: "center", color: "#E6E6E6" }]
+                            }))}
+                        ]
+                    }]
+                },
+                footer: {
+                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "8px", backgroundColor: current.bodyBgColor,
+                    contents: current.videoFooterButtons.map(b => ({
+                        type: "button", style: "primary", height: "sm", color: b.color,
+                        action: { type: "uri", label: b.label || "按鈕", uri: forceHttps(b.uri) }
+                    }))
+                },
+                styles: { body: { backgroundColor: current.bodyBgColor }, footer: { backgroundColor: current.bodyBgColor } }
             };
-            if (current.visualMode === 'video') bubble.hero = { type: "video", url: forceHttps(current.videoUrl), previewUrl: forceHttps(current.previewUrl), aspectRatio: "800:500", altContent: { type: "image", url: forceHttps(current.previewUrl), size: "full", aspectMode: "cover", aspectRatio: "800:500" } };
-            else bubble.hero = { type: "image", url: forceHttps(current.previewUrl), size: "full", aspectRatio: "800:500", aspectMode: "cover", action: { type: "uri", label: "Image", uri: forceHttps(current.imageActionUrl) } };
+
+            // 處理 Hero 視覺區：Video 或 Image
+            if (current.visualMode === 'video') {
+                bubble.hero = {
+                    type: "video", 
+                    url: forceHttps(current.videoUrl), 
+                    previewUrl: forceHttps(current.previewUrl), 
+                    aspectRatio: "800:500",
+                    altContent: { 
+                        type: "image", 
+                        url: forceHttps(current.previewUrl), 
+                        size: "full", 
+                        aspectMode: "cover" 
+                    }
+                };
+            } else {
+                bubble.hero = {
+                    type: "image", 
+                    url: forceHttps(current.previewUrl), 
+                    size: "full", 
+                    aspectRatio: "800:500", 
+                    aspectMode: "cover",
+                    action: { 
+                        type: "uri", 
+                        label: "hero", 
+                        uri: forceHttps(current.imageActionUrl) 
+                    }
+                };
+            }
+
             return bubble;
         });
 
-        const pushVideoCard = () => { if (!liff.isLoggedIn()) { liff.login(); return; } liff.shareTargetPicker([{ type: "flex", altText: data.value.altText, contents: cleanJson(flexJson.value) }]).then(res => { if (res) alert("推播成功發送！"); }).catch(err => alert("發送失敗：網址需為 HTTPS。")); };
-        onMounted(async () => { try { await liff.init({ liffId: "2008541971-Wgvz6gD8" }); isLoggedIn.value = liff.isLoggedIn(); } catch (e) {} });
-        return { data, flexJson, isLoggedIn, pushVideoCard, login: () => liff.login() };
+        // 複製 JSON 碼
+        const copyJson = () => {
+            const raw = JSON.stringify(flexJson.value, null, 2);
+            const el = document.createElement('textarea');
+            el.value = raw;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            alert('JSON 已複製到剪貼簿！');
+        };
+
+        const pushVideoCard = () => {
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            
+            // 重要：LINE 對分享內容的標籤字數、格式有嚴格限制
+            // 這裡進行 cleanJson 確保格式正確
+            const payload = cleanJson(flexJson.value);
+
+            liff.shareTargetPicker([{ 
+                type: "flex", 
+                altText: data.value.altText || "影片名片", 
+                contents: payload 
+            }])
+            .then(res => { 
+                if (res) alert("推播發送成功！"); 
+            })
+            .catch(err => { 
+                console.error("LIFF Push Error:", err); 
+                alert("發送失敗：請確保所有輸入連結皆為有效的 HTTPS 網址。"); 
+            });
+        };
+
+        onMounted(async () => {
+            try { 
+                await liff.init({ liffId: "2008541971-Wgvz6gD8" }); 
+                isLoggedIn.value = liff.isLoggedIn(); 
+            } catch (e) {
+                console.warn("LIFF Init Failed (Local Dev?)");
+            }
+        });
+
+        return { data, flexJson, isLoggedIn, pushVideoCard, copyJson, login: () => liff.login() };
     }
 }).mount('#app');
 </script>
