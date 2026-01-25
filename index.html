@@ -80,7 +80,6 @@
         </button>
     </aside>
 
-    <!-- 主要內容區 -->
     <main class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#f8fafc]">
         <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
             <h2 class="text-xl font-bold text-gray-800">{{ pageTitle }}</h2>
@@ -98,11 +97,9 @@
 
         <div class="flex-grow overflow-hidden">
             <div v-if="currentTab === 'messages'" class="h-full">
-                <!-- 文章型編輯器 -->
+                <!-- 模組載入區 -->
                 <article-editor v-if="currentSubTab === 'single'" :initial-data="flexData" @save="handleSave" @push="handlePush"></article-editor>
-                <!-- 影片名片編輯器 -->
                 <video-editor v-if="currentSubTab === 'video'" :initial-data="flexData" @save="handleSave" @push="handlePush"></video-editor>
-                <!-- 電商型編輯器 -->
                 <ecommerce-editor v-if="currentSubTab === 'ecommerce'" :initial-data="ecomState" @save="handleSave" @push="handlePush"></ecommerce-editor>
             </div>
             <div v-if="currentTab === 'dashboard'" class="p-10 text-center flex flex-col items-center justify-center h-full">
@@ -115,7 +112,7 @@
 </div>
 
 <!-- ==========================================
-     模組 1: 文章型編輯器 (復刻標籤與間距優化)
+     模組 1: 文章型編輯器 (新增標題對齊)
      ========================================== -->
 <script type="text/x-template" id="article-editor-template">
 <div class="flex h-full w-full overflow-hidden">
@@ -133,20 +130,32 @@
                         <div><label class="input-label">圖片網址 (HTTPS)</label><input type="text" v-model="data.imageUrl" class="w-full px-4 py-2 border rounded-xl text-sm focus:border-line-green shadow-sm"></div>
                         <div class="flex items-center gap-3"><label class="input-label mb-0 mr-2">比例：</label><button v-for="ratio in ['1:1', '20:13', '4:6']" @click="data.aspectRatio = ratio" :class="data.aspectRatio === ratio ? 'ratio-btn-active' : ''" class="ratio-btn shadow-sm">{{ ratio }}</button></div>
                         
-                        <!-- 分享標籤功能 -->
                         <div class="bg-white/50 p-4 rounded-lg border border-gray-100 space-y-3 shadow-sm">
-                            <label class="text-xs font-bold text-gray-600 flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" v-model="data.showBadge" class="w-4 h-4 accent-line-green"> 顯示右上分享標籤
-                            </label>
+                            <label class="text-xs font-bold text-gray-600 flex items-center gap-2 cursor-pointer"><input type="checkbox" v-model="data.showBadge" class="w-4 h-4 accent-line-green"> 顯示右上分享標籤</label>
                             <div v-if="data.showBadge" class="grid grid-cols-2 gap-3 pl-6 animate-in fade-in duration-300">
                                 <div><label class="input-label">標籤文字 (限10字)</label><input type="text" v-model="data.badgeText" maxlength="10" class="w-full border rounded p-1.5 text-xs focus:border-line-green outline-none"></div>
-                                <div><label class="input-label">標籤底色</label><div class="flex items-center gap-2"><input type="color" v-model="data.badgeColor"><span class="text-[10px] font-mono">{{data.badgeColor}}</span></div></div>
+                                <div><label class="input-label">標籤底色</label><div class="flex items-center gap-2"><input type="color" v-model="data.badgeColor"><span class="text-[10px] font-mono uppercase">{{data.badgeColor}}</span></div></div>
                                 <div class="col-span-2"><label class="input-label">標籤連結 (HTTPS)</label><input type="text" v-model="data.badgeUri" class="w-full border rounded p-1.5 text-xs focus:border-line-green outline-none" placeholder="https://..."></div>
                             </div>
                         </div>
 
-                        <input type="text" v-model="data.title" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold focus:border-line-green shadow-sm" placeholder="文章標題">
-                        <textarea v-model="data.subtitle" rows="6" class="w-full px-4 py-3 border rounded-xl text-sm outline-none focus:border-line-green shadow-sm" placeholder="內容描述..."></textarea>
+                        <!-- 標題與對齊設定 -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-end">
+                                <label class="input-label">標題內容</label>
+                                <div class="flex bg-slate-100 p-0.5 rounded border mb-1">
+                                    <button @click="data.titleAlign='start'" :class="data.titleAlign==='start'?'bg-white text-line-green shadow-sm':'text-slate-500'" class="p-1 px-2 text-[9px] uppercase font-bold transition-all"><i class="fas fa-align-left"></i></button>
+                                    <button @click="data.titleAlign='center'" :class="data.titleAlign==='center'?'bg-white text-line-green shadow-sm':'text-slate-500'" class="p-1 px-2 text-[9px] uppercase font-bold transition-all"><i class="fas fa-align-center"></i></button>
+                                    <button @click="data.titleAlign='end'" :class="data.titleAlign==='end'?'bg-white text-line-green shadow-sm':'text-slate-500'" class="p-1 px-2 text-[9px] uppercase font-bold transition-all"><i class="fas fa-align-right"></i></button>
+                                </div>
+                            </div>
+                            <input type="text" v-model="data.title" class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold focus:border-line-green shadow-sm" placeholder="文章標題">
+                        </div>
+
+                        <div>
+                            <label class="input-label">描述內容 (邊距 5px 已優化)</label>
+                            <textarea v-model="data.subtitle" rows="6" class="w-full px-4 py-3 border rounded-xl text-sm outline-none focus:border-line-green shadow-sm" placeholder="內容描述..."></textarea>
+                        </div>
                     </div>
                 </div>
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
@@ -164,7 +173,6 @@
             <json-viewer :json="flexJson"></json-viewer>
         </div>
     </div>
-    <!-- 預覽視窗 -->
     <div class="w-[360px] shrink-0 bg-gray-50 flex items-center justify-center py-8 shadow-inner overflow-y-auto no-scrollbar">
         <div class="preview-window">
             <div class="p-3 border-b border-gray-800 bg-[#1A1B1E] flex items-center gap-2 sticky top-0 z-50">
@@ -177,9 +185,8 @@
                         <img :src="data.imageUrl" :style="{ aspectRatio: data.aspectRatio.replace(':', '/') }" class="w-full object-cover">
                         <div v-if="data.showBadge" class="flex-badge" :style="{ backgroundColor: data.badgeColor }">{{ data.badgeText || '分享' }}</div>
                     </div>
-                    <!-- 優化: paddingAll 改為 5px -->
-                    <div class="p-[5px] text-center">
-                        <div class="text-base font-bold truncate">{{ data.title || '標題' }}</div>
+                    <div class="p-[5px]">
+                        <div class="text-base font-bold truncate" :class="{'text-left': data.titleAlign==='start', 'text-center': data.titleAlign==='center', 'text-right': data.titleAlign==='end'}">{{ data.title || '標題' }}</div>
                         <div class="text-[10px] text-gray-500 mt-2 whitespace-pre-wrap leading-relaxed">{{ data.subtitle || '請輸入描述...' }}</div>
                     </div>
                     <div class="p-3 pt-0 space-y-1.5">
@@ -193,7 +200,7 @@
 </script>
 
 <!-- ==========================================
-     模組 2: 影片名片編輯器 (顏色與描述優化)
+     模組 2: 影片名片編輯器
      ========================================== -->
 <script type="text/x-template" id="video-editor-template">
 <div class="flex h-full w-full overflow-hidden">
@@ -209,7 +216,7 @@
                     <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> Header 品牌設定</h4>
                     <div class="grid grid-cols-2 gap-4">
                         <div><label class="input-label">姓名</label><input type="text" v-model="data.headerName" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green"></div>
-                        <div><label class="input-label">敘述 (限20字)</label><input type="text" v-model="data.headerDescription" maxlength="20" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green"></div>
+                        <div><label class="input-label">描述 (限20字)</label><input type="text" v-model="data.headerDescription" maxlength="20" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green"></div>
                         <div class="col-span-2"><label class="input-label">頭像網址</label><input type="text" v-model="data.headerImg" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green"></div>
                         <div><label class="input-label">Header 背景色</label><input type="color" v-model="data.headerBgColor" class="w-full"></div>
                         <div><label class="input-label">Body 背景色</label><input type="color" v-model="data.bodyBgColor" class="w-full"></div>
@@ -242,11 +249,11 @@
                     </div>
                 </div>
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                    <h4 class="text-sm font-bold text-gray-700 mb-4">底部行為按鈕設定 (各別配色)</h4>
+                    <h4 class="text-sm font-bold text-gray-700 mb-4">底部行為按鈕設定</h4>
                     <div v-for="(vBtn, idx) in data.videoFooterButtons" :key="idx" class="flex gap-3 items-center mb-3 p-4 bg-white border rounded-xl transition-all hover:border-green-100">
                         <div class="shrink-0 text-center"><label class="text-[9px] block text-gray-400 font-bold uppercase">配色</label><input type="color" v-model="vBtn.color"></div>
-                        <div class="flex-1"><label class="input-label">按鈕名稱</label><input type="text" v-model="vBtn.label" class="w-full border rounded-lg p-2 text-sm font-bold"></div>
-                        <div class="flex-[2]"><label class="input-label">點擊連結</label><input type="text" v-model="vBtn.uri" class="w-full border rounded-lg p-2 text-sm" placeholder="https://..."></div>
+                        <div class="flex-1"><label class="input-label">名稱</label><input type="text" v-model="vBtn.label" class="w-full border rounded-lg p-2 text-sm font-bold"></div>
+                        <div class="flex-[2]"><label class="input-label">連結</label><input type="text" v-model="vBtn.uri" class="w-full border rounded-lg p-2 text-sm" placeholder="https://..."></div>
                     </div>
                 </div>
             </div>
@@ -270,7 +277,7 @@
 </script>
 
 <!-- ==========================================
-     模組 3: 電商型編輯器 (完全還原規格 + 修正 Crash)
+     模組 3: 電商型編輯器
      ========================================== -->
 <script type="text/x-template" id="ecommerce-editor-template">
 <div class="flex h-full w-full overflow-hidden">
@@ -289,7 +296,7 @@
                         <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-300">
                             <button v-for="t in ['image', 'video', 'none']" @click="state.hero.type = t" :class="state.hero.type===t?'bg-white shadow-sm text-line-green':'text-slate-500'" class="flex-1 py-1.5 text-xs font-bold rounded transition-all">{{ t.toUpperCase() }}</button>
                         </div>
-                        <div v-show="state.hero.type !== 'none'" class="grid grid-cols-2 gap-4">
+                        <div v-show="state.hero.type !== 'none'" class="grid grid-cols-2 gap-4 animate-in fade-in duration-300">
                             <div><label class="input-label">比例</label><select v-model="state.hero.aspectRatio" class="w-full text-xs p-2 border rounded-lg focus:ring-1 focus:ring-line-green outline-none"><option v-for="a in ['16:9','1:1','4:3','1.91:1','3:4']" :value="a">{{ a }}</option></select></div>
                             <div><label class="input-label">{{ state.hero.type === 'video' ? '封面圖' : '圖片' }}</label><input type="text" v-model="state.hero.url" class="w-full text-xs p-2 border rounded-lg shadow-sm" placeholder="https://..."></div>
                             <div v-if="state.hero.type === 'video'" class="col-span-2"><label class="input-label">影片連結 (.mp4)</label><input type="text" v-model="state.hero.videoUrl" class="w-full text-xs p-2 border rounded-lg shadow-sm" placeholder="HTTPS影片連結"></div>
@@ -298,42 +305,33 @@
                 </div>
 
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                    <h4 class="text-sm font-bold text-gray-700 mb-4">Body 規格配置 (完全還原)</h4>
+                    <h4 class="text-sm font-bold text-gray-700 mb-4 flex justify-between items-center"><span>Body 商品配置 (間距 5px 已優化)</span><button @click="state.body.items.push({title:'新商品',img:'https://lihi.cc/mwMvo',url:''})" class="text-xs text-line-green font-bold">+ 新增</button></h4>
                     <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-3">
                             <div><label class="input-label">欄數</label><select v-model="state.body.columns" class="w-full text-xs p-2 border rounded-lg focus:ring-1 focus:ring-line-green outline-none"><option :value="3">3 欄</option><option :value="4">4 欄</option></select></div>
                             <div><label class="input-label">底色</label><div class="flex items-center gap-2 bg-white p-1 border rounded-lg"><input type="color" v-model="state.body.bgColor"><span class="text-[10px] font-mono uppercase tracking-tight">{{state.body.bgColor}}</span></div></div>
                         </div>
-                        <div class="p-3 bg-white border rounded-xl space-y-2 shadow-sm">
-                            <label class="input-label">滿版背景模式</label>
-                            <div class="flex bg-slate-100 p-1 rounded-lg mb-2"><button @click="state.body.bgType='color'" :class="state.body.bgType==='color'?'bg-white text-line-green shadow-sm':'text-slate-500'" class="flex-1 py-1 text-[10px] font-bold rounded">純色</button><button @click="state.body.bgType='image'" :class="state.body.bgType==='image'?'bg-white text-line-green shadow-sm':'text-slate-500'" class="flex-1 py-1 text-[10px] font-bold rounded">圖片</button></div>
-                            <div v-if="state.body.bgType==='image'" class="space-y-3 animate-in fade-in duration-300">
-                                <div><label class="input-label">背景網址</label><input type="text" v-model="state.body.bg" class="w-full text-xs p-2 border rounded focus:border-line-green outline-none" placeholder="https://..."></div>
-                                <div><label class="input-label">顯示模式</label><select v-model="state.body.bgMode" class="w-full text-xs p-1.5 border rounded"><option value="cover">全版拉伸 (Cover)</option><option value="top">等比縮放 (Fit Width)</option></select></div>
-                            </div>
-                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div v-for="(item, idx) in state.body.items" :key="idx" class="p-3 bg-white border rounded-xl flex items-center gap-3 relative shadow-sm hover:border-line-green transition-all">
                                 <img :src="item.img" class="w-12 h-12 rounded object-cover border bg-slate-50 shadow-sm">
-                                <div class="flex-1"><label class="input-label">品名標籤</label><input v-model="item.title" class="w-full text-xs font-bold border-b focus:outline-none mb-1"><label class="input-label">跳轉連結</label><input v-model="item.url" class="w-full text-[10px] text-gray-400 focus:outline-none" placeholder="https://..."></div>
+                                <div class="flex-1"><label class="input-label">品名</label><input v-model="item.title" class="w-full text-xs font-bold border-b focus:outline-none mb-1"><label class="input-label">連結</label><input v-model="item.url" class="w-full text-[10px] text-gray-400 focus:outline-none" placeholder="https://..."></div>
                                 <button @click="state.body.items.splice(idx,1)" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-times"></i></button>
                             </div>
                         </div>
-                        <button @click="state.body.items.push({title:'新商品',img:'https://lihi.cc/mwMvo',url:''})" class="w-full py-2 border-2 border-dashed rounded-xl text-xs font-bold text-slate-400 hover:border-line-green transition-all">+ 新增商品</button>
                     </div>
                 </div>
 
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                    <h4 class="text-sm font-bold text-gray-700 mb-4 flex justify-between items-center"><span>底部區塊設定</span><label class="flex items-center gap-2 cursor-pointer text-xs font-bold"><input type="checkbox" v-model="state.footer.textEnabled" class="accent-green-500"> 說明文字</label></h4>
-                    <div v-show="state.footer.textEnabled" class="mb-4 space-y-3 p-4 bg-white border rounded-xl shadow-sm">
-                        <div class="flex justify-between items-center"><label class="input-label mb-0">樣式與對齊 (5px 間距)</label><div class="flex gap-2"><input type="color" v-model="state.footer.textColor"><div class="flex bg-slate-100 p-0.5 rounded border"><button v-for="a in ['start','center','end']" @click="state.footer.textAlign=a" :class="state.footer.textAlign===a?'bg-white text-line-green shadow-sm':'text-slate-500'" class="p-1 px-2 text-[9px] uppercase font-bold">{{a}}</button></div></div></div>
-                        <textarea v-model="state.footer.text" rows="3" class="w-full border rounded p-2 text-xs focus:outline-none focus:border-line-green" placeholder="輸入頁尾說明文字..."></textarea>
+                    <h4 class="text-sm font-bold text-gray-700 mb-4 flex justify-between items-center"><span>底部區塊與按鈕</span><label class="flex items-center gap-2 cursor-pointer text-xs font-bold"><input type="checkbox" v-model="state.footer.textEnabled" class="accent-green-500"> 說明文字</label></h4>
+                    <div v-show="state.footer.textEnabled" class="mb-4 space-y-3 p-4 bg-white border rounded-xl shadow-sm animate-in fade-in duration-300">
+                        <div class="flex justify-between items-center"><label class="input-label mb-0">對齊樣式</label><div class="flex gap-2"><input type="color" v-model="state.footer.textColor"><div class="flex bg-slate-100 p-0.5 rounded border"><button v-for="a in ['start','center','end']" @click="state.footer.textAlign=a" :class="state.footer.textAlign===a?'bg-white text-line-green shadow-sm':'text-slate-500'" class="p-1 px-2 text-[9px] uppercase font-bold">{{a}}</button></div></div></div>
+                        <textarea v-model="state.footer.text" rows="3" class="w-full border rounded p-2 text-xs focus:outline-none focus:border-line-green"></textarea>
                     </div>
                     <div class="grid grid-cols-1 gap-3">
                         <div v-for="bNum in [1, 2]" class="p-4 bg-white border rounded-xl flex items-center gap-4 shadow-sm transition-all hover:border-green-100">
                             <div class="text-center"><label class="text-[9px] block text-gray-400 font-bold uppercase tracking-tighter">配色</label><input type="color" v-model="state.footer['btn' + bNum].color"></div>
                             <div class="w-40"><label class="input-label">按鈕 {{bNum}} 文字</label><input type="text" v-model="state.footer['btn' + bNum].label" class="w-full border rounded p-1.5 text-sm font-bold"></div>
-                            <div class="flex-1"><label class="input-label">連結網址</label><input type="text" v-model="state.footer['btn' + bNum].uri" class="w-full border rounded p-1.5 text-sm" placeholder="https://..."></div>
+                            <div class="flex-1"><label class="input-label">連結</label><input type="text" v-model="state.footer['btn' + bNum].uri" class="w-full border rounded p-1.5 text-sm" placeholder="https://..."></div>
                         </div>
                     </div>
                 </div>
@@ -353,12 +351,13 @@
                             <div class="relative z-10 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg"><i class="fas fa-play text-slate-900 ml-0.5"></i></div>
                         </div>
                     </div>
-                    <div class="relative w-full p-4" :style="{ backgroundColor: state.body.bgColor }">
-                        <img v-if="state.body.bgType==='image' && state.body.bg" :src="state.body.bg" :class="state.body.bgMode === 'top' ? 'object-contain' : 'object-cover'" class="absolute inset-0 w-full h-full z-0">
+                    <!-- paddingAll: 5px 優化 -->
+                    <div class="relative w-full p-[5px]" :style="{ backgroundColor: state.body.bgColor }">
+                        <img v-if="state.body.bgType==='image' && state.body.bg" :src="state.body.bg" class="absolute inset-0 w-full h-full object-cover z-0">
                         <div :class="state.body.columns === 3 ? 'grid-cols-3' : 'grid-cols-4'" class="relative z-10 grid gap-2">
                             <div v-for="item in state.body.items" class="bg-white rounded p-1 shadow-sm flex flex-col border border-slate-100">
                                 <img :src="item.img" class="w-full aspect-square object-cover rounded-sm mb-1">
-                                <div :style="{ backgroundColor: state.body.tagBgColor, color: state.body.tagTextColor }" class="text-[8px] font-bold text-center py-0.5 truncate rounded-sm">{{ item.title }}</div>
+                                <div :style="{ backgroundColor: state.body.tagBgColor || '#000', color: state.body.tagTextColor || '#fff' }" class="text-[8px] font-bold text-center py-0.5 truncate rounded-sm">{{ item.title }}</div>
                             </div>
                         </div>
                     </div>
@@ -388,12 +387,12 @@ const forceHttps = (u) => {
 
 const EditorHeader = {
     props: ['title'],
-    template: `<div class="flex items-center justify-between"><div><h3 class="text-2xl font-bold text-gray-800">{{ title }}</h3><p class="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-widest">※ 自動修正所有網址為 HTTPS 以確保發送成功</p></div><div class="flex gap-2"><button @click="$emit('save')" class="px-6 py-2.5 bg-purple-500 text-white rounded-xl text-sm font-bold shadow-lg flex items-center gap-2 hover:bg-purple-600 transition-all"><i class="fas fa-save"></i> 儲存專案</button><button @click="$emit('push')" class="px-6 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg flex items-center gap-2 hover:bg-blue-600 transition-all"><i class="fas fa-paper-plane"></i> 🚀 推播測試</button></div></div>`
+    template: `<div class="flex items-center justify-between"><div><h3 class="text-2xl font-bold text-gray-800">{{ title }}</h3><p class="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-widest">※ 自動修正所有網址為 HTTPS 格式</p></div><div class="flex gap-2"><button @click="$emit('save')" class="px-6 py-2.5 bg-purple-500 text-white rounded-xl text-sm font-bold shadow-lg flex items-center gap-2 hover:bg-purple-600 transition-all"><i class="fas fa-save"></i> 儲存專案</button><button @click="$emit('push')" class="px-6 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg flex items-center gap-2 hover:bg-blue-600 transition-all"><i class="fas fa-paper-plane"></i> 🚀 推播測試</button></div></div>`
 };
 
 const JsonViewer = {
     props: ['json'],
-    template: `<div class="mt-12 mb-20"><div class="flex items-center justify-between mb-3 px-2"><span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Flex JSON Schema</span><button @click="copy" class="text-[10px] text-line-green font-bold uppercase hover:underline">Copy JSON</button></div><div class="bg-[#1e2124] rounded-2xl p-6 border border-gray-700 shadow-xl overflow-hidden"><pre class="text-[11px] text-green-400 font-mono h-48 overflow-y-auto no-scrollbar font-mono">{{ JSON.stringify(json, null, 2) }}</pre></div></div>`,
+    template: `<div class="mt-12 mb-20"><div class="flex items-center justify-between mb-3 px-2"><span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Flex JSON Schema</span><button @click="copy" class="text-[10px] text-line-green font-bold uppercase hover:underline">Copy</button></div><div class="bg-[#1e2124] rounded-2xl p-6 border border-gray-700 shadow-xl overflow-hidden"><pre class="text-[11px] text-green-400 font-mono h-48 overflow-y-auto no-scrollbar font-mono">{{ JSON.stringify(json, null, 2) }}</pre></div></div>`,
     methods: { copy() { const el = document.createElement('textarea'); el.value = JSON.stringify(this.json, null, 2); document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); alert('JSON 已複製！'); } }
 };
 
@@ -408,13 +407,14 @@ const ArticleEditor = {
             badgeText: props.initialData.badgeText || '分享',
             badgeUri: props.initialData.badgeUri || '',
             badgeColor: props.initialData.badgeColor || '#FF0000',
+            titleAlign: props.initialData.titleAlign || 'center',
             altText: props.initialData.altText || '您收到了一則精選訊息' 
         });
         const flexJson = computed(() => {
             const bodyContents = [
                 { type: "image", url: forceHttps(data.value.imageUrl), size: "full", aspectRatio: data.value.aspectRatio, aspectMode: "cover" },
                 { type: "box", layout: "vertical", paddingAll: "5px", contents: [
-                    { type: "text", text: data.value.title || "標題", weight: "bold", size: "xl", align: "center", wrap: true },
+                    { type: "text", text: data.value.title || "標題", weight: "bold", size: "xl", align: data.value.titleAlign, wrap: true },
                     { type: "text", text: data.value.subtitle || "內容描述", size: "sm", margin: "sm", color: "#666666", wrap: true }
                 ]}
             ];
@@ -476,18 +476,46 @@ const EcommerceEditor = {
     setup(props) {
         const state = ref({ ...JSON.parse(JSON.stringify(props.initialData)), altText: props.initialData.altText || '商城優惠中！' });
         const flexJson = computed(() => {
-            const cols = state.value.body.columns; const width = cols === 3 ? "32%" : "23%";
+            const cols = state.value.body.columns; 
+            const width = cols === 3 ? "32%" : "23%";
             const chunk = (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) => arr.slice(i * size, i * size + size));
-            const products = { type: "box", layout: "vertical", contents: chunk(state.value.body.items, cols).map((row, idx) => ({ type: "box", layout: "horizontal", margin: idx===0?"none":"md", contents: row.map((item, colIdx) => ({ type: "box", layout: "vertical", width: width, margin: colIdx===0?"none":"md", contents: [ { type: "image", url: forceHttps(item.img), aspectRatio: "1:1", size: "full", aspectMode: "cover" }, { type: "box", layout: "vertical", backgroundColor: state.value.body.tagBgColor || "#000000", paddingAll: "xs", margin: "sm", cornerRadius: "sm", contents: [{ type: "text", text: item.title || "商品", size: "xxs", color: state.value.body.tagTextColor || "#FFFFFF", align: "center", weight: "bold", wrap: true }] } ], action: { type: "uri", uri: forceHttps(item.url) } })) })), paddingAll: "md" };
-            const body = { type: "box", layout: "vertical", backgroundColor: state.value.body.bgColor, paddingAll: "none", contents: [] };
-            if (state.value.body.bgType==='image') body.contents.push({ type: "box", layout: "vertical", contents: [{ type: "image", url: forceHttps(state.value.body.bg), position: "absolute", size: "full", aspectMode: state.value.body.bgMode === 'top' ? "width" : "cover" }, products] }); else body.contents.push(products);
+            
+            const products = { 
+                type: "box", layout: "vertical", 
+                contents: chunk(state.value.body.items, cols).map((row, idx) => ({ 
+                    type: "box", layout: "horizontal", margin: idx===0?"none":"md", 
+                    contents: row.map((item, colIdx) => ({ 
+                        type: "box", layout: "vertical", width: width, margin: colIdx===0?"none":"md", 
+                        contents: [ 
+                            { type: "image", url: forceHttps(item.img), aspectRatio: "1:1", size: "full", aspectMode: "cover" }, 
+                            { type: "box", layout: "vertical", backgroundColor: state.value.body.tagBgColor || "#000000", paddingAll: "xs", margin: "sm", cornerRadius: "sm", contents: [{ type: "text", text: item.title || "商品", size: "xxs", color: state.value.body.tagTextColor || "#FFFFFF", align: "center", weight: "bold", wrap: true }] } 
+                        ], action: { type: "uri", uri: forceHttps(item.url) } 
+                    })) 
+                })), 
+                paddingAll: "md" 
+            };
+            
+            const bodyBox = { type: "box", layout: "vertical", backgroundColor: state.value.body.bgColor, paddingAll: "none", contents: [] };
+            if (state.value.body.bgType==='image') {
+                bodyBox.contents.push({ type: "box", layout: "vertical", contents: [{ type: "image", url: forceHttps(state.value.body.bg), position: "absolute", size: "full", aspectMode: state.value.body.bgMode === 'top' ? "width" : "cover" }, products] });
+            } else {
+                bodyBox.contents.push(products);
+            }
+            
             const footerContents = [];
-            if (state.value.footer.textEnabled) footerContents.push({ type: "text", text: state.value.footer.text, size: "xs", wrap: true, align: state.value.footer.textAlign, color: state.value.footer.textColor, margin: "md" });
-            footerContents.push({ type: "box", layout: "horizontal", spacing: "md", contents: [ { type: "button", style: "primary", height: "sm", color: state.value.footer.btn1.color, action: { type: "uri", label: state.value.footer.btn1.label || "官網", uri: forceHttps(state.value.footer.btn1.uri) } }, { type: "button", style: "primary", height: "sm", color: state.value.footer.btn2.color, action: { type: "uri", label: state.value.footer.btn2.label || "分享", uri: forceHttps(state.value.footer.btn2.uri) } } ]});
-            const flexObj = { type: "bubble", size: "mega", body, footer: { type: "box", layout: "vertical", backgroundColor: state.value.footer.bg, paddingAll: "md", contents: footerContents }};
-            if (state.value.hero.type === 'video') flexObj.hero = { type: "video", url: forceHttps(state.value.hero.videoUrl), previewUrl: forceHttps(state.value.hero.url), aspectRatio: state.value.hero.aspectRatio, altContent: { type: "image", size: "full", aspectRatio: state.value.hero.aspectRatio, aspectMode: "cover", url: forceHttps(state.value.hero.url) } };
-            else if (state.value.hero.type === 'image') flexObj.hero = { type: "image", url: forceHttps(state.value.hero.url), size: "full", aspectRatio: state.value.hero.aspectRatio, aspectMode: "cover" };
-            return flexObj;
+            if (state.value.footer.textEnabled) {
+                footerContents.push({ type: "text", text: state.value.footer.text, size: "xs", wrap: true, align: state.value.footer.textAlign, color: state.footer.textColor, margin: "md" });
+            }
+            footerContents.push({ type: "box", layout: "horizontal", spacing: "md", contents: [ 
+                { type: "button", style: "primary", height: "sm", color: state.value.footer.btn1.color, action: { type: "uri", label: state.value.footer.btn1.label || "按鈕 1", uri: forceHttps(state.value.footer.btn1.uri) } }, 
+                { type: "button", style: "primary", height: "sm", color: state.value.footer.btn2.color, action: { type: "uri", label: state.value.footer.btn2.label || "按鈕 2", uri: forceHttps(state.value.footer.btn2.uri) } } 
+            ]});
+
+            return { 
+                type: "bubble", size: "mega", 
+                body: bodyBox, 
+                footer: { type: "box", layout: "vertical", backgroundColor: state.value.footer.bg, paddingAll: "md", contents: footerContents }
+            };
         });
         return { state, flexJson, getAspectClass: (a) => ({ '1:1':'aspect-1-1','16:9':'aspect-16-9','4:3':'aspect-4-3','1.91:1':'aspect-1_91-1','3:4':'aspect-3-4' }[a] || 'aspect-16-9') };
     }
@@ -503,10 +531,17 @@ createApp({
         const isSidebarCollapsed = ref(false); const isMessageMenuOpen = ref(true);
         const currentTab = ref('dashboard'); const currentSubTab = ref('single');
         const isLoggedIn = ref(false); const user = ref(null);
-        const flexData = ref({ type: 'standard', showBadge: true, badgeText: '分享', badgeUri: '', badgeColor: '#FF0000', altText: '精選訊息', imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/a635f6d04823512343614d4ddc692545.jpg', aspectRatio: '20:13', title: '最新焦點', subtitle: '歡迎查看我們最新發布的精選外掛插件內容。', buttons: [{ label: '了解更多', uri: '', color: '#00B900' }] });
+        
+        const flexData = ref({ type: 'standard', showBadge: true, badgeText: '分享', badgeUri: '', badgeColor: '#FF0000', titleAlign: 'center', altText: '精選訊息', imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/a635f6d04823512343614d4ddc692545.jpg', aspectRatio: '20:13', title: '最新焦點', subtitle: '歡迎查看我們最新發布的精選內容。', buttons: [{ label: '了解更多', uri: '', color: '#00B900' }] });
         const ecomState = ref({ altText: '商城活動', hero: { type: 'video', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "https://lihi.cc/YsmAp" }, body: { columns: 3, bgType: "image", bgMode: "cover", bgColor: "#F8F8F8", bg: "https://lihi.cc/l5qqU", tagBgColor: "#0D0D0D", tagTextColor: "#FFFFFF", items: [{ title: "商品 A", img: "https://lihi.cc/mwMvo", url: "" }, { title: "商品 B", img: "https://lihi.cc/2Nu8G", url: "" }, { title: "商品 C", img: "https://lihi.cc/yRfpn", url: "" }] }, footer: { bg: "#ffffff", textEnabled: false, text: "※ 數量有限。", textColor: "#666666", textAlign: "center", btn1: { label: "官網", color: "#000000", uri: "" }, btn2: { label: "分享", color: "#000000", uri: "" } } });
-        const handlePush = ({ json, altText }) => { if (!liff.isLoggedIn()) { liff.login(); return; } liff.shareTargetPicker([{ type: "flex", altText: altText || "精選訊息", contents: json }]).then(res => { if (res) alert("推播發送成功！"); }).catch(err => alert("發送失敗：請確認網址格式正確。")); };
-        onMounted(async () => { try { await liff.init({ liffId: "2008541971-Wgvz6gD8" }); isLoggedIn.value = liff.isLoggedIn(); if (isLoggedIn.value) user.value = await liff.getProfile(); if (window.lucide) window.lucide.createIcons(); } catch (e) {} });
+
+        const handlePush = ({ json, altText }) => {
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            liff.shareTargetPicker([{ type: "flex", altText: altText || "精選訊息", contents: json }]).then(res => { if (res) alert("推播成功！"); }).catch(err => alert("發送失敗：請確認網址格式正確。"));
+        };
+        onMounted(async () => {
+            try { await liff.init({ liffId: "2008541971-Wgvz6gD8" }); isLoggedIn.value = liff.isLoggedIn(); if (isLoggedIn.value) user.value = await liff.getProfile(); if (window.lucide) window.lucide.createIcons(); } catch (e) {}
+        });
         return { isSidebarCollapsed, isMessageMenuOpen, currentTab, currentSubTab, isLoggedIn, user, flexData, ecomState, pageTitle: computed(() => currentTab.value === 'dashboard' ? ' CMS 主儀表板' : { single:'文章型', video:'影片型', ecommerce:'電商型' }[currentSubTab.value]), toggleMenu: () => { if (isSidebarCollapsed.value) isSidebarCollapsed.value = false; isMessageMenuOpen.value = !isMessageMenuOpen.value; }, switchSubTab: (t, s) => { currentTab.value = t; currentSubTab.value = s; }, login: () => liff.login(), handleSave: () => alert("已模擬儲存動作"), handlePush };
     }
 }).mount('#app');
