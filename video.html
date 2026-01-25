@@ -29,7 +29,7 @@
         .grid-item { padding: 10px; border-radius: 10px; text-align: center; transition: background-color 0.3s; }
 
         .input-label { @apply block text-[11px] font-bold text-gray-500 uppercase mb-1 ml-1 tracking-wider; }
-        input[type="color"] { -webkit-appearance: none; border: none; width: 26px; height: 26px; cursor: pointer; background: none; }
+        input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; cursor: pointer; background: none; }
         input[type="color"]::-webkit-color-swatch { border-radius: 4px; border: 1px solid #ddd; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
 
@@ -68,7 +68,7 @@
         <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
             <div class="flex items-center gap-3">
                 <h2 class="text-xl font-bold text-gray-800">影片名片插件開發</h2>
-                <span class="px-2 py-0.5 bg-green-100 text-green-600 text-[10px] font-bold rounded">HEX COLOR FIXED</span>
+                <span class="px-2 py-0.5 bg-green-100 text-green-600 text-[10px] font-bold rounded">HEADER TEXT COLOR FIXED</span>
             </div>
             <div class="flex items-center gap-4">
                 <div v-if="isLoggedIn" class="flex items-center gap-2 px-4 py-1.5 bg-green-50 rounded-full border border-green-100 shadow-sm">
@@ -96,7 +96,7 @@
                     </div>
 
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-6">
-                        <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> Header 品牌與背景配色 (HEX)</h4>
+                        <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> Header 品牌與背景配色</h4>
                         <div class="grid grid-cols-2 gap-4">
                             <div><label class="input-label">姓名 / 品牌名</label><input type="text" v-model="data.headerName" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green outline-none"></div>
                             <div><label class="input-label">敘述描述 (限20字)</label><input type="text" v-model="data.headerDescription" maxlength="20" class="w-full px-4 py-2 border rounded-lg text-sm focus:border-line-green outline-none"></div>
@@ -106,6 +106,10 @@
                                 <div class="flex items-center gap-2 bg-white p-1.5 border rounded-lg"><input type="color" v-model="data.headerBgColor"><span class="text-[10px] font-mono">{{data.headerBgColor}}</span></div>
                             </div>
                             <div>
+                                <label class="input-label">Header 文字顏色</label>
+                                <div class="flex items-center gap-2 bg-white p-1.5 border rounded-lg"><input type="color" v-model="data.headerTextColor"><span class="text-[10px] font-mono">{{data.headerTextColor}}</span></div>
+                            </div>
+                            <div class="col-span-2">
                                 <label class="input-label">Body 背景色</label>
                                 <div class="flex items-center gap-2 bg-white p-1.5 border rounded-lg"><input type="color" v-model="data.bodyBgColor"><span class="text-[10px] font-mono">{{data.bodyBgColor}}</span></div>
                             </div>
@@ -170,7 +174,10 @@
                         <div class="flex-bubble flex-bubble-dark shadow-2xl mt-4" :style="{ backgroundColor: data.bodyBgColor }">
                             <div class="header-box" :style="{ backgroundColor: data.headerBgColor }">
                                 <img :src="data.headerImg" class="w-10 h-10 rounded-full object-cover border border-gray-700 shadow-sm">
-                                <div class="flex flex-col overflow-hidden"><span class="text-[11px] font-bold uppercase truncate" style="color:#D4AF37">{{ data.headerName }}</span><span class="text-[8px] text-gray-400 leading-tight truncate">{{ data.headerDescription }}</span></div>
+                                <div class="flex flex-col overflow-hidden">
+                                    <span class="text-[11px] font-bold uppercase truncate" :style="{ color: data.headerTextColor }">{{ data.headerName || '姓名' }}</span>
+                                    <span class="text-[8px] opacity-80 leading-tight truncate" :style="{ color: data.headerTextColor }">{{ data.headerDescription || '敘述' }}</span>
+                                </div>
                             </div>
                             <div class="video-hero">
                                 <img :src="data.previewUrl" class="w-full h-full object-cover opacity-60">
@@ -221,8 +228,9 @@ createApp({
             headerDescription: '系統開發服務',
             headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png',
             headerBgColor: '#1A1B1E',
+            headerTextColor: '#D4AF37', // 新增：預設文字顏色
             bodyBgColor: '#0F0F10',
-            gridBgColor: '#2A2C31', // 修復：改為 HEX 格式
+            gridBgColor: '#2A2C31',
             videoUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/mp4',
             previewUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/m800x1200',
             gridButtons: [ 
@@ -247,9 +255,9 @@ createApp({
                     contents: [
                         { type: "image", url: forceHttps(current.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" },
                         { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [
-                            { type: "text", text: current.headerName || "TONY", weight: "bold", size: "lg", color: "#D4AF37" },
-                            { type: "text", text: "LINE行銷達人", size: "sm", color: "#E6E6E6" },
-                            { type: "text", text: current.headerDescription || "服務介紹", size: "xs", color: "#A0A0A0", wrap: true }
+                            { type: "text", text: current.headerName || "TONY", weight: "bold", size: "lg", color: current.headerTextColor },
+                            { type: "text", text: "LINE行銷達人", size: "sm", color: current.headerTextColor, opacity: 0.8 },
+                            { type: "text", text: current.headerDescription || "服務介紹", size: "xs", color: current.headerTextColor, wrap: true, opacity: 0.6 }
                         ]}
                     ]
                 },
@@ -289,7 +297,7 @@ createApp({
             } else {
                 bubble.hero = {
                     type: "image", url: forceHttps(current.previewUrl), size: "full", aspectRatio: "800:500", aspectMode: "cover",
-                    action: { type: "uri", label: "HeroLink", uri: forceHttps(current.imageActionUrl) }
+                    action: { type: "uri", label: "Image", uri: forceHttps(current.imageActionUrl) }
                 };
             }
             return bubble;
@@ -311,7 +319,7 @@ createApp({
             const payload = cleanJson(flexJson.value);
             liff.shareTargetPicker([{ type: "flex", altText: data.value.altText || "影片名片", contents: payload }])
             .then(res => { if (res) alert("推播發送成功！"); })
-            .catch(err => { alert("發送失敗：請確保所有連結網址皆為有效的 HTTPS 網址且格式正確。"); });
+            .catch(err => { alert("發送失敗：請檢查所有連結網址是否皆為有效的 HTTPS 網址且格式正確。"); });
         };
 
         onMounted(async () => {
