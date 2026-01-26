@@ -23,7 +23,7 @@
     <aside class="sidebar-container text-gray-400 shadow-2xl">
         <div class="h-16 flex items-center px-6 border-b border-gray-700 shrink-0">
             <i class="fab fa-line text-3xl line-green"></i>
-            <span class="ml-4 text-white font-bold uppercase font-mono tracking-tighter">CMS Project</span>
+            <span class="ml-4 text-white font-bold whitespace-nowrap tracking-tighter uppercase font-mono">CMS Project</span>
         </div>
         <nav class="mt-6 flex-grow overflow-y-auto no-scrollbar whitespace-nowrap">
             <a href="index.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors">
@@ -37,7 +37,6 @@
         </nav>
     </aside>
 
-    <!-- 主要內容區 -->
     <main class="flex-grow flex flex-col h-full bg-[#f8fafc] overflow-hidden">
         <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm">
             <div class="flex items-center gap-4">
@@ -63,7 +62,7 @@
                 <div class="flex-grow overflow-y-auto no-scrollbar">
                     <div v-if="loading" class="p-20 text-center text-gray-400">
                         <i class="fas fa-circle-notch animate-spin text-3xl mb-4"></i>
-                        <p class="text-xs font-bold uppercase tracking-widest">從試算表同步資料...</p>
+                        <p class="text-xs font-bold uppercase tracking-widest">正在從雲端抓取...</p>
                     </div>
                     <!-- 初始為空狀態 -->
                     <div v-else-if="filteredProjects.length === 0" class="p-20 text-center text-gray-400">
@@ -76,11 +75,11 @@
                         :class="selectedProject?.cardId === p.cardId ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50 border-l-4 border-transparent'"
                         class="p-5 border-b cursor-pointer transition-all">
                         <div class="flex justify-between items-start mb-1">
-                            <h4 class="font-bold text-gray-800">{{ p.cardTitle }}</h4>
-                            <span :class="getTypeBadgeClass(p.cardType)" class="text-[9px] px-2 py-0.5 rounded font-bold uppercase">{{ p.cardType }}</span>
+                            <h4 class="font-bold text-gray-800">{{ p.cardTitle || '無標題專案' }}</h4>
+                            <span :class="getTypeBadgeClass(p.cardType)" class="text-[9px] px-2 py-0.5 rounded font-bold uppercase">{{ p.cardType || 'unknown' }}</span>
                         </div>
                         <div class="flex justify-between items-center mt-2">
-                            <span class="text-[9px] text-gray-400 font-mono tracking-tighter">{{ p.updatedAt || p.createdAt }}</span>
+                            <span class="text-[9px] text-gray-400 font-mono tracking-tighter">{{ p.updatedAt || p.createdAt || '時間未知' }}</span>
                             <button @click.stop="deleteProject(p)" class="text-gray-300 hover:text-red-500 transition-colors px-2"><i class="fas fa-trash-alt"></i></button>
                         </div>
                     </div>
@@ -97,7 +96,7 @@
                         </div>
                         <div class="flex gap-2">
                             <button @click="copyJson" class="px-5 py-2 bg-slate-800 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-black transition-all flex items-center gap-2">
-                                <i class="fas fa-copy"></i> 複製 cardJson
+                                <i class="fas fa-copy"></i> 複製參數 (cardJson)
                             </button>
                         </div>
                     </div>
@@ -123,7 +122,7 @@
 <script>
 const { createApp, ref, computed, onMounted } = Vue;
 
-// --- 請更換為您的真實 Worker 網址 ---
+// --- 請務必確認 Worker 網址正確 ---
 const workerUrl = "https://lineoa.fangwl591021.workers.dev";
 
 createApp({
@@ -136,15 +135,27 @@ createApp({
         const fetchProjects = async () => {
             loading.value = true;
             try {
-                // 假設您的 Worker 支援 action=getProjects，從試算表撈取
-                const res = await fetch(workerUrl + "?action=getProjects");
+                // 改用 POST 請求並帶入 action: 'getProjects'
+                const res = await fetch(workerUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getProjects' })
+                });
+                
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                
                 const result = await res.json();
-                if (result.status === 'success') {
-                    projects.value = result.data;
+                
+                // 修正：增加對 result.data 的檢查，防止 undefined 引發 reverse() 錯誤
+                if (result.status === 'success' && result.data) {
+                    // 確保資料是陣列後再反轉，若不是則設為空陣列
+                    projects.value = Array.isArray(result.data) ? [...result.data].reverse() : [];
+                } else {
+                    console.error("GAS 錯誤或資料格式不正確:", result.message || "未知原因");
+                    projects.value = [];
                 }
             } catch (e) {
-                console.error("無法撈取專案列表", e);
-                // 這裡暫時保持空數組，等待真實連動
+                console.error("網路或 Worker 錯誤:", e.message);
                 projects.value = [];
             } finally {
                 loading.value = false;
@@ -152,37 +163,51 @@ createApp({
         };
 
         const filteredProjects = computed(() => {
-            return projects.value.filter(p => p.cardTitle.toLowerCase().includes(searchQuery.value.toLowerCase()));
+            return projects.value.filter(p => {
+                const title = p.cardTitle || '';
+                return title.toLowerCase().includes(searchQuery.value.toLowerCase());
+            });
         });
 
         const formattedJson = computed(() => {
             if (!selectedProject.value) return '';
             try {
-                return JSON.stringify(JSON.parse(selectedProject.value.cardJson), null, 2);
+                // 如果 cardJson 是字串則解析，如果是物件則直接排版
+                const json = typeof selectedProject.value.cardJson === 'string' 
+                    ? JSON.parse(selectedProject.value.cardJson) 
+                    : selectedProject.value.cardJson;
+                return JSON.stringify(json, null, 2);
             } catch (e) {
-                return selectedProject.value.cardJson;
+                return selectedProject.value.cardJson || '無有效資料';
             }
         });
 
         const selectProject = (p) => { selectedProject.value = p; };
 
         const deleteProject = async (p) => {
-            if (confirm(`確定要從試算表中刪除專案「${p.cardTitle}」嗎？`)) {
+            if (confirm(`確定要刪除專案「${p.cardTitle}」嗎？`)) {
                 try {
-                    await fetch(workerUrl, {
+                    const res = await fetch(workerUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ action: 'delete', cardId: p.cardId })
                     });
-                    projects.value = projects.value.filter(proj => proj.cardId !== p.cardId);
-                    if (selectedProject.value?.cardId === p.cardId) selectedProject.value = null;
-                } catch (e) { alert("刪除失敗"); }
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        projects.value = projects.value.filter(proj => proj.cardId !== p.cardId);
+                        if (selectedProject.value?.cardId === p.cardId) selectedProject.value = null;
+                        alert("刪除成功");
+                    } else {
+                        alert("刪除失敗: " + result.message);
+                    }
+                } catch (e) { alert("刪除時發生網路連線失敗"); }
             }
         };
 
         const copyJson = () => {
+            if (!formattedJson.value) return;
             navigator.clipboard.writeText(formattedJson.value);
-            alert("參數 JSON 已複製到剪貼簿！");
+            alert("參數 JSON 已複製！");
         };
 
         onMounted(fetchProjects);
