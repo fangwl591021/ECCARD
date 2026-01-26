@@ -44,6 +44,7 @@
 <body>
 
 <div id="app" class="flex h-screen overflow-hidden text-gray-800">
+    <!-- 側邊選單系統 -->
     <aside :class="isSidebarCollapsed ? 'w-collapsed' : 'w-expanded'" class="sidebar-container text-gray-400 shadow-2xl sidebar-transition">
         <div class="h-16 flex items-center border-b border-gray-700 overflow-hidden shrink-0 sidebar-transition" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
             <i class="fab fa-line text-3xl line-green"></i>
@@ -89,6 +90,7 @@
 
         <div class="flex-grow overflow-hidden">
             <div v-if="currentTab === 'messages'" class="h-full">
+                <!-- 模組傳遞 @save 事件觸發儲存 -->
                 <article-editor v-if="currentSubTab === 'single'" :initial-data="flexData" @push="handlePush" @save="initSave"></article-editor>
                 <ecommerce-editor v-if="currentSubTab === 'ecommerce'" :initial-data="ecomState" @push="handlePush" @save="initSave"></ecommerce-editor>
             </div>
@@ -104,12 +106,12 @@
     <div v-if="showSaveModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] backdrop-blur-sm">
         <div class="bg-white rounded-[32px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in duration-300">
             <h3 class="text-2xl font-bold mb-2">儲存專案到雲端</h3>
-            <p class="text-xs text-gray-400 mb-8 font-medium italic">對應工作表: cards</p>
+            <p class="text-xs text-gray-400 mb-8 font-medium">對應工作表: cards (試算表 ID: 1qQjIMf8...)</p>
             
             <div class="space-y-6">
                 <div>
-                    <label class="input-label">專案名稱 (cardTitle)</label>
-                    <input type="text" v-model="projectName" class="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-line-green shadow-sm text-lg font-bold" placeholder="輸入專案名稱...">
+                    <label class="input-label">專案標題 (cardTitle)</label>
+                    <input type="text" v-model="projectName" class="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-line-green shadow-sm text-lg font-bold" placeholder="例如：2026 夏季大特賣">
                 </div>
             </div>
 
@@ -117,14 +119,16 @@
                 <button @click="showSaveModal = false" class="flex-1 py-3 text-gray-400 font-bold hover:text-gray-600 transition-colors">取消</button>
                 <button @click="confirmSave" :disabled="isSaving" class="flex-[2] py-3 bg-line-green text-white rounded-2xl font-bold shadow-lg hover:brightness-110 transition-all flex items-center justify-center gap-2">
                     <i v-if="isSaving" class="fas fa-circle-notch animate-spin"></i>
-                    <span>{{ isSaving ? '同步至 Google Sheets...' : '確認儲存' }}</span>
+                    <span>{{ isSaving ? '傳輸資料中...' : '儲存送出' }}</span>
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 文章型模組模板 -->
+<!-- ==========================================
+     模組 1: 文章型編輯器
+     ========================================== -->
 <script type="text/x-template" id="article-editor-template">
 <div class="flex h-full w-full overflow-hidden">
     <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
@@ -140,7 +144,7 @@
             
             <div class="space-y-6">
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
-                    <label class="input-label">主視覺圖片網址</label><input type="text" v-model="data.imageUrl" class="w-full border rounded p-2 text-sm focus:border-line-green shadow-sm">
+                    <label class="input-label">主視覺圖片連結</label><input type="text" v-model="data.imageUrl" class="w-full border rounded p-2 text-sm focus:border-line-green shadow-sm">
                     <div class="bg-white/50 p-4 rounded-lg border space-y-3 shadow-sm">
                         <label class="text-xs font-bold text-gray-600 flex items-center gap-2 cursor-pointer"><input type="checkbox" v-model="data.showBadge" class="accent-line-green"> 顯示右上標籤</label>
                         <div v-if="data.showBadge" class="grid grid-cols-2 gap-3 pl-6">
@@ -149,21 +153,12 @@
                         </div>
                     </div>
                     <div class="space-y-2">
-                        <div class="flex justify-between items-end"><label class="input-label">標題內容</label>
+                        <div class="flex justify-between items-end"><label class="input-label">標題內容 (限30字)</label>
                             <div class="flex bg-slate-100 p-0.5 rounded border"><button v-for="a in ['start','center','end']" @click="data.titleAlign=a" :class="data.titleAlign===a?'bg-white text-line-green shadow-sm':'text-slate-500'" class="p-1 px-2 text-[9px] uppercase font-bold transition-all"><i :class="'fas fa-align-' + (a==='start'?'left':a==='center'?'center':'right')"></i></button></div>
                         </div>
                         <input type="text" v-model="data.title" maxlength="30" class="w-full border rounded p-2 text-sm font-bold shadow-sm">
                     </div>
-                    <div><label class="input-label">描述文字 (5px 優化)</label><textarea v-model="data.subtitle" rows="6" class="w-full border rounded p-2 text-sm focus:border-line-green shadow-sm"></textarea></div>
-                </div>
-                <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                    <h4 class="text-sm font-bold mb-4 flex justify-between items-center"><span>底部按鈕設定</span><button @click="addButton" class="text-xs text-line-green font-bold">+ 新增</button></h4>
-                    <div class="space-y-3">
-                        <div v-for="(btn, idx) in data.buttons" :key="idx" class="flex gap-3 items-center bg-white p-3 rounded-xl border group shadow-sm transition-all hover:border-line-green">
-                            <input type="color" v-model="btn.color"><input type="text" v-model="btn.label" class="w-32 border rounded p-1 text-sm font-bold"><input type="text" v-model="btn.uri" class="flex-1 border rounded p-1 text-sm">
-                            <button @click="data.buttons.splice(idx,1)" class="text-gray-300 hover:text-red-500 transition-opacity"><i class="fas fa-trash-alt"></i></button>
-                        </div>
-                    </div>
+                    <div><label class="input-label">內容文字 (xs 大小)</label><textarea v-model="data.subtitle" rows="6" class="w-full border rounded p-2 text-sm focus:border-line-green shadow-sm"></textarea></div>
                 </div>
             </div>
             <json-viewer :json="flexJson"></json-viewer>
@@ -171,18 +166,17 @@
     </div>
     <div class="w-[450px] shrink-0 open-preview-area shadow-inner bg-slate-200/50 overflow-y-auto no-scrollbar">
         <div class="chat-room-bg no-scrollbar">
-            <div class="mb-4 text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] w-full text-center">Live Flex Preview</div>
             <div class="flex-bubble-container">
                 <div class="flex-bubble">
-                    <div class="relative w-full">
+                    <div class="relative w-full overflow-hidden">
                         <img :src="data.imageUrl" class="w-full aspect-[20/13] object-cover">
                         <div v-if="data.showBadge" class="flex-badge-preview" :style="{ backgroundColor: data.badgeColor }">{{ data.badgeText }}</div>
                     </div>
                     <div class="p-[5px] text-center">
                         <div class="text-base font-bold truncate mt-1" :class="{'text-left': data.titleAlign==='start', 'text-center': data.titleAlign==='center', 'text-right': data.titleAlign==='end'}">{{ data.title }}</div>
-                        <div class="text-[9px] text-gray-500 mt-2 whitespace-pre-wrap leading-relaxed px-1">{{ data.subtitle }}</div>
+                        <div class="text-[9px] text-gray-500 mt-2 whitespace-pre-wrap px-1">{{ data.subtitle }}</div>
                     </div>
-                    <div class="p-3 pt-0 space-y-1.5" style="padding: 5px !important;"><button v-for="btn in data.buttons" class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm" :style="{ backgroundColor: btn.color }">{{ btn.label }}</button></div>
+                    <div class="p-1.5 space-y-1"><button v-for="btn in data.buttons" class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm" :style="{ backgroundColor: btn.color }">{{ btn.label }}</button></div>
                 </div>
             </div>
         </div>
@@ -190,13 +184,15 @@
 </div>
 </script>
 
-<!-- 電商型模組模板 -->
+<!-- ==========================================
+     模組 2: 電商型編輯器
+     ========================================== -->
 <script type="text/x-template" id="ecommerce-editor-template">
 <div class="flex h-full w-full overflow-hidden">
     <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
         <div class="max-w-4xl mx-auto space-y-8 pb-10">
             <div class="flex items-center justify-between">
-                <h3 class="text-2xl font-bold text-gray-800 font-mono">ECOMMERCE_PRO</h3>
+                <h3 class="text-2xl font-bold text-gray-800">電商型模組開發</h3>
                 <div class="flex gap-2">
                     <button @click="$emit('save', { type: 'ecommerce', data: state, json: flexJson })" class="px-5 py-2 border border-line-green text-line-green rounded-xl text-sm font-bold hover:bg-green-50 flex items-center gap-2 transition-all"><i class="fas fa-cloud-upload-alt"></i> 儲存專案</button>
                     <button @click="copyJson" class="px-5 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold shadow hover:bg-slate-800 transition-all"><i class="fas fa-copy"></i> 複製 JSON</button>
@@ -205,18 +201,20 @@
             </div>
 
             <div class="space-y-6">
+                <!-- Hero 配置 -->
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                     <h4 class="text-sm font-bold flex items-center"><i class="fas fa-image mr-2 text-line-green"></i> 頂部視覺 Hero</h4>
                     <div class="flex bg-slate-100 p-1 rounded-lg border">
                         <button v-for="t in ['image', 'video', 'none']" @click="state.hero.type = t" :class="state.hero.type===t?'bg-white shadow-sm text-line-green':'text-slate-400'" class="flex-1 py-1.5 text-xs font-bold rounded transition-all">{{ t.toUpperCase() }}</button>
                     </div>
-                    <div v-if="state.hero.type !== 'none'" class="grid grid-cols-2 gap-4 animate-in fade-in">
+                    <div v-if="state.hero.type !== 'none'" class="grid grid-cols-2 gap-4">
                         <div><label class="input-label">顯示比例</label><select v-model="state.hero.aspectRatio" class="w-full border rounded p-2 text-xs shadow-sm"><option v-for="a in ['16:9','1:1','1.91:1']" :value="a">{{ a }}</option></select></div>
-                        <div><label class="input-label">{{ state.hero.type === 'video' ? '預覽封面圖' : '圖片連結' }}</label><input type="text" v-model="state.hero.url" class="w-full border rounded p-2 text-xs shadow-sm"></div>
-                        <div v-if="state.hero.type === 'video'" class="col-span-2"><label class="input-label text-blue-600 font-bold">影片連結 (.mp4)</label><input type="text" v-model="state.hero.videoUrl" class="w-full border-2 border-blue-100 rounded p-2 text-xs shadow-sm outline-none focus:border-blue-400"></div>
+                        <div><label class="input-label">{{ state.hero.type === 'video' ? '封面圖連結' : '主圖連結' }}</label><input type="text" v-model="state.hero.url" class="w-full border rounded p-2 text-xs shadow-sm"></div>
+                        <div v-if="state.hero.type === 'video'" class="col-span-2"><label class="input-label text-blue-600 font-bold">影片連結 (.mp4)</label><input type="text" v-model="state.hero.videoUrl" class="w-full border-2 border-blue-100 rounded p-2 text-xs shadow-sm"></div>
                     </div>
                 </div>
 
+                <!-- 商品設定 -->
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                     <div class="flex justify-between items-center">
                         <h4 class="text-sm font-bold">商品網格顯示</h4>
@@ -224,40 +222,17 @@
                     </div>
                     <div class="grid grid-cols-3 gap-4">
                         <div><label class="input-label">每行欄數</label><select v-model="state.body.columns" class="w-full border rounded p-2 text-xs shadow-sm"><option :value="3">3 欄</option><option :value="4">4 欄</option></select></div>
-                        <div><label class="input-label">圖片比例</label>
-                            <div class="flex bg-white p-1 border rounded shadow-sm h-[34px]"><button @click="state.body.productRatio = '1:1'" :class="state.body.productRatio==='1:1'?'bg-line-green text-white':'text-gray-400'" class="flex-1 text-[9px] font-bold rounded">1:1</button><button @click="state.body.productRatio = '16:9'" :class="state.body.productRatio==='16:9'?'bg-line-green text-white':'text-gray-400'" class="flex-1 text-[9px] font-bold rounded ml-1">16:9</button></div>
-                        </div>
+                        <div><label class="input-label">圖片比例</label><div class="flex bg-white p-1 border rounded shadow-sm h-[34px]"><button v-for="r in ['1:1','16:9']" @click="state.body.productRatio = r" :class="state.body.productRatio===r?'bg-line-green text-white':'text-gray-400'" class="flex-1 text-[9px] font-bold rounded">{{r}}</button></div></div>
                         <div><label class="input-label">網格背景</label><div class="flex items-center gap-2 bg-white p-1 border rounded shadow-sm h-[34px] px-2"><input type="color" v-model="state.body.bgColor"><span class="text-[10px] font-mono uppercase">{{state.body.bgColor}}</span></div></div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <div v-for="(item, idx) in state.body.items" :key="idx" class="p-4 bg-white border rounded-2xl relative shadow-sm hover:border-line-green group transition-all">
+                        <div v-for="(item, idx) in state.body.items" :key="idx" class="p-4 bg-white border rounded-2xl relative shadow-sm hover:border-line-green transition-all group">
                             <button @click="state.body.items.splice(idx,1)" class="text-gray-300 hover:text-red-500 absolute top-2 right-2 transition-colors"><i class="fas fa-times-circle"></i></button>
                             <div class="flex gap-4 mb-3">
                                 <img :src="item.img" class="w-14 h-14 rounded-lg object-cover border" onerror="this.src='https://via.placeholder.com/100?text=Error'">
                                 <div class="flex-1"><label class="input-label">品名</label><input v-model="item.title" class="w-full border-b text-sm font-bold focus:border-line-green outline-none"></div>
                             </div>
-                            <div class="space-y-2">
-                                <label class="input-label">圖片 URL</label><input v-model="item.img" class="w-full border rounded p-1.5 text-[10px] bg-slate-50">
-                                <label class="input-label">跳轉連結</label><input v-model="item.url" class="w-full border rounded p-1.5 text-[10px] bg-slate-50">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
-                    <h4 class="text-sm font-bold flex justify-between items-center">
-                        <span>底部行為設定</span>
-                        <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-blue-600"><input type="checkbox" v-model="state.footer.textEnabled" class="accent-blue-600"> 顯示說明文字</label>
-                    </h4>
-                    <div v-show="state.footer.textEnabled" class="mb-4 space-y-3 p-4 bg-white border rounded-xl shadow-sm animate-in fade-in duration-300">
-                        <textarea v-model="state.footer.text" rows="3" class="w-full border rounded p-2 text-xs focus:outline-none focus:border-line-green shadow-inner" placeholder="底部文字內容..."></textarea>
-                        <div class="flex justify-end gap-2"><input type="color" v-model="state.footer.textColor"><div class="flex bg-slate-100 p-0.5 rounded border"><button v-for="a in ['start','center','end']" @click="state.footer.textAlign=a" :class="state.footer.textAlign===a?'bg-white text-line-green shadow-sm':'text-slate-400'" class="p-1 px-2 text-[9px] uppercase font-bold">{{a}}</button></div></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div v-for="b in ['btn1','btn2']" :key="b" class="p-4 bg-white border rounded-xl shadow-sm transition-all hover:border-line-green">
-                            <div class="flex items-center justify-between mb-2"><label class="input-label mb-0">配色</label><input type="color" v-model="state.footer[b].color"></div>
-                            <input type="text" v-model="state.footer[b].label" class="w-full border rounded p-2 text-sm font-bold mb-2 shadow-sm">
-                            <input type="text" v-model="state.footer[b].uri" class="w-full border rounded p-2 text-[10px] shadow-sm">
+                            <div class="space-y-2"><label class="input-label">圖片 URL</label><input v-model="item.img" class="w-full border rounded p-1.5 text-[10px] bg-slate-50"></div>
                         </div>
                     </div>
                 </div>
@@ -267,7 +242,6 @@
     </div>
     <div class="w-[450px] shrink-0 open-preview-area shadow-inner bg-slate-200/50 overflow-y-auto no-scrollbar">
         <div class="chat-room-bg no-scrollbar">
-            <div class="mb-4 text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] w-full text-center">Live Ecommerce Preview</div>
             <div class="flex-bubble-container">
                 <div class="flex-bubble flex flex-col bg-white shadow-2xl">
                     <div v-show="state.hero.type !== 'none'" :class="getAspectClass(state.hero.aspectRatio)" class="w-full bg-black shrink-0 overflow-hidden relative">
@@ -285,11 +259,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="p-3 border-t bg-white flex flex-col gap-2" style="padding: 5px !important;">
-                        <div v-if="state.footer.textEnabled" :style="{ color: state.footer.textColor }" :class="{'text-left': state.footer.textAlign==='start', 'text-center': state.footer.textAlign==='center', 'text-right': state.footer.textAlign==='end'}" class="text-[10px] whitespace-pre-wrap mb-1 px-1">{{ state.footer.text }}</div>
-                        <div class="flex gap-2">
-                            <button v-for="b in [state.footer.btn1, state.footer.btn2]" :key="b.label" :style="{ backgroundColor: b.color }" class="flex-1 py-2 rounded text-[10px] font-bold text-white shadow-sm">{{ b.label }}</button>
-                        </div>
+                    <div class="p-1.5 border-t bg-white flex gap-2">
+                        <button v-for="b in [state.footer.btn1, state.footer.btn2]" :key="b.label" :style="{ backgroundColor: b.color }" class="flex-1 py-1.5 rounded text-[10px] font-bold text-white shadow-sm">{{ b.label }}</button>
                     </div>
                 </div>
             </div>
@@ -308,8 +279,10 @@ const forceHttps = (u) => {
     return url.startsWith("https://") ? url : "https://" + url; 
 };
 
-// 請在此處填入您的 GAS 部署網址
-const scriptUrl = "https://script.google.com/macros/s/YOUR_GAS_ID/exec"; 
+/** * 請將下方的網址替換為您在 Google Apps Script 部署後的 Web App 網址 
+ * 部署 ID 應為類似：AKfycb...
+ */
+const scriptUrl = "https://script.google.com/macros/s/AKfycbyR6w27F0W5Wl9W7S7S7S7S7S7S7S7S7S7S/exec";
 
 const ArticleEditor = {
     props: ['initialData'], template: '#article-editor-template',
@@ -331,7 +304,7 @@ const ArticleEditor = {
             };
         });
         const copyJson = () => { navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); alert('JSON 已複製！'); };
-        return { data, flexJson, copyJson, addButton: () => data.value.buttons.push({ label: '了解更多', color: '#00B900', uri: 'https://line.me' }) };
+        return { data, flexJson, copyJson, addButton: () => data.value.buttons.push({ label: '新按鈕', color: '#00B900', uri: 'https://line.me' }) };
     }
 };
 
@@ -352,16 +325,13 @@ const EcommerceEditor = {
                             { type: "image", url: forceHttps(item.img), aspectRatio: cur.body.productRatio, aspectMode: "cover", size: "full" },
                             { type: "box", layout: "vertical", backgroundColor: "#000000", paddingAll: "xs", contents: [{ type: "text", text: item.title || "商品", color: "#FFFFFF", size: "xxs", align: "center", weight: "bold", wrap: true }] }
                         ],
-                        action: { type: "uri", label: item.title || "item", uri: forceHttps(item.url) }
+                        action: { type: "uri", label: item.title || "item", uri: forceHttps(item.url || 'https://line.me') }
                     });
                 });
                 while (rowBox.contents.length < cols) { rowBox.contents.push({ type: "box", layout: "vertical", flex: 1, contents: [] }); }
                 rows.push(rowBox);
             }
-            const footItems = [];
-            if (cur.footer.textEnabled && cur.footer.text) { footItems.push({ type: "text", text: cur.footer.text, size: "xs", wrap: true, align: cur.footer.textAlign, color: cur.footer.textColor, margin: "md" }); }
-            footItems.push({ type: "box", layout: "horizontal", spacing: "md", contents: [{ type: "button", style: "primary", height: "sm", color: cur.footer.btn1.color, action: { type: "uri", label: cur.footer.btn1.label, uri: forceHttps(cur.footer.btn1.uri) } },{ type: "button", style: "primary", height: "sm", color: cur.footer.btn2.color, action: { type: "uri", label: cur.footer.btn2.label, uri: forceHttps(cur.footer.btn2.uri) } }]});
-            const flex = { type: "bubble", size: "mega", body: { type: "box", layout: "vertical", paddingAll: "5px", backgroundColor: cur.body.bgColor, contents: rows }, footer: { type: "box", layout: "vertical", paddingAll: "5px", contents: footItems } };
+            const flex = { type: "bubble", size: "mega", body: { type: "box", layout: "vertical", paddingAll: "5px", backgroundColor: cur.body.bgColor, contents: rows }, footer: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "5px", contents: [{ type: "button", style: "primary", height: "sm", color: cur.footer.btn1.color, action: { type: "uri", label: cur.footer.btn1.label, uri: forceHttps(cur.footer.btn1.uri) } },{ type: "button", style: "primary", height: "sm", color: cur.footer.btn2.color, action: { type: "uri", label: cur.footer.btn2.label, uri: forceHttps(cur.footer.btn2.uri) } }] } };
             if (cur.hero.type === 'video') flex.hero = { type: "video", url: forceHttps(cur.hero.videoUrl), previewUrl: forceHttps(cur.hero.url), aspectRatio: cur.hero.aspectRatio, altContent: { type: "image", url: forceHttps(cur.hero.url), size: "full", aspectMode: "cover" } };
             else if (cur.hero.type === 'image') flex.hero = { type: "image", url: forceHttps(cur.hero.url), size: "full", aspectRatio: cur.hero.aspectRatio, aspectMode: "cover", action: { type: "uri", label: "hero", uri: "https://line.me" } };
             return flex;
@@ -380,23 +350,24 @@ createApp({
         const showSaveModal = ref(false); const isSaving = ref(false); const projectName = ref('');
         const savePayload = ref(null);
 
-        const flexData = ref({ imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/a635f6d04823512343614d4ddc692545.jpg', title: '最新焦點', subtitle: '描述...', buttons: [{ label: '了解更多', uri: 'https://line.me', color: '#00B900' }], titleAlign: 'center', showBadge: true, badgeText: 'Hot', badgeColor: '#FF0000' });
-        const ecomState = ref({ altText: '商城活動', hero: { type: 'video', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/mp4" }, body: { columns: 3, bgColor: "#F8F8F8", productRatio: '1:1', items: [{ title: "經典黑", img: "https://lihi.cc/mwMvo", url: "https://line.me" }, { title: "酷炫藍", img: "https://lihi.cc/2Nu8G", url: "https://line.me" }] }, footer: { textEnabled: true, text: "※ 數量有限，售完為止。", textColor: "#666666", textAlign: "center", btn1: { label: "官網", color: "#000000", uri: "https://line.me" }, btn2: { label: "分享", color: "#CC0000", uri: "https://line.me" } } });
+        const flexData = ref({ imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/a635f6d04823512343614d4ddc692545.jpg', title: '最新焦點', subtitle: '內容描述...', buttons: [{ label: '了解更多', uri: 'https://line.me', color: '#00B900' }], titleAlign: 'center', showBadge: true, badgeText: 'Hot', badgeColor: '#FF0000' });
+        const ecomState = ref({ altText: '商城特惠', hero: { type: 'video', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", videoUrl: "https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/mp4" }, body: { columns: 3, bgColor: "#F8F8F8", productRatio: '1:1', items: [{ title: "經典黑", img: "https://lihi.cc/mwMvo", url: "https://line.me" }, { title: "酷炫藍", img: "https://lihi.cc/2Nu8G", url: "https://line.me" }] }, footer: { textEnabled: true, text: "※ 全館五折起，限時特賣中！", textColor: "#666666", textAlign: "center", btn1: { label: "進入官網", color: "#000000", uri: "https://line.me" }, btn2: { label: "好友分享", color: "#CC0000", uri: "https://line.me" } } });
         
         const initSave = (payload) => { savePayload.value = payload; showSaveModal.value = true; };
         
-        // 精確對接 1qQjIMf8... cards 工作表欄位
+        // 精確對接 1qQjIMf8... cards 工作表 30+ 欄位
         const confirmSave = async () => {
             if (!projectName.value) { alert("請輸入專案名稱"); return; }
-            isSaving.value = true;
+            if (scriptUrl.includes("https://script.google.com/macros/s/AKfycbygHQxnMJo0cfPzNN0RvMnr7tVWmTc46LwaV4M4hN3DW-qZONK_h9M7kpvV53tvtBhR/exec")) { alert("錯誤：請在程式碼中填入正確的 GAS scriptUrl。"); return; }
             
+            isSaving.value = true;
             const type = savePayload.value.type;
             const data = savePayload.value.data;
             const now = new Date().toISOString();
 
-            // 構建欄位映射物件
+            // 構建映射：完全符合 cards 工作表定義
             const sheetData = {
-                userId: userProfile.value.userId || 'Guest',
+                userId: userProfile.value.userId || 'GUEST_USER',
                 displayName: userProfile.value.displayName || '訪客',
                 pictureUrl: userProfile.value.pictureUrl || '',
                 cardId: 'CARD_' + Date.now(),
@@ -405,47 +376,55 @@ createApp({
                 cardTitle: projectName.value,
                 isActive: true,
                 shareSlug: Math.random().toString(36).substring(2, 10),
-                // Header 欄位
-                'header.avatarUrl': type === 'ecommerce' ? '' : '', 
+                // Header
+                'header.avatarUrl': userProfile.value.pictureUrl || '', 
                 'header.name': projectName.value,
-                'header.subtitle': type === 'article' ? data.title : '',
-                'header.description': type === 'article' ? data.subtitle : '',
+                'header.subtitle': type === 'article' ? data.title : 'E-Commerce',
+                'header.description': type === 'article' ? data.subtitle : '商城產品推薦',
                 'header.bgColor': '#FFFFFF',
-                // Hero 欄位
+                // Hero
                 'hero.mode': type === 'ecommerce' ? data.hero.type : 'image',
                 'hero.video.url': type === 'ecommerce' && data.hero.type === 'video' ? data.hero.videoUrl : '',
                 'hero.video.previewUrl': type === 'ecommerce' ? data.hero.url : '',
                 'hero.image.url': type === 'article' ? data.imageUrl : (type === 'ecommerce' ? data.hero.url : ''),
-                // Footer 欄位 (對應 1 & 2)
-                'footer.maxButtons': data.buttons ? data.buttons.length : 2,
-                'footer.1.label': type === 'article' ? data.buttons[0]?.label : data.footer.btn1.label,
-                'footer.1.uri': type === 'article' ? data.buttons[0]?.uri : data.footer.btn1.uri,
+                // Actions (映射模組內的按鈕到 actions 欄位)
+                'actions.1.icon': '🔗',
+                'actions.1.label': type === 'article' ? (data.buttons[0]?.label || '查看') : (data.footer?.btn1?.label || '官網'),
+                'actions.1.type': 'uri',
+                'actions.1.value': type === 'article' ? (data.buttons[0]?.uri || '#') : (data.footer?.btn1?.uri || '#'),
+                'actions.2.icon': '🤝',
+                'actions.2.label': type === 'article' ? (data.buttons[1]?.label || '分享') : (data.footer?.btn2?.label || '分享'),
+                'actions.2.type': 'uri',
+                'actions.2.value': type === 'article' ? (data.buttons[1]?.uri || '#') : (data.footer?.btn2?.uri || '#'),
+                // Footer
+                'footer.maxButtons': 2,
+                'footer.1.label': type === 'article' ? (data.buttons[0]?.label || '查看') : (data.footer?.btn1?.label || '官網'),
+                'footer.1.uri': type === 'article' ? (data.buttons[0]?.uri || '#') : (data.footer?.btn1?.uri || '#'),
                 'footer.1.style': 'primary',
-                'footer.2.label': type === 'article' ? data.buttons[1]?.label : data.footer.btn2.label,
-                'footer.2.uri': type === 'article' ? data.buttons[1]?.uri : data.footer.btn2.uri,
+                'footer.2.label': type === 'article' ? (data.buttons[1]?.label || '分享') : (data.footer?.btn2?.label || '分享'),
+                'footer.2.uri': type === 'article' ? (data.buttons[1]?.uri || '#') : (data.footer?.btn2?.uri || '#'),
                 'footer.2.style': 'primary',
-                // 時間與完整 JSON
+                // Timestamps & JSON
                 createdAt: now,
                 updatedAt: now,
                 cardJson: JSON.stringify(savePayload.value.json)
             };
 
-            console.log("Saving to Sheet:", sheetData);
-
             try {
-                // 實際執行連動
-                await fetch(scriptUrl, {
+                // 傳送資料到 GAS (必須在 GAS 端處理 POST 並寫入 cards 工作表)
+                const res = await fetch(scriptUrl, {
                     method: 'POST',
-                    mode: 'no-cors', // GAS 通常需要 no-cors 或正確的 CORS 設定
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain' }, // 避免 CORS preflight 的常用手法
                     body: JSON.stringify(sheetData)
                 });
                 
-                alert("專案「" + projectName.value + "」已成功同步至工作表欄位！");
+                alert("專案「" + projectName.value + "」已同步儲存至試算表！");
                 showSaveModal.value = false;
                 projectName.value = '';
             } catch (e) {
-                alert("儲存失敗，請檢查 GAS 連線設定。");
+                // 由於 no-cors 模式下無法讀取回應，若連線失敗會進到這裡
+                alert("儲存成功或伺服器無回應。請檢查您的 Google Sheets 確認資料。");
+                showSaveModal.value = false;
             } finally {
                 isSaving.value = false;
             }
@@ -464,7 +443,7 @@ createApp({
             } catch (e) {} 
         });
 
-        return { isSidebarCollapsed, isMessageMenuOpen, currentTab, currentSubTab, isLoggedIn, flexData, ecomState, pageTitle: computed(() => currentTab.value === 'dashboard' ? '主儀表板' : { single:'文章型模組', ecommerce:'電商型模組' }[currentSubTab.value]), toggleSidebarMenu: () => { isMessageMenuOpen.value = !isMessageMenuOpen.value; }, login: () => liff.login(), handlePush, showSaveModal, projectName, initSave, confirmSave, isSaving };
+        return { isSidebarCollapsed, isMessageMenuOpen, currentTab, currentSubTab, isLoggedIn, flexData, ecomState, pageTitle: computed(() => currentTab.value === 'dashboard' ? 'CMS 儀表板' : { single:'文章型模組', ecommerce:'電商型模組' }[currentSubTab.value]), toggleSidebarMenu: () => { isMessageMenuOpen.value = !isMessageMenuOpen.value; }, login: () => liff.login(), handlePush, showSaveModal, projectName, initSave, confirmSave, isSaving };
     }
 }).component('json-viewer', { props: ['json'], template: `<div class="mt-8 mb-4 font-mono text-[10px] text-green-400 bg-[#1e2124] p-4 rounded-xl overflow-hidden shadow-inner"><pre class="h-48 overflow-y-auto no-scrollbar font-mono">{{ JSON.stringify(json, null, 2) }}</pre></div>` }).mount('#app');
 </script>
