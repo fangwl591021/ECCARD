@@ -26,26 +26,26 @@
         .open-preview-area { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
         .chat-room-bg { background-color: #8c9bad; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 60px 20px; }
         
-        /* LINE Flex 氣泡標準容器 */
+        /* LINE Flex 氣泡標準尺寸 */
         .flex-bubble-container { width: 100%; max-width: 300px; position: relative; }
         .flex-bubble { background: #FFFFFF; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
         
-        /* 修復：標籤預覽 - 寬度隨文字自動收縮，Offset 右側 10px */
+        /* 標籤預覽樣式：寬度隨文字內容伸縮，Offset 10px */
         .flex-badge-preview { 
             position: absolute; 
             top: 10px; 
             right: 10px; 
             color: white; 
-            /* 修復：將右內距從 55px 改為與左側一致或對稱的 20px，避免過長 */
             padding: 5px 20px 2px 20px; 
             border-radius: 30px; 
             font-size: 11px; 
             font-weight: bold; 
             z-index: 20; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25); 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
             display: inline-block;
             white-space: nowrap;
-            width: auto; /* 寬度隨文字內容伸縮 */
+            width: auto;
+            max-width: calc(100% - 20px);
         }
         
         .ratio-btn { @apply px-3 py-1 text-[10px] border border-gray-200 rounded-md transition-all cursor-pointer bg-white hover:border-line-green font-bold; }
@@ -81,7 +81,6 @@
             <sidebar-item icon="fas fa-box" label="專案管理" :active="currentTab === 'projects'" @click="currentTab = 'projects'" :collapsed="isSidebarCollapsed"></sidebar-item>
         </nav>
 
-        <!-- 收合按鈕 -->
         <button @click="isSidebarCollapsed = !isSidebarCollapsed" 
             class="p-4 w-full flex items-center justify-center border-t border-gray-700 hover:text-white transition-colors text-gray-500 bg-gray-900 bg-opacity-30 sidebar-transition">
             <i class="fas" :class="isSidebarCollapsed ? 'fa-indent text-xl' : 'fa-outdent text-xl'"></i>
@@ -89,7 +88,6 @@
         </button>
     </aside>
 
-    <!-- 主要內容區 -->
     <main class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#f8fafc]">
         <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
             <h2 class="text-xl font-bold text-gray-800">{{ pageTitle }}</h2>
@@ -105,14 +103,12 @@
 
         <div class="flex-grow overflow-hidden">
             <div v-if="currentTab === 'messages'" class="h-full">
-                <!-- 文章型編輯器 -->
                 <article-editor v-if="currentSubTab === 'single'" :initial-data="flexData" @push="handlePush"></article-editor>
-                <!-- 電商型編輯器 -->
                 <ecommerce-editor v-if="currentSubTab === 'ecommerce'" :initial-data="ecomState" @push="handlePush"></ecommerce-editor>
             </div>
             <div v-else class="p-10 text-center flex flex-col items-center justify-center h-full text-gray-400">
                 <i class="fab fa-line text-6xl text-line-green mb-6"></i>
-                <h3 class="text-2xl font-bold font-mono uppercase tracking-widest">LINEOA CMS PRO</h3>
+                <h3 class="text-2xl font-bold font-mono uppercase tracking-widest">CMS PRO PANEL</h3>
                 <p class="mt-2 text-sm">請從側邊選單開啟模組進行編輯。</p>
             </div>
         </div>
@@ -136,27 +132,27 @@
             
             <div class="space-y-6">
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
-                    <label class="input-label">主視覺圖片網址</label><input type="text" v-model="data.imageUrl" class="w-full border rounded p-2 text-sm focus:border-line-green shadow-sm">
+                    <label class="input-label">主視覺圖片連結</label><input type="text" v-model="data.imageUrl" class="w-full border rounded p-2 text-sm focus:border-line-green shadow-sm">
                     
                     <div class="bg-white/50 p-4 rounded-lg border space-y-3 shadow-sm">
-                        <label class="text-xs font-bold text-gray-600 flex items-center gap-2 cursor-pointer"><input type="checkbox" v-model="data.showBadge" class="accent-line-green"> 顯示右上標籤 (長度隨文字動態向左移)</label>
+                        <label class="text-xs font-bold text-gray-600 flex items-center gap-2 cursor-pointer"><input type="checkbox" v-model="data.showBadge" class="accent-line-green"> 顯示右上標籤 (寬度隨文字伸縮)</label>
                         <div v-if="data.showBadge" class="grid grid-cols-2 gap-3 pl-6">
-                            <div><label class="input-label">文字 (限10字)</label><input type="text" v-model="data.badgeText" maxlength="10" class="w-full border rounded p-1.5 text-xs focus:border-line-green" placeholder="輸入文字"></div>
-                            <div><label class="input-label">標籤顏色</label><input type="color" v-model="data.badgeColor" class="w-full"></div>
+                            <div><label class="input-label">文字 (限10字)</label><input type="text" v-model="data.badgeText" maxlength="10" class="w-full border rounded p-1.5 text-xs focus:border-line-green" placeholder="輸入標籤"></div>
+                            <div><label class="input-label">標籤背景色</label><input type="color" v-model="data.badgeColor" class="w-full"></div>
                         </div>
                     </div>
 
                     <div class="space-y-2">
-                        <div class="flex justify-between items-end"><label class="input-label">標題內容</label>
+                        <div class="flex justify-between items-end"><label class="input-label">標題與對齊</label>
                             <div class="flex bg-slate-100 p-0.5 rounded border"><button v-for="a in ['start','center','end']" @click="data.titleAlign=a" :class="data.titleAlign===a?'bg-white text-line-green shadow-sm':'text-slate-500'" class="p-1 px-2 text-[9px] uppercase font-bold transition-all"><i :class="'fas fa-align-' + (a==='start'?'left':a==='center'?'center':'right')"></i></button></div>
                         </div>
                         <input type="text" v-model="data.title" class="w-full border rounded p-2 text-sm font-bold shadow-sm">
                     </div>
-                    <div><label class="input-label">內容文字 (5px 優化)</label><textarea v-model="data.subtitle" rows="6" class="w-full border rounded p-2 text-sm focus:border-line-green shadow-sm"></textarea></div>
+                    <div><label class="input-label">內容描述 (5px 優化)</label><textarea v-model="data.subtitle" rows="6" class="w-full border rounded p-2 text-sm focus:border-line-green shadow-sm"></textarea></div>
                 </div>
 
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                    <h4 class="text-sm font-bold mb-4 flex justify-between items-center"><span>底部按鈕設定</span><button @click="addButton" class="text-xs text-line-green font-bold">+ 新增按鈕</button></h4>
+                    <h4 class="text-sm font-bold mb-4 flex justify-between items-center"><span>底部主按鈕設定</span><button @click="addButton" class="text-xs text-line-green font-bold">+ 新增按鈕</button></h4>
                     <div class="space-y-3">
                         <div v-for="(btn, idx) in data.buttons" :key="idx" class="flex gap-3 items-center bg-white p-3 rounded-xl border group shadow-sm transition-all hover:border-line-green">
                             <input type="color" v-model="btn.color">
@@ -167,7 +163,6 @@
                     </div>
                 </div>
             </div>
-            <json-viewer :json="flexJson"></json-viewer>
         </div>
     </div>
 
@@ -179,12 +174,11 @@
                 <div class="flex-bubble">
                     <div class="relative w-full">
                         <img :src="data.imageUrl" class="w-full aspect-[20/13] object-cover">
-                        <!-- 預覽：標籤寬度會隨文字縮減或延長，右側 Offset 10px 固定 -->
                         <div v-if="data.showBadge" class="flex-badge-preview" :style="{ backgroundColor: data.badgeColor }">{{ data.badgeText }}</div>
                     </div>
                     <div class="p-[5px] text-center">
                         <div class="text-base font-bold truncate mt-1" :class="{'text-left': data.titleAlign==='start', 'text-center': data.titleAlign==='center', 'text-right': data.titleAlign==='end'}">{{ data.title || '最新焦點' }}</div>
-                        <div class="text-[10px] text-gray-500 mt-2 whitespace-pre-wrap leading-relaxed px-1">{{ data.subtitle || '內容描述文字...' }}</div>
+                        <div class="text-[10px] text-gray-500 mt-2 whitespace-pre-wrap leading-relaxed px-1">{{ data.subtitle || '請輸入內容描述...' }}</div>
                     </div>
                     <div class="p-3 pt-0 space-y-1.5"><button v-for="btn in data.buttons" class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm" :style="{ backgroundColor: btn.color }">{{ btn.label }}</button></div>
                 </div>
@@ -195,7 +189,7 @@
 </script>
 
 <!-- ==========================================
-     模組 2: 電商型編輯器 (修正網格對齊與變數報錯)
+     模組 2: 電商型編輯器 (找回並修復說明文字開關)
      ========================================== -->
 <script type="text/x-template" id="ecommerce-editor-template">
 <div class="flex h-full w-full overflow-hidden">
@@ -205,21 +199,21 @@
                 <h3 class="text-2xl font-bold text-gray-800 font-mono">ECOMMERCE_PRO</h3>
                 <div class="flex gap-2">
                     <button @click="copyJson" class="px-5 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold shadow flex items-center gap-2 hover:bg-slate-800 transition-all"><i class="fas fa-copy"></i> 複製 JSON</button>
-                    <button @click="$emit('push', { json: flexJson, altText: state.altText })" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow flex items-center gap-2 hover:bg-blue-600 transition-all"><i class="fas fa-paper-plane"></i> 🚀 推播發送</button>
+                    <button @click="$emit('push', { json: flexJson, altText: state.altText })" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow flex items-center gap-2 hover:bg-blue-600 transition-all"><i class="fas fa-paper-plane"></i> 🚀 直接推播</button>
                 </div>
             </div>
 
             <div class="space-y-6">
                 <!-- Hero 配置 -->
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
-                    <h4 class="text-sm font-bold flex items-center"><i class="fas fa-image mr-2 text-line-green"></i> 頂部視覺 Hero</h4>
+                    <h4 class="text-sm font-bold flex items-center"><i class="fas fa-image mr-2 text-line-green"></i> 頂部視覺 (Hero)</h4>
                     <div class="grid grid-cols-2 gap-4">
-                        <div><label class="input-label">Hero 顯示比例</label><select v-model="state.hero.aspectRatio" class="w-full border rounded p-2 text-xs shadow-sm"><option v-for="a in ['16:9','1:1','1.91:1']" :value="a">{{ a }}</option></select></div>
-                        <div><label class="input-label">Hero 圖片網址</label><input type="text" v-model="state.hero.url" class="w-full border rounded p-2 text-xs shadow-sm" placeholder="https://..."></div>
+                        <div><label class="input-label">Hero 比例</label><select v-model="state.hero.aspectRatio" class="w-full border rounded p-2 text-xs shadow-sm"><option v-for="a in ['16:9','1:1','1.91:1']" :value="a">{{ a }}</option></select></div>
+                        <div><label class="input-label">圖片連結</label><input type="text" v-model="state.hero.url" class="w-full border rounded p-2 text-xs shadow-sm" placeholder="https://..."></div>
                     </div>
                 </div>
 
-                <!-- 商品設定 -->
+                <!-- 商品配置 -->
                 <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                     <div class="flex justify-between items-center">
                         <h4 class="text-sm font-bold">商品網格與顯示</h4>
@@ -228,8 +222,8 @@
                     
                     <div class="grid grid-cols-3 gap-4">
                         <div><label class="input-label">每行欄數</label><select v-model="state.body.columns" class="w-full border rounded p-2 text-xs shadow-sm"><option :value="3">3 欄</option><option :value="4">4 欄</option></select></div>
-                        <div><label class="input-label">商品圖片比例</label>
-                            <div class="flex bg-white p-1 border rounded shadow-sm h-[34px]"><button @click="state.body.productRatio = '1:1'" :class="state.body.productRatio==='1:1'?'bg-line-green text-white':'text-gray-400'" class="flex-1 text-[9px] font-bold rounded transition-all">1:1</button><button @click="state.body.productRatio = '16:9'" :class="state.body.productRatio==='16:9'?'bg-line-green text-white':'text-gray-400'" class="flex-1 text-[9px] font-bold rounded ml-1 transition-all">16:9</button></div>
+                        <div><label class="input-label">圖片比例</label>
+                            <div class="flex bg-white p-1 border rounded shadow-sm h-[34px]"><button @click="state.body.productRatio = '1:1'" :class="state.body.productRatio==='1:1'?'bg-line-green text-white':'text-gray-400'" class="flex-1 text-[9px] font-bold rounded">1:1</button><button @click="state.body.productRatio = '16:9'" :class="state.body.productRatio==='16:9'?'bg-line-green text-white':'text-gray-400'" class="flex-1 text-[9px] font-bold rounded ml-1">16:9</button></div>
                         </div>
                         <div><label class="input-label">網格背景色</label><div class="flex items-center gap-2 bg-white p-1 border rounded shadow-sm h-[34px] px-2"><input type="color" v-model="state.body.bgColor"><span class="text-[10px] font-mono uppercase">{{state.body.bgColor}}</span></div></div>
                     </div>
@@ -239,25 +233,39 @@
                             <button @click="state.body.items.splice(idx,1)" class="text-gray-300 hover:text-red-500 absolute top-2 right-2 transition-colors"><i class="fas fa-times-circle"></i></button>
                             <div class="flex gap-4 mb-3">
                                 <img :src="item.img" class="w-14 h-14 rounded-lg object-cover border" onerror="this.src='https://via.placeholder.com/100?text=Error'">
-                                <div class="flex-1">
-                                    <label class="input-label">標籤文字</label>
-                                    <input v-model="item.title" class="w-full border-b text-sm font-bold focus:border-line-green outline-none" placeholder="商品品名">
-                                </div>
+                                <div class="flex-1"><label class="input-label">標籤品名</label><input v-model="item.title" class="w-full border-b text-sm font-bold focus:border-line-green outline-none" placeholder="輸入名稱"></div>
                             </div>
                             <div class="space-y-2">
-                                <label class="input-label">圖片網址</label><input v-model="item.img" class="w-full border rounded p-1.5 text-[10px] bg-slate-50 focus:bg-white transition-all shadow-inner">
-                                <label class="input-label">跳轉連結</label><input v-model="item.url" class="w-full border rounded p-1.5 text-[10px] bg-slate-50 focus:bg-white transition-all shadow-inner">
+                                <label class="input-label">圖片 URL</label><input v-model="item.img" class="w-full border rounded p-1.5 text-[10px] bg-slate-50 focus:bg-white transition-all">
+                                <label class="input-label">點擊連結</label><input v-model="item.url" class="w-full border rounded p-1.5 text-[10px] bg-slate-50 focus:bg-white transition-all">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 底部行為 -->
-                <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                    <h4 class="text-sm font-bold mb-4">底部行為設定</h4>
+                <!-- 修復：找回底部說明文字開關 -->
+                <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
+                    <h4 class="text-sm font-bold flex justify-between items-center">
+                        <span>底部行為設定</span>
+                        <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-blue-600"><input type="checkbox" v-model="state.footer.textEnabled" class="accent-blue-600"> 顯示說明文字</label>
+                    </h4>
+                    
+                    <div v-show="state.footer.textEnabled" class="mb-4 space-y-3 p-4 bg-white border rounded-xl shadow-sm animate-in fade-in duration-300">
+                        <div class="flex justify-between items-center">
+                            <label class="input-label mb-0">樣式設定</label>
+                            <div class="flex gap-2">
+                                <input type="color" v-model="state.footer.textColor">
+                                <div class="flex bg-slate-100 p-0.5 rounded border">
+                                    <button v-for="a in ['start','center','end']" @click="state.footer.textAlign=a" :class="state.footer.textAlign===a?'bg-white text-line-green shadow-sm':'text-slate-400'" class="p-1 px-2 text-[9px] uppercase font-bold">{{a}}</button>
+                                </div>
+                            </div>
+                        </div>
+                        <textarea v-model="state.footer.text" rows="3" class="w-full border rounded p-2 text-xs focus:outline-none focus:border-line-green shadow-inner" placeholder="請輸入底部說明文字..."></textarea>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-4">
                         <div v-for="b in ['btn1','btn2']" :key="b" class="p-4 bg-white border rounded-xl shadow-sm transition-all hover:border-line-green">
-                            <div class="flex items-center justify-between mb-2"><label class="input-label mb-0">配色</label><input type="color" v-model="state.footer[b].color"></div>
+                            <div class="flex items-center justify-between mb-2"><label class="input-label mb-0">按鈕顏色</label><input type="color" v-model="state.footer[b].color"></div>
                             <input type="text" v-model="state.footer[b].label" class="w-full border rounded p-2 text-sm font-bold mb-2 shadow-sm">
                             <input type="text" v-model="state.footer[b].uri" class="w-full border rounded p-2 text-[10px] shadow-sm" placeholder="https://...">
                         </div>
@@ -288,8 +296,12 @@
                         </div>
                     </div>
                     
-                    <div class="p-3 border-t bg-white flex gap-2">
-                        <button v-for="b in [state.footer.btn1, state.footer.btn2]" :key="b.label" :style="{ backgroundColor: b.color }" class="flex-1 py-2 rounded text-[10px] font-bold text-white shadow-sm">{{ b.label }}</button>
+                    <div class="p-3 border-t bg-white flex flex-col gap-2">
+                        <!-- 預覽底部文字 -->
+                        <div v-if="state.footer.textEnabled" :style="{ color: state.footer.textColor }" :class="{'text-left': state.footer.textAlign==='start', 'text-center': state.footer.textAlign==='center', 'text-right': state.footer.textAlign==='end'}" class="text-[10px] whitespace-pre-wrap mb-1 leading-relaxed px-1 font-medium">{{ state.footer.text }}</div>
+                        <div class="flex gap-2">
+                            <button v-for="b in [state.footer.btn1, state.footer.btn2]" :key="b.label" :style="{ backgroundColor: b.color }" class="flex-1 py-2 rounded text-[10px] font-bold text-white shadow-sm transition hover:brightness-110">{{ b.label }}</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -314,15 +326,13 @@ const ArticleEditor = {
     props: ['initialData'], template: '#article-editor-template',
     setup(props) {
         const data = ref({ ...JSON.parse(JSON.stringify(props.initialData)), badgeText:'分享', badgeUri:'https://line.me', badgeColor:'#FF0000', showBadge: true, titleAlign: 'center', altText: '精選文章' });
-        
         const flexJson = computed(() => {
             const visualBox = { type: "box", layout: "vertical", contents: [{ type: "image", url: forceHttps(data.value.imageUrl), size: "full", aspectRatio: data.value.aspectRatio, aspectMode: "cover" }] };
             if (data.value.showBadge) {
-                // 修復：不設定寬度與 flex，配合 Offset 定位，長度隨內容文字自動向左伸縮，且 Offset 10px 避開邊界
                 visualBox.contents.push({
                     type: "box", layout: "vertical", position: "absolute", backgroundColor: data.value.badgeColor,
                     cornerRadius: "xl", 
-                    paddingTop: "5px", paddingBottom: "2px", paddingStart: "20px", paddingEnd: "20px", // 修復：右邊距從 55px 改為 20px 解決過長問題
+                    paddingTop: "5px", paddingBottom: "2px", paddingStart: "20px", paddingEnd: "20px",
                     offsetTop: "10px", offsetEnd: "10px", 
                     action: { type: "uri", label: "badge", uri: forceHttps(data.value.badgeUri) },
                     contents: [{ type: "text", text: data.value.badgeText || "分享", color: "#ffffff", size: "10px", weight: "bold" }]
@@ -333,7 +343,6 @@ const ArticleEditor = {
                 footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "15px", contents: data.value.buttons.map(b => ({ type: "button", style: "primary", color: b.color, height: "sm", action: { type: "uri", label: b.label || "了解更多", uri: forceHttps(b.uri) } })) }
             };
         });
-        
         const copyJson = () => { const raw = JSON.stringify(flexJson.value, null, 2); const el = document.createElement('textarea'); el.value = raw; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); alert('JSON 已複製！'); };
         return { data, flexJson, copyJson, addButton: () => data.value.buttons.push({ label: '了解更多', color: '#00B900', uri: 'https://line.me' }) };
     }
@@ -342,15 +351,11 @@ const ArticleEditor = {
 const EcommerceEditor = {
     props: ['initialData'], template: '#ecommerce-editor-template',
     setup(props) {
-        const state = ref({ ...JSON.parse(JSON.stringify(props.initialData)), altText: '商城特惠' });
+        const state = ref({ ...JSON.parse(JSON.stringify(props.initialData)) });
         if (!state.value.body.productRatio) state.value.body.productRatio = '1:1';
         
-        const chunkedItems = computed(() => { 
-            const size = state.value.body.columns; const res = []; 
-            for (let i = 0; i < state.value.body.items.length; i += size) res.push(state.value.body.items.slice(i, i + size)); 
-            return res; 
-        });
-
+        const chunkedItems = computed(() => { const size = state.value.body.columns; const res = []; for (let i = 0; i < state.value.body.items.length; i += size) res.push(state.value.body.items.slice(i, i + size)); return res; });
+        
         const flexJson = computed(() => {
             const cur = state.value; const cols = cur.body.columns; const rows = [];
             for (let i = 0; i < cur.body.items.length; i += cols) {
@@ -369,8 +374,19 @@ const EcommerceEditor = {
                 while (rowBox.contents.length < cols) { rowBox.contents.push({ type: "box", layout: "vertical", flex: 1, contents: [] }); }
                 rows.push(rowBox);
             }
-            const flex = { type: "bubble", size: "mega", body: { type: "box", layout: "vertical", paddingAll: "5px", backgroundColor: cur.body.bgColor, contents: rows }, footer: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "md", contents: [{ type: "button", style: "primary", height: "sm", color: cur.footer.btn1.color, action: { type: "uri", label: cur.footer.btn1.label, uri: forceHttps(cur.footer.btn1.uri) } }, { type: "button", style: "primary", height: "sm", color: cur.footer.btn2.color, action: { type: "uri", label: cur.footer.btn2.label, uri: forceHttps(cur.footer.btn2.uri) } }] } };
-            if (cur.hero.type !== 'none') flex.hero = { type: "image", url: forceHttps(cur.hero.url), size: "full", aspectRatio: cur.hero.aspectRatio, aspectMode: "cover", action: { type: "uri", label: "hero", uri: forceHttps(cur.hero.link || 'https://line.me') } };
+            
+            const footItems = [];
+            // 修復：正確判斷並加入說明文字到 JSON
+            if (cur.footer.textEnabled && cur.footer.text) {
+                footItems.push({ type: "text", text: cur.footer.text, size: "xs", wrap: true, align: cur.footer.textAlign, color: cur.footer.textColor, margin: "md" });
+            }
+            footItems.push({ type: "box", layout: "horizontal", spacing: "md", contents: [
+                { type: "button", style: "primary", height: "sm", color: cur.footer.btn1.color, action: { type: "uri", label: cur.footer.btn1.label, uri: forceHttps(cur.footer.btn1.uri) } },
+                { type: "button", style: "primary", height: "sm", color: cur.footer.btn2.color, action: { type: "uri", label: cur.footer.btn2.label, uri: forceHttps(cur.footer.btn2.uri) } }
+            ]});
+
+            const flex = { type: "bubble", size: "mega", body: { type: "box", layout: "vertical", paddingAll: "5px", backgroundColor: cur.body.bgColor, contents: rows }, footer: { type: "box", layout: "vertical", paddingAll: "md", contents: footItems } };
+            if (cur.hero.url) flex.hero = { type: "image", url: forceHttps(cur.hero.url), size: "full", aspectRatio: cur.hero.aspectRatio, aspectMode: "cover", action: { type: "uri", label: "hero", uri: forceHttps(cur.hero.link || 'https://line.me') } };
             return flex;
         });
 
@@ -385,7 +401,8 @@ createApp({
         const isSidebarCollapsed = ref(false); const isMessageMenuOpen = ref(true);
         const currentTab = ref('dashboard'); const currentSubTab = ref('single'); const isLoggedIn = ref(false);
         const flexData = ref({ imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/a635f6d04823512343614d4ddc692545.jpg', aspectRatio: '20:13', title: '最新焦點', subtitle: '內容描述...', buttons: [{ label: '了解更多', uri: 'https://line.me', color: '#00B900' }], titleAlign: 'center' });
-        const ecomState = ref({ hero: { type: 'image', aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", link: "https://line.me" }, body: { columns: 3, bgColor: "#F8F8F8", productRatio: '1:1', items: [{ title: "商品 A", img: "https://lihi.cc/mwMvo", url: "https://line.me" }, { title: "新品 B", img: "https://lihi.cc/mwMvo", url: "https://line.me" }, { title: "新品 C", img: "https://lihi.cc/mwMvo", url: "https://line.me" }] }, footer: { bg: "#ffffff", btn1: { label: "官網", color: "#000000", uri: "https://line.me" }, btn2: { label: "分享", color: "#000000", uri: "https://line.me" } } });
+        // 初始化包含說明文字資料結構
+        const ecomState = ref({ altText: '商城活動', hero: { aspectRatio: '16:9', url: "https://lihi.cc/5OXMZ", link: "https://line.me" }, body: { columns: 3, bgColor: "#F8F8F8", productRatio: '1:1', items: [{ title: "商品 A", img: "https://lihi.cc/mwMvo", url: "https://line.me" }, { title: "新品 B", img: "https://lihi.cc/mwMvo", url: "https://line.me" }, { title: "新品 C", img: "https://lihi.cc/mwMvo", url: "https://line.me" }] }, footer: { textEnabled: false, text: "※ 數量有限，售完為止。", textColor: "#666666", textAlign: "center", btn1: { label: "官網", color: "#000000", uri: "https://line.me" }, btn2: { label: "分享", color: "#000000", uri: "https://line.me" } } });
         const handlePush = ({ json, altText }) => { if (!liff.isLoggedIn()) { liff.login(); return; } liff.shareTargetPicker([{ type: "flex", altText: altText || "精選訊息", contents: cleanJson(json) }]).then(res => { if (res) alert("推播成功！"); }).catch(err => alert("發送失敗：網址需為 HTTPS。")); };
         onMounted(async () => { try { await liff.init({ liffId: "2008541971-Wgvz6gD8" }); isLoggedIn.value = liff.isLoggedIn(); } catch (e) {} });
         return { isSidebarCollapsed, isMessageMenuOpen, currentTab, currentSubTab, isLoggedIn, flexData, ecomState, pageTitle: computed(() => currentTab.value === 'dashboard' ? '主儀表板' : { single:'文章型模組', ecommerce:'電商型模組' }[currentSubTab.value]), toggleSidebarMenu: () => { isMessageMenuOpen.value = !isMessageMenuOpen.value; }, login: () => liff.login(), handleSave: () => alert("已儲存動作"), handlePush };
