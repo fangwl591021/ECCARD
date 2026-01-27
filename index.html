@@ -50,11 +50,18 @@
         .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
         input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; cursor: pointer; background: none; }
         input[type="color"]::-webkit-color-swatch { border-radius: 4px; border: 1px solid #ddd; }
+
+        /* 自訂訊息框 */
+        .toast-msg { position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 12px 24px; border-radius: 12px; background: #333; color: white; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div id="app" class="flex h-screen overflow-hidden text-gray-800">
+    <!-- 提示訊息 -->
+    <div v-if="toast.show" class="toast-msg" :style="{ backgroundColor: toast.color }">{{ toast.text }}</div>
+
     <!-- 側邊欄 -->
     <aside :class="isSidebarCollapsed ? 'w-collapsed' : 'w-expanded'" class="sidebar-container text-gray-400 shadow-2xl">
         <div class="h-16 flex items-center border-b border-gray-700 shrink-0 overflow-hidden" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
@@ -164,7 +171,7 @@
                         <textarea v-model="data.subtitle" rows="4" class="w-full border rounded p-2 text-sm shadow-sm focus:ring-1 focus:ring-line-green outline-none" placeholder="請輸入訊息內容..."></textarea>
                     </div>
 
-                    <!-- 按鈕管理：補回功能 -->
+                    <!-- 按鈕管理 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="text-sm font-bold text-gray-700">底部操作按鈕 (最多4個)</h4>
@@ -190,7 +197,6 @@
                     <div class="flex-bubble relative animate-in zoom-in duration-300">
                         <div class="relative w-full overflow-hidden">
                             <img :src="data.imageUrl" class="w-full aspect-[20/13] object-cover" onerror="this.src='https://lihi.cc/mwMvo'">
-                            <!-- 預覽標籤：支援左右切換 -->
                             <div v-if="data.showBadge" 
                                 class="flex-badge-preview" 
                                 :class="data.badgeAlign === 'left' ? 'badge-left' : 'badge-right'"
@@ -202,7 +208,6 @@
                             <div class="text-base font-bold truncate text-gray-800">{{ data.title || '標題內容' }}</div>
                             <div class="text-[9px] text-gray-500 mt-2 leading-relaxed whitespace-pre-wrap">{{ data.subtitle || '請輸入描述內容...' }}</div>
                         </div>
-                        <!-- Footer 5px 邊距優化 -->
                         <div class="p-[5px] pt-0 space-y-1">
                             <button v-for="btn in data.buttons" 
                                 class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm transition-transform active:scale-95"
@@ -252,23 +257,29 @@ createApp({
         const showSaveModal = ref(false); 
         const isSaving = ref(false); 
         const projectName = ref('');
+        const toast = ref({ show: false, text: '', color: '#333' });
+
+        const showToast = (text, color = '#00B900') => {
+            toast.value = { show: true, text, color };
+            setTimeout(() => { toast.value.show = false; }, 3000);
+        };
         
-        // 初始資料更新為最新範例圖片
+        // 初始資料：更新圖片網址與預設雙按鈕
         const data = ref({ 
-            imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/186e0b95c2db2349fc96d76e66be1bc5.png', 
+            imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/781206b661aebf645c633e618db3960b.png', 
             title: '標準版插件標題', 
-            subtitle: '內容描述文字預覽大小為 xs。分享標籤可自由設定位置。',
+            subtitle: '內容描述文字預覽大小為 xs。本版本預設生成兩個底部按鈕。',
             showBadge: true,
             badgeText: '分享',
             badgeColor: '#FF0000',
             badgeUri: 'https://line.me',
-            badgeAlign: 'right', // 預設靠右
+            badgeAlign: 'right',
             buttons: [
-                { label: '了解更多', uri: 'https://line.me', color: '#00B900' }
+                { label: '了解更多', uri: 'https://line.me', color: '#00B900' },
+                { label: '立即購買', uri: 'https://line.me', color: '#000000' }
             ]
         });
 
-        // 生成 LINE Flex JSON
         const flexJson = computed(() => {
             const bodyContents = [
                 { type: "image", url: forceHttps(data.value.imageUrl), size: "full", aspectRatio: "20:13", aspectMode: "cover" }, 
@@ -307,12 +318,12 @@ createApp({
         });
 
         const addButton = () => {
-            if (data.value.buttons.length >= 4) { alert("標準版最多支援 4 個按鈕"); return; }
+            if (data.value.buttons.length >= 4) { showToast("標準版最多支援 4 個按鈕", "#ef4444"); return; }
             data.value.buttons.push({ label: '新按鈕', uri: 'https://line.me', color: '#00B900' });
         };
 
         const confirmSave = async () => {
-            if(!projectName.value) { alert("請輸入專案名稱"); return; }
+            if(!projectName.value) { showToast("請輸入專案名稱", "#ef4444"); return; }
             isSaving.value = true;
             const payload = { 
                 userId: userProfile.value.userId || 'GUEST', 
@@ -335,18 +346,31 @@ createApp({
                 }); 
                 const result = await res.json();
                 if (result.status === 'success') {
-                    alert("標準版專案已儲存成功"); 
+                    showToast("標準版專案已儲存成功"); 
                     showSaveModal.value = false;
                     projectName.value = '';
+                } else {
+                    showToast("儲存失敗: " + result.message, "#ef4444");
                 }
-            } catch (e) { alert("連線失敗"); } 
+            } catch (e) { showToast("連線異常", "#ef4444"); } 
             finally { isSaving.value = false; }
         };
 
         const handlePush = () => { 
             if(!liff.isLoggedIn()) { liff.login(); return; } 
             liff.shareTargetPicker([{ type: "flex", altText: data.value.title || "標準版訊息", contents: flexJson.value }])
-            .then(res => { if(res) alert("成功發送推播！"); }); 
+            .then(res => { if(res) showToast("推播成功發送！"); }); 
+        };
+
+        const copyJson = () => { 
+            const raw = JSON.stringify(flexJson.value, null, 2);
+            const el = document.createElement('textarea');
+            el.value = raw;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            showToast("JSON 代碼已複製");
         };
 
         onMounted(async () => { 
@@ -361,11 +385,7 @@ createApp({
 
         return { 
             isSidebarCollapsed, data, flexJson, showSaveModal, projectName, isSaving, 
-            confirmSave, handlePush, isLoggedIn, userProfile, addButton,
-            copyJson: () => { 
-                const raw = JSON.stringify(flexJson.value, null, 2);
-                navigator.clipboard.writeText(raw).then(() => alert("JSON 代碼已複製"));
-            } 
+            confirmSave, handlePush, isLoggedIn, userProfile, addButton, toast, copyJson
         };
     }
 }).mount('#app');
