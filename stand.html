@@ -312,7 +312,9 @@ createApp({
                     if (link && link.trim()) {
                         const actionUri = key === 'tel' ? `tel:${link.trim()}` : forceHttps(link);
                         socialRow.contents.push({
-                            type: "box", layout: "vertical", width: "32px", height: "32px", backgroundColor: socialTypes[key].color, cornerRadius: "full", alignItems: "center", justifyContent: "center",
+                            type: "box", layout: "vertical", width: "32px", height: "32px", backgroundColor: socialTypes[key].color, 
+                            cornerRadius: "xxl", // 已依照要求將 FULL 改為 xxl
+                            alignItems: "center", justifyContent: "center",
                             action: { type: "uri", label: key, uri: actionUri },
                             contents: [{ type: "text", text: emojiMap[key], size: "sm", align: "center", gravity: "center" }]
                         });
