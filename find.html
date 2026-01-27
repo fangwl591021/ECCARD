@@ -96,7 +96,7 @@
     <main class="flex-grow flex flex-col overflow-hidden">
         <header class="h-16 bg-white border-b flex items-center px-8 shrink-0 shadow-sm z-10">
             <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <i class="fab fa-line text-line-green"></i> LINE VOOM 真實尺寸擷取工具
+                <i class="fab fa-line text-line-green"></i> LINE VOOM 資源擷取中心
             </h2>
         </header>
 
@@ -104,20 +104,20 @@
             <div class="max-w-4xl mx-auto">
                 <!-- 輸入區域 -->
                 <div class="bg-white p-10 rounded-[32px] shadow-xl border border-slate-200 mb-10">
-                    <h3 class="text-lg font-bold mb-4 text-gray-700">貼上 VOOM 貼文網址 (F12 模式)</h3>
+                    <h3 class="text-lg font-bold mb-4 text-gray-700">貼上貼文網址 (精準 JSON 解析模式)</h3>
                     <div class="flex gap-4">
                         <input type="text" v-model="voomUrl" 
                             class="flex-1 bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 outline-none focus:border-line-green transition-all font-mono text-sm" 
-                            placeholder="請在此處貼上網址...">
+                            placeholder="貼上網址後點擊分析...">
                         <button @click="startExtract" :disabled="loading" 
                             class="bg-line-green text-white px-10 rounded-2xl font-bold shadow-lg shadow-green-200 hover:brightness-110 disabled:opacity-50 flex items-center gap-2 transition-all">
                             <i v-if="loading" class="fas fa-circle-notch animate-spin"></i>
                             <span>{{ loading ? '深度解析中...' : '開始分析' }}</span>
                         </button>
                     </div>
-                    <div class="mt-4 flex items-center gap-2 text-[10px] text-gray-400">
-                        <i class="fas fa-magic"></i>
-                        <span>系統將自動嘗試剝離縮圖參數，並透過二次載入偵測圖片之「真實物理尺寸」。</span>
+                    <div class="mt-4 flex items-center gap-2 text-[10px] text-gray-400 italic">
+                        <i class="fas fa-search-dollar"></i>
+                        <span>系統將直接從網頁預載狀態中提取官方定義的「原始尺寸」與「高畫質網址」。</span>
                     </div>
                 </div>
 
@@ -127,25 +127,23 @@
                     <div class="result-card bg-white p-8 rounded-[32px] shadow-lg border border-slate-100 flex flex-col">
                         <div class="flex justify-between items-center mb-6">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500">
+                                <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500 shadow-sm">
                                     <i class="fas fa-image text-xl"></i>
                                 </div>
-                                <h4 class="font-bold text-gray-800 text-sm">真實原始圖片素材</h4>
+                                <h4 class="font-bold text-gray-800 text-sm">原始圖片資源</h4>
                             </div>
-                            <span class="text-[9px] bg-blue-50 text-blue-500 px-2 py-1 rounded font-black uppercase tracking-widest">Original</span>
+                            <span class="text-[9px] bg-blue-50 text-blue-500 px-2 py-1 rounded-lg font-black uppercase tracking-widest border border-blue-100">Original</span>
                         </div>
 
                         <div class="aspect-video rounded-2xl bg-slate-900 overflow-hidden mb-6 border relative group">
-                            <!-- 加上 onerror 以便載入失敗時切換網址 -->
-                            <img :src="result.imageUrl" class="w-full h-full object-contain" @load="detectSize" @error="handleImgError" id="previewImg">
-                            <!-- 尺寸標籤 -->
+                            <img :src="result.imageUrl" class="w-full h-full object-contain">
+                            <!-- 尺寸標籤：現在直接由 JSON 提供 -->
                             <div class="absolute bottom-3 right-3 flex flex-col gap-1 items-end">
-                                <div class="bg-black/70 backdrop-blur-md text-white text-[10px] px-3 py-1.5 rounded-full font-mono font-bold border border-white/20">
-                                    <i v-if="!imgLoaded" class="fas fa-circle-notch animate-spin mr-1"></i>
-                                    真實解析度: {{ imgLoaded ? `${realSize.w} x ${realSize.h}` : (isError ? '偵測失敗' : '偵測中...') }}
+                                <div class="bg-black/80 backdrop-blur-md text-white text-[11px] px-3 py-1.5 rounded-full font-mono font-bold border border-white/20">
+                                    <i class="fas fa-ruler-combined mr-1 text-line-green"></i> 原始尺寸: {{ result.width }} x {{ result.height }}
                                 </div>
-                                <div v-if="result.originalUrlParams" class="bg-blue-600/80 backdrop-blur-md text-white text-[9px] px-2 py-1 rounded font-mono">
-                                    原始解析參數: {{ result.originalUrlParams }}
+                                <div v-if="result.source === 'json'" class="bg-line-green/90 text-white text-[8px] px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                                    精準數據源
                                 </div>
                             </div>
                         </div>
@@ -153,8 +151,8 @@
                         <div class="space-y-4 mt-auto">
                             <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="input-label !ml-0 text-blue-600">優化後連結 (已剝離參數)</label>
-                                    <button @click="copyText(result.imageUrl)" class="text-line-green text-xs font-bold hover:underline">複製</button>
+                                    <label class="input-label !ml-0 text-blue-600">圖片/封面連結</label>
+                                    <button @click="copyText(result.imageUrl)" class="text-line-green text-xs font-bold hover:underline"><i class="fas fa-copy mr-1"></i>複製</button>
                                 </div>
                                 <input readonly :value="result.imageUrl" class="w-full bg-transparent text-[11px] font-mono truncate outline-none text-gray-500">
                             </div>
@@ -165,27 +163,27 @@
                     <div class="result-card bg-white p-8 rounded-[32px] shadow-lg border border-slate-100 flex flex-col" style="animation-delay: 0.1s;">
                         <div class="flex justify-between items-center mb-6">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500">
+                                <div class="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500 shadow-sm">
                                     <i class="fas fa-video text-xl"></i>
                                 </div>
                                 <h4 class="font-bold text-gray-800 text-sm">影片 MP4 直接網址</h4>
                             </div>
-                            <span class="text-[10px] bg-orange-50 text-orange-500 px-2 py-1 rounded-lg font-bold tracking-widest uppercase">Video</span>
+                            <span class="text-[9px] bg-orange-50 text-orange-500 px-2 py-1 rounded-lg font-black uppercase tracking-widest border border-orange-100">Video</span>
                         </div>
 
                         <div class="aspect-video rounded-2xl bg-slate-900 overflow-hidden mb-6 border relative">
                             <video v-if="result.videoUrl" :src="result.videoUrl" controls class="w-full h-full"></video>
                             <div v-else class="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-3">
                                 <i class="fas fa-video-slash text-3xl opacity-20"></i>
-                                <span class="text-xs italic">此貼文查無 MP4 影片資源</span>
+                                <span class="text-xs italic tracking-tighter">此貼文查無影片資源</span>
                             </div>
                         </div>
 
                         <div v-if="result.videoUrl" class="space-y-4 mt-auto">
                             <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="input-label !ml-0 text-orange-600">影片直連網址</label>
-                                    <button @click="copyText(result.videoUrl)" class="text-line-green text-xs font-bold hover:underline">複製</button>
+                                    <label class="input-label !ml-0 text-orange-600">MP4 直連網址</label>
+                                    <button @click="copyText(result.videoUrl)" class="text-line-green text-xs font-bold hover:underline"><i class="fas fa-copy mr-1"></i>複製</button>
                                 </div>
                                 <input readonly :value="result.videoUrl" class="w-full bg-transparent text-[11px] font-mono truncate outline-none text-gray-500">
                             </div>
@@ -195,11 +193,11 @@
 
                 <!-- 初始說明 -->
                 <div v-if="!result && !loading" class="flex flex-col items-center justify-center py-32 text-slate-300">
-                    <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-inner mb-8">
-                        <i class="fas fa-laptop-code text-4xl opacity-20"></i>
+                    <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-inner mb-8 transition-transform hover:scale-105 duration-500">
+                        <i class="fas fa-terminal text-4xl opacity-20 text-line-green"></i>
                     </div>
-                    <p class="text-lg font-bold text-slate-400 tracking-tighter">正在等待分析網址</p>
-                    <p class="text-xs mt-2 opacity-60">支援自動解析真實尺寸與去縮圖參數優化</p>
+                    <p class="text-lg font-bold text-slate-400">正在模擬 F12 深度掃描</p>
+                    <p class="text-xs mt-2 opacity-60">輸入 VOOM 貼文網址，自動還原原始物理素材與尺寸</p>
                 </div>
             </div>
         </div>
@@ -217,12 +215,7 @@ createApp({
         const voomUrl = ref('');
         const loading = ref(false);
         const result = ref(null);
-        const imgLoaded = ref(false);
-        const isError = ref(false);
-        const realSize = reactive({ w: 0, h: 0 });
         const toast = reactive({ show: false, text: '' });
-        
-        let originalThumbnailUrl = ""; // 用於失敗回退
 
         const showToast = (text) => {
             toast.text = text; toast.show = true;
@@ -236,29 +229,7 @@ createApp({
             el.select();
             document.execCommand('copy');
             document.body.removeChild(el);
-            showToast("連結已複製到剪貼簿");
-        };
-
-        // 偵測真實尺寸 (F12 物理數據)
-        const detectSize = (event) => {
-            const img = event.target;
-            if (img.naturalWidth > 0) {
-                realSize.w = img.naturalWidth;
-                realSize.h = img.naturalHeight;
-                imgLoaded.value = true;
-                isError.value = false;
-            }
-        };
-
-        // 處理載入錯誤 (通常是因為 stripped URL 無法讀取)
-        const handleImgError = () => {
-            if (result.value && originalThumbnailUrl && result.value.imageUrl !== originalThumbnailUrl) {
-                console.warn("去參數網址載入失敗，切換回原始縮圖網址進行偵測");
-                result.value.imageUrl = originalThumbnailUrl;
-            } else {
-                isError.value = true;
-                loading.value = false;
-            }
+            showToast("已成功複製連結！");
         };
 
         const startExtract = async () => {
@@ -269,11 +240,9 @@ createApp({
 
             loading.value = true;
             result.value = null;
-            imgLoaded.value = false;
-            isError.value = false;
-            originalThumbnailUrl = "";
 
             try {
+                // 1. 透過 Worker Proxy 獲取 HTML 原始碼
                 const response = await fetch(workerUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -284,60 +253,89 @@ createApp({
                 if (data.status !== 'success') throw new Error(data.message);
 
                 const html = data.html;
+
+                // --- 核心邏輯：深度解析 PRELOADED_STATE (F12 最強模式) ---
                 let videoUrl = null;
                 let imageUrl = null;
-                let originalUrlParams = null;
+                let width = 0;
+                let height = 0;
+                let source = 'unknown';
 
-                // A. 優先掃描 PRELOADED_STATE (最完整)
+                // A. 尋找 window.__PRELOADED_STATE__
                 const stateMatch = html.match(/window\.__PRELOADED_STATE__\s*=\s*(\{.*?\});/);
                 if (stateMatch) {
                     try {
                         const state = JSON.parse(stateMatch[1]);
+                        // 導航到內容節點
                         const content = state.post?.post?.contents?.[0];
                         if (content) {
+                            source = 'json';
                             if (content.type === 'VIDEO') {
                                 videoUrl = content.video?.url;
                                 imageUrl = content.video?.previewUrl;
+                                width = content.video?.width || 0;
+                                height = content.video?.height || 0;
                             } else if (content.type === 'IMAGE') {
                                 imageUrl = content.image?.url;
+                                width = content.image?.width || 0;
+                                height = content.image?.height || 0;
                             }
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        console.warn("JSON 解析失敗，改用備用方案");
+                    }
                 }
 
-                // B. 回退方案：暴力正則 (支援更多網域)
+                // B. 回退方案：暴力 Regex (如果 JSON 中沒找到寬高或連結)
+                if (!imageUrl) {
+                    source = 'regex';
+                    // 掃描包含尺寸參數的連結
+                    const iMatch = html.match(/https?:\/\/(voom-obs\.line-cdn\.net|voom-obs\.line-scdn\.net|obs\.line-apps\.com)\/[^\/\"\'\s]+\/m\d+x\d+/i) ||
+                                 html.match(/https?:\/\/(voom-obs\.line-cdn\.net|voom-obs\.line-scdn\.net|obs\.line-apps\.com)\/[^\/\"\'\s]+/i);
+                    if (iMatch) imageUrl = iMatch[0].replace(/&amp;/g, '&');
+                }
+                
                 if (!videoUrl) {
                     const vMatch = html.match(/https?:\/\/(voom-obs\.line-cdn\.net|voom-obs\.line-scdn\.net|obs\.line-apps\.com)\/[^\/\"\'\s]+\/mp4/i);
                     if (vMatch) videoUrl = vMatch[0].replace(/&amp;/g, '&');
                 }
-                if (!imageUrl) {
-                    const iMatch = html.match(/https?:\/\/(voom-obs\.line-cdn\.net|voom-obs\.line-scdn\.net|obs\.line-apps\.com)\/[^\/\"\'\s]+\/(m\d+x\d+|w\d+)/i) || 
-                                 html.match(/https?:\/\/(voom-obs\.line-cdn\.net|voom-obs\.line-scdn\.net|obs\.line-apps\.com)\/[^\/\"\'\s]+/i);
-                    if (iMatch) imageUrl = iMatch[0].replace(/&amp;/g, '&');
-                }
 
-                if (!videoUrl && !imageUrl) throw new Error("找不到資源連結");
-
-                // --- F12 二次解析優化 ---
+                // --- 數據優化處理 ---
                 if (imageUrl) {
-                    originalThumbnailUrl = imageUrl;
-                    // 識別參數 (支援 m800x1200 或 w640 格式)
-                    const paramMatch = imageUrl.match(/\/([mw])(\d+)(x\d+)?$/);
-                    if (paramMatch) {
-                        originalUrlParams = `${paramMatch[2]}${paramMatch[3] || ''}`;
-                        // 嘗試剝離參數：這才是 F12 看到的原始大圖
-                        const strippedUrl = imageUrl.replace(/\/([mw])(\d+)(x\d+)?$/, '');
-                        imageUrl = strippedUrl;
+                    // 如果網址帶有參數但 JSON 沒提供寬高，試著從參數提取（這不一定準確，但在沒有 JSON 時是最好猜測）
+                    if (width === 0) {
+                        const paramMatch = imageUrl.match(/\/m(\d+)x(\d+)$/);
+                        if (paramMatch) {
+                            width = parseInt(paramMatch[1]);
+                            height = parseInt(paramMatch[2]);
+                        }
                     }
+                    // 剝離縮圖參數獲取原始大圖
+                    imageUrl = imageUrl.replace(/\/m\d+x\d+$/, '').replace(/\/w\d+$/, '');
                 }
 
-                result.value = { videoUrl, imageUrl, originalUrlParams };
-                showToast("F12 分析完成！正在偵測尺寸...");
+                // --- 真實尺寸二次驗證 (如果 JSON 中抓到的寬高還是不準) ---
+                // 如果 JSON 給的是 800x1200 這種數值，我們可以透過載入圖片來獲取真正物理寬高
+                if (imageUrl) {
+                    const img = new Image();
+                    img.src = imageUrl;
+                    // 這裡我們不卡住 Loading，讓它背景加載並更新
+                    img.onload = () => {
+                        if (img.naturalWidth > 0) {
+                            result.value.width = img.naturalWidth;
+                            result.value.height = img.naturalHeight;
+                        }
+                    };
+                }
+
+                if (!videoUrl && !imageUrl) throw new Error("解析不到資源，請確認網址");
+
+                result.value = { videoUrl, imageUrl, width, height, source };
+                showToast("F12 深度掃描完成！");
 
             } catch (err) {
                 console.error(err);
                 showToast("擷取異常，請確認連結");
-                isError.value = true;
             } finally {
                 loading.value = false;
             }
@@ -345,7 +343,7 @@ createApp({
 
         return { 
             isSidebarCollapsed, isCardMenuOpen, voomUrl, loading, result, 
-            realSize, toast, imgLoaded, isError, startExtract, copyText, detectSize, handleImgError 
+            toast, startExtract, copyText
         };
     }
 }).mount('#app');
