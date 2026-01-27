@@ -90,7 +90,7 @@
         </button>
     </aside>
 
-    <main class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#f8fafc]">
+    <main class="flex-grow flex flex-col h-full bg-[#f8fafc] overflow-hidden">
         <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
             <div class="flex items-center gap-3">
                 <h2 class="text-xl font-bold text-gray-800">商務型名片插件開發</h2>
@@ -126,8 +126,8 @@
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                         <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-film mr-2 text-line-green"></i> 視覺內容模式</h4>
                         <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-300 shadow-inner">
-                            <button @click="data.visualMode = 'video'" :class="data.visualMode === 'video' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">影片商務模式</button>
-                            <button @click="data.visualMode = 'image'" :class="data.visualMode === 'image' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">靜態形象模式</button>
+                            <button @click="data.visualMode = 'video'" :class="data.visualMode === 'video' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">影片模式</button>
+                            <button @click="data.visualMode = 'image'" :class="data.visualMode === 'image' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">圖片模式</button>
                         </div>
                         
                         <div v-if="data.visualMode === 'video'" class="space-y-4 animate-in fade-in duration-300">
