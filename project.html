@@ -29,6 +29,10 @@
         .input-label { @apply block text-[11px] font-bold text-gray-500 uppercase mb-1 ml-1 tracking-wider; }
         input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; cursor: pointer; background: none; }
         input[type="color"]::-webkit-color-swatch { border-radius: 4px; border: 1px solid #ddd; }
+        
+        /* 修復按鈕文字看不見的問題：增加對比度與陰影 */
+        .btn-update { background-color: #059669; color: #ffffff !important; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .btn-update:hover { background-color: #047857; }
     </style>
 </head>
 <body>
@@ -85,10 +89,11 @@
                 <header class="h-16 border-b flex items-center justify-between px-8 shrink-0 bg-white shadow-sm z-10">
                     <div class="flex flex-col">
                         <input type="text" v-model="editState.cardTitle" class="text-xl font-bold text-gray-800 border-none p-0 focus:ring-0 w-64" placeholder="專案標題">
-                        <span class="text-[10px] text-gray-400 uppercase font-mono tracking-widest">ID: {{ editState.cardId }} / Type: {{ editState.cardType }}</span>
+                        <span class="text-[10px] text-gray-400 uppercase font-mono tracking-widest">ID: {{ editState.cardId }}</span>
                     </div>
                     <div class="flex gap-3">
-                        <button @click="updateProject" :disabled="isSaving" class="px-5 py-2 bg-line-green text-white rounded-xl text-sm font-bold shadow-lg hover:brightness-110 flex items-center gap-2 transition-all">
+                        <!-- 已修正按鈕顏色與文字辨識度 -->
+                        <button @click="updateProject" :disabled="isSaving" class="px-5 py-2 btn-update rounded-xl text-sm shadow-lg flex items-center gap-2 transition-all">
                             <i v-if="isSaving" class="fas fa-circle-notch animate-spin"></i>
                             <i v-else class="fas fa-cloud-upload-alt"></i> 更新雲端
                         </button>
@@ -120,50 +125,41 @@
                         <!-- 2. 影片名片編輯 (Card) -->
                         <div v-if="editState.cardType === 'card'" class="space-y-6 animate-in fade-in">
                             <div class="bg-white p-6 rounded-2xl border shadow-sm space-y-6">
-                                <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> Header 與 品牌配色</h4>
+                                <h4 class="text-sm font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-id-card text-line-green"></i> Header 與 品牌配色</h4>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="col-span-2"><label class="input-label">姓名/主標題</label><input type="text" v-model="editState.params.headerName" class="w-full border rounded-lg p-2 text-sm font-bold"></div>
                                     <div class="col-span-2"><label class="input-label">職稱/敘述 (20字)</label><input type="text" v-model="editState.params.headerDescription" maxlength="20" class="w-full border rounded-lg p-2 text-sm"></div>
                                     <div class="col-span-2"><label class="input-label">頭像連結</label><input type="text" v-model="editState.params.headerImg" class="w-full border rounded-lg p-2 text-sm"></div>
-                                    <div><label class="input-label">背景顏色</label><input type="color" v-model="editState.params.headerBgColor" class="w-full h-8"></div>
-                                    <div><label class="input-label">文字顏色</label><input type="color" v-model="editState.params.headerTextColor" class="w-full h-8"></div>
+                                    <div><label class="input-label">背景顏色</label><div class="flex items-center gap-2 bg-slate-50 p-2 rounded border"><input type="color" v-model="editState.params.headerBgColor"><span class="text-[10px] font-mono">{{editState.params.headerBgColor}}</span></div></div>
+                                    <div><label class="input-label">文字顏色</label><div class="flex items-center gap-2 bg-slate-50 p-2 rounded border"><input type="color" v-model="editState.params.headerTextColor"><span class="text-[10px] font-mono">{{editState.params.headerTextColor}}</span></div></div>
                                 </div>
                             </div>
                             <div class="bg-white p-6 rounded-2xl border shadow-sm space-y-4">
-                                <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-video mr-2 text-line-green"></i> 視覺 Hero 內容</h4>
+                                <h4 class="text-sm font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-video text-line-green"></i> 視覺 Hero 內容</h4>
                                 <div class="flex bg-slate-100 p-1 rounded-lg border mb-2">
-                                    <button @click="editState.params.visualMode = 'video'" :class="editState.params.visualMode==='video'?'bg-white shadow-sm text-line-green':'text-gray-400'" class="flex-1 py-1.5 text-xs font-bold rounded">VIDEO</button>
-                                    <button @click="editState.params.visualMode = 'image'" :class="editState.params.visualMode==='image'?'bg-white shadow-sm text-line-green':'text-gray-400'" class="flex-1 py-1.5 text-xs font-bold rounded">IMAGE</button>
+                                    <button @click="editState.params.visualMode = 'video'" :class="editState.params.visualMode==='video'?'bg-white shadow-sm text-line-green':'text-gray-400'" class="flex-1 py-1.5 text-xs font-bold rounded transition-all">VIDEO</button>
+                                    <button @click="editState.params.visualMode = 'image'" :class="editState.params.visualMode==='image'?'bg-white shadow-sm text-line-green':'text-gray-400'" class="flex-1 py-1.5 text-xs font-bold rounded transition-all">IMAGE</button>
                                 </div>
-                                <input type="text" v-model="editState.params.previewUrl" class="w-full border rounded p-2 text-xs" placeholder="封面圖/圖片網址">
-                                <input v-if="editState.params.visualMode==='video'" type="text" v-model="editState.params.videoUrl" class="w-full border rounded p-2 text-xs" placeholder="影片 .mp4 網址">
+                                <div><label class="input-label">主圖/封面網址</label><input type="text" v-model="editState.params.previewUrl" class="w-full border rounded-lg p-2 text-xs" placeholder="封面圖/圖片網址"></div>
+                                <div v-if="editState.params.visualMode==='video'"><label class="input-label">影片檔案 (.mp4)</label><input type="text" v-model="editState.params.videoUrl" class="w-full border rounded-lg p-2 text-xs" placeholder="影片 .mp4 網址"></div>
                             </div>
                             <div class="bg-white p-6 rounded-2xl border shadow-sm space-y-4">
-                                <div class="flex justify-between items-center"><h4 class="text-sm font-bold text-gray-700">功能網格 (Grid)</h4><input type="color" v-model="editState.params.gridBgColor"></div>
+                                <div class="flex justify-between items-center"><h4 class="text-sm font-bold text-gray-700">功能網格 (Grid) 配色</h4><input type="color" v-model="editState.params.gridBgColor"></div>
                                 <div class="grid grid-cols-2 gap-3">
                                     <div v-for="(g, idx) in editState.params.gridButtons" :key="idx" class="p-3 border rounded-xl bg-slate-50 space-y-2">
-                                        <div class="flex gap-2"><input type="text" v-model="g.emoji" class="w-8 border rounded text-center text-xs"><input type="text" v-model="g.label" class="flex-1 border rounded p-1 text-xs"></div>
-                                        <input type="text" v-model="g.uri" class="w-full border rounded p-1 text-[10px]" placeholder="HTTPS URL">
+                                        <div class="flex gap-2"><input type="text" v-model="g.emoji" class="w-8 border rounded text-center text-xs shadow-inner"><input type="text" v-model="g.label" class="flex-1 border rounded p-1 text-xs shadow-inner"></div>
+                                        <input type="text" v-model="g.uri" class="w-full border rounded p-1 text-[10px] shadow-inner" placeholder="https://">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 3. 電商型編輯 (Ecommerce) -->
-                        <div v-if="editState.cardType === 'ecommerce'" class="space-y-6 animate-in fade-in">
-                            <div class="bg-white p-6 rounded-2xl border shadow-sm space-y-4">
-                                <h4 class="text-sm font-bold text-gray-700">電商頂部視覺</h4>
-                                <input type="text" v-model="editState.params.imageUrl" class="w-full border rounded-lg p-2 text-sm" placeholder="Hero 圖片連結">
-                                <div class="pt-4 border-t"><label class="input-label">商品背景底色</label><input type="color" v-model="editState.params.bodyBgColor" class="w-full h-8"></div>
-                            </div>
-                        </div>
-
-                        <!-- 共同欄位：底部主按鈕 -->
+                        <!-- 共同欄位：底部按鈕 -->
                         <div class="bg-white p-6 rounded-2xl border shadow-sm">
                             <h4 class="text-sm font-bold mb-4 flex justify-between items-center text-gray-700"><span>底部操作按鈕</span><button @click="addButton" class="text-xs text-line-green font-bold">+ 新增</button></h4>
                             <div class="space-y-3">
-                                <div v-for="(btn, idx) in editState.params.buttons" :key="idx" class="flex gap-3 items-center bg-slate-50 p-3 rounded-xl border group transition-all">
-                                    <input type="color" v-model="btn.color"><input type="text" v-model="btn.label" class="w-32 border rounded p-1 text-sm font-bold"><input type="text" v-model="btn.uri" class="flex-1 border rounded p-1 text-sm">
+                                <div v-for="(btn, idx) in editState.params.buttons" :key="idx" class="flex gap-3 items-center bg-slate-50 p-3 rounded-xl border group transition-all hover:border-line-green">
+                                    <input type="color" v-model="btn.color"><input type="text" v-model="btn.label" class="w-32 border rounded p-1 text-sm font-bold shadow-inner"><input type="text" v-model="btn.uri" class="flex-1 border rounded p-1 text-sm shadow-inner">
                                     <button @click="editState.params.buttons.splice(idx,1)" class="text-gray-300 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button>
                                 </div>
                             </div>
@@ -172,28 +168,28 @@
                 </div>
             </div>
 
-            <!-- 即時預覽區 (右側) -->
+            <!-- 右側即時預覽 -->
             <div class="w-[420px] shrink-0 chat-room-bg no-scrollbar shadow-inner border-l">
-                <div class="mb-6 text-[10px] font-bold text-white/40 uppercase tracking-[0.3em] text-center">Live Preview</div>
+                <div class="mb-6 text-[10px] font-bold text-white/40 uppercase tracking-[0.3em] text-center">Cloud Sync Preview</div>
                 
                 <div class="flex-bubble-container">
                     <!-- 預覽：文章型 -->
-                    <div v-if="editState.cardType === 'article'" class="flex-bubble">
+                    <div v-if="editState.cardType === 'article'" class="flex-bubble animate-in zoom-in duration-300">
                         <div class="relative w-full overflow-hidden">
-                            <img :src="editState.params.imageUrl" class="w-full aspect-[20/13] object-cover">
+                            <img :src="editState.params.imageUrl" class="w-full aspect-[20/13] object-cover" onerror="this.src='https://via.placeholder.com/800x520?text=Image+Error'">
                             <div v-if="editState.params.showBadge" class="flex-badge-preview" :style="{ backgroundColor: editState.params.badgeColor }">{{ editState.params.badgeText }}</div>
                         </div>
                         <div class="p-[5px] text-center">
-                            <div class="text-base font-bold truncate mt-1">{{ editState.params.title || '標題內容' }}</div>
+                            <div class="text-base font-bold truncate mt-1 text-gray-800">{{ editState.params.title || '標題內容' }}</div>
                             <div class="text-[9px] text-gray-500 mt-2 whitespace-pre-wrap leading-relaxed px-1">{{ editState.params.subtitle }}</div>
                         </div>
                         <div class="p-[5px] space-y-1.5"><button v-for="btn in editState.params.buttons" class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm" :style="{ backgroundColor: btn.color }">{{ btn.label }}</button></div>
                     </div>
                     
                     <!-- 預覽：影片名片型 -->
-                    <div v-if="editState.cardType === 'card'" class="flex-bubble">
-                        <div class="header-box" :style="{ backgroundColor: editState.params.headerBgColor }">
-                            <img :src="editState.params.headerImg" class="w-10 h-10 rounded-full object-cover shadow-sm">
+                    <div v-if="editState.cardType === 'card'" class="flex-bubble animate-in zoom-in duration-300">
+                        <div class="header-box shadow-sm" :style="{ backgroundColor: editState.params.headerBgColor }">
+                            <img :src="editState.params.headerImg" class="w-10 h-10 rounded-full object-cover border border-black/10 shadow-sm">
                             <div class="flex flex-col overflow-hidden">
                                 <span class="text-[11px] font-bold uppercase truncate" :style="{ color: editState.params.headerTextColor }">{{ editState.params.headerName || '姓名' }}</span>
                                 <span class="text-[8px] leading-tight truncate" :style="{ color: editState.params.headerTextColor, opacity: 0.8 }">{{ editState.params.headerDescription }}</span>
@@ -201,11 +197,11 @@
                         </div>
                         <div class="w-full aspect-video bg-black relative flex items-center justify-center overflow-hidden">
                             <img :src="editState.params.previewUrl" class="w-full h-full object-cover opacity-60">
-                            <i v-if="editState.params.visualMode==='video'" class="fas fa-play-circle text-white text-4xl absolute drop-shadow-xl"></i>
+                            <i v-if="editState.params.visualMode==='video'" class="fas fa-play-circle text-white text-4xl absolute drop-shadow-2xl"></i>
                         </div>
                         <div class="grid-box" :style="{ backgroundColor: editState.params.headerBgColor }">
                             <div v-for="grid in editState.params.gridButtons" class="grid-item shadow-sm" :style="{ backgroundColor: editState.params.gridBgColor }">
-                                <div class="text-xl">{{grid.emoji}}</div>
+                                <div class="text-xl mb-1">{{grid.emoji}}</div>
                                 <div class="text-[8px] text-gray-300 font-bold truncate uppercase">{{grid.label || '選單'}}</div>
                             </div>
                         </div>
@@ -213,16 +209,9 @@
                             <button v-for="btn in editState.params.buttons" class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-md" :style="{ backgroundColor: btn.color }">{{ btn.label }}</button>
                         </div>
                     </div>
-
-                    <!-- 預覽：電商型 -->
-                    <div v-if="editState.cardType === 'ecommerce'" class="flex-bubble">
-                        <img :src="editState.params.imageUrl" class="w-full aspect-video object-cover">
-                        <div class="p-4 text-center opacity-40 text-[10px] italic" :style="{ backgroundColor: editState.params.bodyBgColor }">商城商品網格 (唯讀模式)</div>
-                        <div class="p-[5px] border-t flex gap-2"><button v-for="btn in editState.params.buttons" class="flex-1 py-1.5 text-white text-[10px] font-bold rounded shadow-sm" :style="{ backgroundColor: btn.color }">{{ btn.label }}</button></div>
-                    </div>
                 </div>
 
-                <div class="mt-auto bg-black/10 text-white/30 text-[9px] py-4 text-center w-full uppercase tracking-tighter">Connected to Sheet ID: 1qQjIMf8...</div>
+                <div class="mt-auto bg-black/10 text-white/30 text-[9px] py-4 text-center w-full uppercase tracking-tighter">Syncing with Sheet ID: 1qQjIMf8...</div>
             </div>
         </div>
     </main>
@@ -255,7 +244,9 @@ createApp({
             try {
                 const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify({ action: 'getProjects' }) });
                 const result = await res.json();
-                if (result.status === 'success') projects.value = [...result.data].reverse();
+                if (result.status === 'success') {
+                    projects.value = Array.isArray(result.data) ? [...result.data].reverse() : [];
+                }
             } catch (e) { console.error("Fetch Error:", e); }
             finally { loading.value = false; }
         };
@@ -272,12 +263,10 @@ createApp({
                     imageUrl: p['hero.image.url'] || '',
                     title: p['header.subtitle'] || p.cardTitle,
                     subtitle: p['header.description'] || '',
-                    showBadge: true,
-                    badgeText: 'HOT', badgeColor: '#FF0000',
+                    showBadge: true, badgeText: 'HOT', badgeColor: '#FF0000',
                     buttons: rawJson.footer?.contents?.map(c => ({ label: c.action.label, uri: c.action.uri, color: c.color })) || []
                 };
             } else if (p.cardType === 'card') {
-                // 從 Flex JSON 中嘗試抓取網格配色與 Emoji
                 const bodyBox = rawJson.body?.contents?.[0];
                 const gridRow1 = bodyBox?.contents?.[0]?.contents || [];
                 const gridRow2 = bodyBox?.contents?.[1]?.contents || [];
@@ -292,19 +281,13 @@ createApp({
                     headerDescription: p['header.subtitle'] || '',
                     headerImg: p['header.avatarUrl'] || '',
                     headerBgColor: p['header.bgColor'] || '#1A1B1E',
-                    headerTextColor: '#D4AF37',
+                    headerTextColor: p['header.textColor'] || '#D4AF37',
                     visualMode: p['hero.mode'] || 'video',
                     previewUrl: p['hero.image.url'] || '',
                     videoUrl: p['hero.video.url'] || '',
                     gridBgColor: '#2A2C31',
-                    gridButtons: grids.length ? grids : [{emoji:'🤖',label:'AI',uri:'https://line.me'}],
+                    gridButtons: grids.length >= 4 ? grids : [{emoji:'🤖',label:'AI',uri:'https://line.me'},{emoji:'🎥',label:'影',uri:'https://line.me'},{emoji:'🧾',label:'單',uri:'https://line.me'},{emoji:'📍',label:'圖',uri:'https://line.me'}],
                     buttons: rawJson.footer?.contents?.map(c => ({ label: c.action.label, uri: c.action.uri, color: c.color })) || []
-                };
-            } else if (p.cardType === 'ecommerce') {
-                params = {
-                    imageUrl: p['hero.image.url'] || '',
-                    bodyBgColor: '#F8F8F8',
-                    buttons: rawJson.footer?.contents?.[0]?.contents?.map(c => ({ label: c.action.label, uri: c.action.uri, color: c.color })) || []
                 };
             }
             
@@ -325,12 +308,13 @@ createApp({
                 updatedAt: new Date().toISOString()
             };
 
-            // 如果是影片名片，更新特定欄位
+            // 根據類型打包試算表欄位
             if (s.cardType === 'card') {
                 payload['header.name'] = s.params.headerName;
                 payload['header.subtitle'] = s.params.headerDescription;
                 payload['header.avatarUrl'] = s.params.headerImg;
                 payload['header.bgColor'] = s.params.headerBgColor;
+                payload['header.textColor'] = s.params.headerTextColor;
                 payload['hero.mode'] = s.params.visualMode;
                 payload['hero.video.url'] = s.params.videoUrl;
                 payload['hero.image.url'] = s.params.previewUrl;
@@ -344,8 +328,8 @@ createApp({
                 const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify(payload) });
                 const result = await res.json();
                 if (result.status === 'success') {
-                    alert("專案雲端更新成功！");
-                    fetchProjects();
+                    alert("雲端資料已成功更新（已覆蓋原專案）");
+                    await fetchProjects();
                 } else { throw new Error(result.message); }
             } catch (e) { alert("更新失敗：" + e.message); }
             finally { isSaving.value = false; }
@@ -381,15 +365,15 @@ createApp({
             } else if (s.cardType === 'card') {
                 const bubble = {
                     type: "bubble", size: "mega",
-                    header: { type: "box", layout: "horizontal", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "image", url: forceHttps(cur.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover" }, { type: "box", layout: "vertical", margin: "md", flex: 3, contents: [{ type: "text", text: cur.headerName || "姓名", weight: "bold", color: "#D4AF37" }, { type: "text", text: cur.headerDescription || "描述", size: "xs", color: "#D4AF37", wrap: true }] }] },
+                    header: { type: "box", layout: "horizontal", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "image", url: forceHttps(cur.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover" }, { type: "box", layout: "vertical", margin: "md", flex: 3, contents: [{ type: "text", text: cur.headerName || "姓名", weight: "bold", color: cur.headerTextColor }, { type: "text", text: cur.headerDescription || "描述", size: "xs", color: cur.headerTextColor, wrap: true }] }] },
                     body: { type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "box", layout: "vertical", spacing: "sm", contents: [{ type: "box", layout: "horizontal", spacing: "sm", contents: cur.gridButtons.slice(0, 2).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label, uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji, align: "center", size: "xl" }, { type: "text", text: g.label, size: "sm", align: "center", color: "#E6E6E6" }] })) }, { type: "box", layout: "horizontal", spacing: "sm", contents: cur.gridButtons.slice(2, 4).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label, uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji, align: "center", size: "xl" }, { type: "text", text: g.label, size: "sm", align: "center", color: "#E6E6E6" }] })) }] }] },
-                    footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: cur.buttons.map(b => ({ type: "button", style: "primary", height: "sm", color: b.color, action: { type: "uri", label: b.label, uri: forceHttps(b.uri) } })) }
+                    footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: (cur.buttons||[]).map(b => ({ type: "button", style: "primary", height: "sm", color: b.color, action: { type: "uri", label: b.label, uri: forceHttps(b.uri) } })) }
                 };
                 if (cur.visualMode === 'video') bubble.hero = { type: "video", url: forceHttps(cur.videoUrl), previewUrl: forceHttps(cur.previewUrl), aspectRatio: "16:9", altContent: { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectMode: "cover" } };
                 else bubble.hero = { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectRatio: "16:9", aspectMode: "cover", action: { type: "uri", label: "hero", uri: "https://line.me" } };
                 return bubble;
             }
-            return { type: "bubble", body: { type: "text", text: "暫不支援此類型預覽" } };
+            return { type: "bubble", body: { type: "text", text: "暫不支援預覽" } };
         };
 
         const deleteProject = async (p) => {
