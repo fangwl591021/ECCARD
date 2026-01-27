@@ -90,11 +90,9 @@
         </button>
     </aside>
 
-    <main class="flex-grow flex flex-col h-full bg-[#f8fafc] overflow-hidden">
+    <main class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#f8fafc]">
         <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
-            <div class="flex items-center gap-3">
-                <h2 class="text-xl font-bold text-gray-800">商務型名片插件開發</h2>
-            </div>
+            <h2 class="text-xl font-bold text-gray-800">商務型名片插件開發</h2>
             <div class="flex items-center gap-4">
                 <div v-if="isLoggedIn" class="flex items-center gap-2 px-3 py-1 bg-green-50 rounded-full border border-green-100">
                     <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
@@ -107,7 +105,7 @@
                     <i class="fas fa-copy"></i> 複製 JSON
                 </button>
                 <button @click="pushCard" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all">
-                    <i class="fas fa-paper-plane"></i> 🚀 推播發送
+                    <i class="fas fa-paper-plane"></i> 🚀 直接推播
                 </button>
             </div>
         </header>
@@ -119,44 +117,45 @@
                     
                     <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-sm">
                         <label class="input-label text-blue-800">聊天室通知文字 (altText)</label>
-                        <input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm outline-none shadow-sm focus:ring-2 focus:ring-blue-200">
+                        <input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-200 shadow-sm">
                     </div>
 
-                    <!-- 視覺模式切換 -->
+                    <!-- 視覺內容模式 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
-                        <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-film mr-2 text-line-green"></i> 視覺內容模式</h4>
+                        <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-film mr-2 text-line-green"></i> 視覺內容設定</h4>
                         <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-300 shadow-inner">
                             <button @click="data.visualMode = 'video'" :class="data.visualMode === 'video' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">影片模式</button>
-                            <button @click="data.visualMode = 'image'" :class="data.visualMode === 'image' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">圖片模式</button>
+                            <button @click="data.visualMode = 'image'" :class="data.visualMode === 'image' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">靜態圖片模式</button>
                         </div>
                         
                         <div v-if="data.visualMode === 'video'" class="space-y-4 animate-in fade-in duration-300">
-                            <div><label class="input-label">商務影片網址 (.mp4)</label><input type="text" v-model="data.videoUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
+                            <div><label class="input-label">商務影片連結 (.mp4)</label><input type="text" v-model="data.videoUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
                             <div><label class="input-label">影片封面縮圖網址</label><input type="text" v-model="data.previewUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
                         </div>
                         <div v-else class="space-y-4 animate-in fade-in duration-300">
-                            <div><label class="input-label">主形象圖片網址</label><input type="text" v-model="data.previewUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
-                            <div><label class="input-label">圖片點擊跳轉網址</label><input type="text" v-model="data.imageActionUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
+                            <div><label class="input-label">形象展示圖片網址</label><input type="text" v-model="data.previewUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
+                            <div><label class="input-label">圖片點擊跳轉連結</label><input type="text" v-model="data.imageActionUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
                         </div>
                     </div>
 
-                    <!-- Header 品牌設定 -->
+                    <!-- Header 品牌與配色 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-6">
                         <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> 品牌身份與 Header 配色</h4>
                         <div class="grid grid-cols-2 gap-4">
                             <div><label class="input-label">姓名/單位</label><input type="text" v-model="data.headerName" class="w-full px-4 py-2 border rounded-lg text-sm shadow-sm"></div>
-                            <div><label class="input-label">職稱/描述 (20字)</label><input type="text" v-model="data.headerDescription" maxlength="20" class="w-full px-4 py-2 border rounded-lg text-sm shadow-sm"></div>
-                            <div class="col-span-2"><label class="input-label">頭像連結 (1:1)</label><input type="text" v-model="data.headerImg" class="w-full px-4 py-2 border rounded-lg text-sm shadow-sm"></div>
+                            <!-- 已更新：字數增加到 50 字 -->
+                            <div><label class="input-label">職稱/描述 (50字)</label><input type="text" v-model="data.headerDescription" maxlength="50" class="w-full px-4 py-2 border rounded-lg text-sm shadow-sm"></div>
+                            <div class="col-span-2"><label class="input-label">頭像連結 (1:1 佳)</label><input type="text" v-model="data.headerImg" class="w-full px-4 py-2 border rounded-lg text-sm shadow-sm"></div>
                             <div><label class="input-label">Header 背景色</label><input type="color" v-model="data.headerBgColor" class="w-full h-10 border rounded"></div>
                             <div><label class="input-label">Header 文字顏色</label><input type="color" v-model="data.headerTextColor" class="w-full h-10 border rounded"></div>
                         </div>
                     </div>
 
-                    <!-- 網格按鈕設定 -->
+                    <!-- 功能網格 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                         <div class="flex justify-between items-center mb-4">
-                            <h4 class="text-sm font-bold text-gray-700">商務功能網格 (同步配色)</h4>
-                            <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase">按鈕背景</span><input type="color" v-model="data.gridBgColor"></div>
+                            <h4 class="text-sm font-bold text-gray-700">商務功能網格設定</h4>
+                            <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">按鈕底色</span><input type="color" v-model="data.gridBgColor"></div>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div v-for="(grid, idx) in data.gridButtons" :key="idx" class="p-4 bg-white border rounded-xl shadow-sm space-y-2 group transition-all hover:border-line-green">
@@ -166,23 +165,27 @@
                         </div>
                     </div>
 
-                    <!-- 底部按鈕 -->
-                    <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                        <h4 class="text-sm font-bold text-gray-700 mb-4">底部行為按鈕 (固定全寬)</h4>
-                        <div v-for="(vBtn, idx) in data.videoFooterButtons" :key="idx" class="flex gap-3 items-center mb-3 p-4 bg-white border rounded-xl shadow-sm group hover:border-line-green transition-all">
+                    <!-- 底部按鈕：加入調色盤 -->
+                    <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-sm font-bold text-gray-700">底部行為按鈕設定</h4>
+                            <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Footer 背景</span><input type="color" v-model="data.footerBgColor"></div>
+                        </div>
+                        <div v-for="(vBtn, idx) in data.videoFooterButtons" :key="idx" class="flex gap-3 items-center p-4 bg-white border rounded-xl shadow-sm group hover:border-line-green transition-all">
                             <input type="color" v-model="vBtn.color">
-                            <div class="flex-1"><input type="text" v-model="vBtn.label" class="w-full border rounded-lg p-2 text-sm font-bold shadow-sm" placeholder="按鈕文字"></div>
+                            <div class="flex-1"><input type="text" v-model="vBtn.label" class="w-full border rounded-lg p-2 text-sm font-bold shadow-sm" placeholder="文字"></div>
                             <div class="flex-[2]"><input type="text" v-model="vBtn.uri" class="w-full border rounded-lg p-2 text-sm shadow-sm" placeholder="https://..."></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 右側：預覽區 -->
+            <!-- 右側：即時預覽 -->
             <div class="w-[450px] shrink-0 open-preview-area shadow-inner bg-slate-200/50 overflow-y-auto no-scrollbar">
                 <div class="chat-room-bg no-scrollbar">
                     <div class="flex-bubble-container animate-in zoom-in duration-300">
                         <div class="flex-bubble">
+                            <!-- Header 預覽 -->
                             <div class="header-box" :style="{ backgroundColor: data.headerBgColor }">
                                 <img :src="data.headerImg" class="w-10 h-10 rounded-full object-cover border border-white/20 shadow-sm">
                                 <div class="flex flex-col overflow-hidden">
@@ -190,18 +193,20 @@
                                     <span class="text-[8px] leading-tight truncate" :style="{ color: data.headerTextColor, opacity: 0.8 }">{{ data.headerDescription || '敘述' }}</span>
                                 </div>
                             </div>
+                            <!-- Hero 預覽 -->
                             <div class="hero-box">
                                 <img :src="data.previewUrl" class="w-full h-full object-cover opacity-60">
                                 <i v-if="data.visualMode === 'video'" class="fas fa-play-circle text-white text-4xl absolute opacity-90 drop-shadow-2xl"></i>
                             </div>
+                            <!-- Grid 預覽 -->
                             <div class="grid-box" :style="{ backgroundColor: data.headerBgColor }">
                                 <div v-for="grid in data.gridButtons" class="grid-item shadow-md transition-transform active:scale-95" :style="{ backgroundColor: data.gridBgColor }">
                                     <div class="text-xl mb-1">{{ grid.emoji }}</div>
                                     <div class="text-[8px] text-gray-300 font-bold uppercase truncate px-1">{{ grid.label || '選單' }}</div>
                                 </div>
                             </div>
-                            <!-- Footer 5px 邊距優化 -->
-                            <div class="p-3 pt-0 space-y-1.5" :style="{ backgroundColor: data.headerBgColor }">
+                            <!-- Footer 預覽 (5px 內距) -->
+                            <div class="p-3 pt-0 space-y-1.5" :style="{ backgroundColor: data.footerBgColor }">
                                 <div style="padding: 5px !important;">
                                     <button v-for="vBtn in data.videoFooterButtons" class="w-full py-2 text-[10px] font-bold rounded shadow-md text-white transition-transform active:scale-95 mb-1.5 last:mb-0" :style="{ backgroundColor: vBtn.color }">{{ vBtn.label }}</button>
                                 </div>
@@ -217,7 +222,7 @@
     <div v-if="showSaveModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] backdrop-blur-sm">
         <div class="bg-white rounded-[32px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in duration-300">
             <h3 class="text-2xl font-bold mb-2 text-gray-800 tracking-tighter">儲存商務型名片專案</h3>
-            <p class="text-xs text-gray-400 mb-8 font-medium">專案資料將同步至 cards 工作表</p>
+            <p class="text-xs text-gray-400 mb-8 font-medium">專案資料將同步至雲端 cards 工作表</p>
             <div class="space-y-6">
                 <div>
                     <label class="input-label">專案名稱 (cardTitle)</label>
@@ -261,11 +266,11 @@ createApp({
             visualMode: 'video', 
             imageActionUrl: 'https://line.me',
             headerName: 'TONY',
-            headerDescription: '系統開發與 AI 顧問服務',
+            headerDescription: '系統開發與 AI 顧問服務，提供專業的自動化解決方案。', // 預設描述變長
             headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png',
             headerBgColor: '#1A1B1E',
             headerTextColor: '#D4AF37',
-            bodyBgColor: '#0F0F10',
+            footerBgColor: '#1A1B1E', // 新增：Footer 背景色
             gridBgColor: '#2A2C31',
             videoUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/mp4',
             previewUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/m800x1200',
@@ -314,10 +319,10 @@ createApp({
                     }]
                 },
                 footer: {
-                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.headerBgColor,
+                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.footerBgColor, // 已應用 Footer 背景色與 5px 內距
                     contents: cur.videoFooterButtons.map(b => ({
                         type: "button", style: "primary", height: "sm", color: b.color,
-                        action: { type: "uri", label: b.label || "OK", uri: forceHttps(b.uri) }
+                        action: { type: "uri", label: b.label || "了解更多", uri: forceHttps(b.uri) }
                     }))
                 }
             };
@@ -358,29 +363,36 @@ createApp({
                 const res = await fetch(workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const result = await res.json();
                 if (result.status === 'success') {
-                    alert("商務型名片專案已成功儲存至雲端！");
+                    alert("商務型名片專案已成功儲存！");
                     showSaveModal.value = false;
                     projectName.value = '';
                 }
-            } catch (e) { alert("連線失敗"); }
+            } catch (e) { alert("儲存連線失敗"); }
             finally { isSaving.value = false; }
         };
 
         const pushCard = () => {
             if (!liff.isLoggedIn()) { liff.login(); return; }
-            liff.shareTargetPicker([{ type: "flex", altText: data.value.altText || "商務名片", contents: flexJson.value }])
-            .then(res => { if (res) alert("商務型名片已成功推播！"); });
+            liff.shareTargetPicker([{ type: "flex", altText: data.value.altText || "商務型名片", contents: flexJson.value }])
+            .then(res => { if (res) alert("商務型名片推播成功！"); });
         };
 
         onMounted(async () => {
             try { 
                 await liff.init({ liffId: "2008541971-Wgvz6gD8" }); 
-                if (liff.isLoggedIn()) userProfile.value = await liff.getProfile();
                 isLoggedIn.value = liff.isLoggedIn();
+                if (isLoggedIn.value) userProfile.value = await liff.getProfile();
             } catch (e) {}
         });
 
-        return { isSidebarCollapsed, data, flexJson, isLoggedIn, userProfile, pushCard, copyJson: () => { navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); alert("JSON 已複製"); }, initSave, confirmSave, showSaveModal, projectName, isSaving };
+        return { 
+            isSidebarCollapsed, data, flexJson, isLoggedIn, userProfile, pushCard, 
+            copyJson: () => { 
+                navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); 
+                alert("JSON 代碼已複製"); 
+            }, 
+            initSave, confirmSave, showSaveModal, projectName, isSaving 
+        };
     }
 }).mount('#app');
 </script>
