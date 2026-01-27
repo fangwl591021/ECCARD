@@ -165,7 +165,7 @@
                             </div>
                         </div>
 
-                        <!-- 修正：標題與描述分行顯示，並加大編輯區 -->
+                        <!-- 標題與描述編輯區 -->
                         <div class="space-y-4">
                             <div>
                                 <label class="input-label">標題內容 (限30字)</label>
@@ -224,7 +224,8 @@
                             <div class="text-base font-bold truncate text-gray-800">{{ data.title || '標題內容' }}</div>
                             <div class="text-[9px] text-gray-500 mt-2 leading-relaxed whitespace-pre-wrap">{{ data.subtitle || '請輸入描述內容...' }}</div>
                         </div>
-                        <div class="p-[5px] pt-0 space-y-1">
+                        <!-- 修正：Footer 預覽背景色即時同步 -->
+                        <div class="space-y-1" :style="{ backgroundColor: data.footerBgColor, padding: '5px' }">
                             <button v-for="btn in data.buttons" 
                                 class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm transition-transform active:scale-95"
                                 :style="{ backgroundColor: btn.color }">
