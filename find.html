@@ -19,25 +19,31 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .submenu-enter-active, .submenu-leave-active { transition: max-height 0.3s ease-out; overflow: hidden; }
         .submenu-enter-from, .submenu-leave-to { max-height: 0; }
+        .submenu-enter-to, .submenu-leave-from { max-height: 300px; }
         .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
         
-        /* 擷取結果卡片 */
+        /* 擷取結果卡片動畫 */
         .result-card { animation: fadeInUp 0.5s ease-out forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        .toast-msg { position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 12px 24px; border-radius: 12px; background: #333; color: white; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .toast-msg { position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 12px 24px; border-radius: 12px; background: #333; color: white; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: opacity 0.3s; }
+        .loading-shimmer { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
 <body>
 
 <div id="app" class="flex h-screen overflow-hidden text-gray-800">
+    <!-- 提示訊息 -->
     <div v-if="toast.show" class="toast-msg">{{ toast.text }}</div>
 
-    <!-- 側邊欄：同步最新架構 -->
+    <!-- 側邊欄 -->
     <aside :class="isSidebarCollapsed ? 'w-collapsed' : 'w-expanded'" class="sidebar-container text-gray-400 shadow-2xl">
         <div class="h-16 flex items-center border-b border-gray-700 shrink-0 overflow-hidden" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
-            <i class="fab fa-line text-3xl line-green"></i>
-            <span v-if="!isSidebarCollapsed" class="ml-4 text-white font-bold uppercase font-mono tracking-tighter sidebar-link-text">LINEOA CMS</span>
+            <a href="index.html" class="flex items-center hover:opacity-80 transition-opacity">
+                <i class="fab fa-line text-3xl line-green"></i>
+                <span v-if="!isSidebarCollapsed" class="ml-4 text-white font-bold uppercase font-mono tracking-tighter sidebar-link-text">LINEOA CMS</span>
+            </a>
         </div>
         
         <nav class="mt-6 flex-grow overflow-y-auto no-scrollbar">
@@ -46,7 +52,7 @@
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">控制中心</span>
             </a>
 
-            <!-- 名片專區目錄 -->
+            <!-- 名片專區：摺疊目錄 -->
             <div v-if="!isSidebarCollapsed">
                 <div @click="isCardMenuOpen = !isCardMenuOpen" class="flex items-center justify-between py-4 px-6 hover:bg-gray-700 transition-all cursor-pointer text-gray-300">
                     <div class="flex items-center">
@@ -64,9 +70,7 @@
                     </div>
                 </transition>
             </div>
-            <div v-else class="flex justify-center py-4 hover:bg-gray-700 cursor-pointer" @click="isSidebarCollapsed = false">
-                <i class="fas fa-address-book text-lg"></i>
-            </div>
+            <div v-else class="flex justify-center py-4 hover:bg-gray-700 cursor-pointer" @click="isSidebarCollapsed = false"><i class="fas fa-address-book text-lg"></i></div>
 
             <!-- 工具欄區塊 -->
             <div class="mt-4 border-t border-gray-800 pt-4">
@@ -105,70 +109,86 @@
                     <div class="flex gap-4">
                         <input type="text" v-model="voomUrl" 
                             class="flex-1 bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 outline-none focus:border-line-green transition-all font-mono text-sm" 
-                            placeholder="https://linevoom.line.me/post/...">
+                            placeholder="例如：https://linevoom.line.me/post/1176852953173021320">
                         <button @click="startExtract" :disabled="loading" 
                             class="bg-line-green text-white px-10 rounded-2xl font-bold shadow-lg shadow-green-200 hover:brightness-110 disabled:opacity-50 flex items-center gap-2 transition-all">
                             <i v-if="loading" class="fas fa-circle-notch animate-spin"></i>
                             <span>{{ loading ? '解析中...' : '開始分析' }}</span>
                         </button>
                     </div>
-                    <p class="text-[10px] text-gray-400 mt-4 italic">* 本工具將自動分離影片 (.mp4) 與圖片網址，並檢測真實原始尺寸。</p>
                 </div>
 
-                <!-- 擷取結果顯示 -->
-                <div v-if="result" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- 圖片結果 -->
-                        <div class="result-card bg-white p-6 rounded-3xl shadow-md border border-slate-100">
-                            <div class="flex justify-between items-center mb-4">
-                                <h4 class="font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-image text-blue-500"></i> 圖片資源</h4>
-                                <span class="text-[10px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded font-bold uppercase">Image</span>
-                            </div>
-                            <div class="aspect-video rounded-xl bg-slate-900 overflow-hidden mb-4 border relative group">
-                                <img :src="result.imageUrl" class="w-full h-full object-contain">
-                                <div class="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded-md font-mono">
-                                    真實尺寸: {{ realSize.w }} x {{ realSize.h }}
+                <!-- 擷取結果 -->
+                <div v-if="result" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- 圖片資源卡片 -->
+                    <div class="result-card bg-white p-8 rounded-[32px] shadow-lg border border-slate-100 flex flex-col">
+                        <div class="flex justify-between items-center mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500">
+                                    <i class="fas fa-image text-xl"></i>
                                 </div>
+                                <h4 class="font-bold text-gray-800">圖片/封面資源</h4>
                             </div>
-                            <div class="space-y-3">
-                                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                    <label class="text-[10px] font-bold text-gray-400 block mb-1 uppercase">圖片連結</label>
-                                    <div class="flex items-center gap-2">
-                                        <input readonly :value="result.imageUrl" class="flex-1 bg-transparent text-xs font-mono truncate outline-none">
-                                        <button @click="copyText(result.imageUrl)" class="text-line-green hover:text-green-700 p-1"><i class="fas fa-copy"></i></button>
-                                    </div>
-                                </div>
+                            <span class="text-[10px] bg-blue-50 text-blue-500 px-2 py-1 rounded-lg font-bold tracking-widest uppercase">Image</span>
+                        </div>
+
+                        <div class="aspect-video rounded-2xl bg-slate-900 overflow-hidden mb-6 border relative group">
+                            <img :src="result.imageUrl" class="w-full h-full object-contain" @load="detectSize" id="previewImg">
+                            <div class="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10px] px-3 py-1.5 rounded-full font-mono font-bold">
+                                {{ imgLoaded ? `${realSize.w} x ${realSize.h}` : '偵測尺寸中...' }}
                             </div>
                         </div>
 
-                        <!-- 影片結果 -->
-                        <div class="result-card bg-white p-6 rounded-3xl shadow-md border border-slate-100" style="animation-delay: 0.1s;">
-                            <div class="flex justify-between items-center mb-4">
-                                <h4 class="font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-video text-orange-500"></i> 影片資源</h4>
-                                <span class="text-[10px] bg-orange-50 text-orange-500 px-2 py-0.5 rounded font-bold uppercase">Video / MP4</span>
-                            </div>
-                            <div class="aspect-video rounded-xl bg-slate-900 overflow-hidden mb-4 border relative">
-                                <video v-if="result.videoUrl" :src="result.videoUrl" controls class="w-full h-full"></video>
-                                <div v-else class="w-full h-full flex items-center justify-center text-gray-500 text-xs italic">此貼文無影片資源</div>
-                            </div>
-                            <div class="space-y-3">
-                                <div v-if="result.videoUrl" class="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                    <label class="text-[10px] font-bold text-gray-400 block mb-1 uppercase">影片連結</label>
-                                    <div class="flex items-center gap-2">
-                                        <input readonly :value="result.videoUrl" class="flex-1 bg-transparent text-xs font-mono truncate outline-none">
-                                        <button @click="copyText(result.videoUrl)" class="text-line-green hover:text-green-700 p-1"><i class="fas fa-copy"></i></button>
-                                    </div>
+                        <div class="space-y-4 mt-auto">
+                            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <label class="input-label !ml-0">圖片連結</label>
+                                <div class="flex items-center gap-2">
+                                    <input readonly :value="result.imageUrl" class="flex-1 bg-transparent text-[11px] font-mono truncate outline-none text-gray-500">
+                                    <button @click="copyText(result.imageUrl)" class="w-8 h-8 flex items-center justify-center bg-white border rounded-lg text-line-green hover:shadow-sm transition-all"><i class="fas fa-copy"></i></button>
                                 </div>
-                                <div v-else class="p-4 text-center text-gray-300 text-xs italic">貼文不含 MP4 檔案</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 影片資源卡片 -->
+                    <div class="result-card bg-white p-8 rounded-[32px] shadow-lg border border-slate-100 flex flex-col" style="animation-delay: 0.1s;">
+                        <div class="flex justify-between items-center mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500">
+                                    <i class="fas fa-video text-xl"></i>
+                                </div>
+                                <h4 class="font-bold text-gray-800">影片 MP4 資源</h4>
+                            </div>
+                            <span class="text-[10px] bg-orange-50 text-orange-500 px-2 py-1 rounded-lg font-bold tracking-widest uppercase">Video</span>
+                        </div>
+
+                        <div class="aspect-video rounded-2xl bg-slate-900 overflow-hidden mb-6 border relative">
+                            <video v-if="result.videoUrl" :src="result.videoUrl" controls class="w-full h-full"></video>
+                            <div v-else class="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-3">
+                                <i class="fas fa-video-slash text-3xl opacity-20"></i>
+                                <span class="text-xs italic">此貼文僅含圖片，無影片檔</span>
+                            </div>
+                        </div>
+
+                        <div v-if="result.videoUrl" class="space-y-4 mt-auto">
+                            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <label class="input-label !ml-0 text-orange-600">影片直接連結 (.mp4)</label>
+                                <div class="flex items-center gap-2">
+                                    <input readonly :value="result.videoUrl" class="flex-1 bg-transparent text-[11px] font-mono truncate outline-none text-gray-500">
+                                    <button @click="copyText(result.videoUrl)" class="w-8 h-8 flex items-center justify-center bg-white border rounded-lg text-line-green hover:shadow-sm transition-all"><i class="fas fa-copy"></i></button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 初始狀態說明 -->
-                <div v-if="!result && !loading" class="flex flex-col items-center justify-center py-20 text-gray-300">
-                    <i class="fas fa-search-plus text-8xl mb-6 opacity-10"></i>
-                    <p class="text-sm font-medium">輸入網址後點擊分析，系統將自動提取素材網址</p>
+                <!-- 初始說明 -->
+                <div v-if="!result && !loading" class="flex flex-col items-center justify-center py-32 text-slate-300">
+                    <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-inner mb-8">
+                        <i class="fas fa-search-plus text-4xl opacity-20"></i>
+                    </div>
+                    <p class="text-lg font-bold">準備好擷取素材了嗎？</p>
+                    <p class="text-xs mt-2 opacity-60">貼上 LINE VOOM 連結，系統將為您分離圖片與影片</p>
                 </div>
             </div>
         </div>
@@ -178,7 +198,7 @@
 <script>
 const { createApp, ref, reactive } = Vue;
 
-const workerUrl = "https://lineoa.fangwl591021.workers.dev"; // 指向更新後的 Worker
+const workerUrl = "https://lineoa.fangwl591021.workers.dev"; 
 
 createApp({
     setup() {
@@ -187,12 +207,12 @@ createApp({
         const voomUrl = ref('');
         const loading = ref(false);
         const result = ref(null);
+        const imgLoaded = ref(false);
         const realSize = reactive({ w: 0, h: 0 });
         const toast = reactive({ show: false, text: '' });
 
         const showToast = (text) => {
-            toast.text = text;
-            toast.show = true;
+            toast.text = text; toast.show = true;
             setTimeout(() => { toast.show = false; }, 2500);
         };
 
@@ -203,7 +223,14 @@ createApp({
             el.select();
             document.execCommand('copy');
             document.body.removeChild(el);
-            showToast("網址已複製到剪貼簿！");
+            showToast("網址已複製！");
+        };
+
+        const detectSize = (event) => {
+            const img = event.target;
+            realSize.w = img.naturalWidth;
+            realSize.h = img.naturalHeight;
+            imgLoaded.value = true;
         };
 
         const startExtract = async () => {
@@ -214,9 +241,10 @@ createApp({
 
             loading.value = true;
             result.value = null;
+            imgLoaded.value = false;
 
             try {
-                // 1. 透過 Worker 代理抓取網頁 HTML
+                // 1. 透過 Worker Proxy 抓取 HTML
                 const response = await fetch(workerUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -231,48 +259,59 @@ createApp({
 
                 const html = data.html;
 
-                // 2. 正則表達式匹配資源網址
-                // 影片邏輯: 搜尋 mp4 結尾的 line-cdn 網址
-                const videoRegex = /https:\/\/voom-obs\.line-cdn\.net\/[^"']+\/mp4/g;
-                const videoMatch = html.match(videoRegex);
-                const extractedVideo = videoMatch ? videoMatch[0] : null;
+                // 2. 改進的擷取邏輯：優先尋找 Preloaded State (JSON)
+                // LINE VOOM 將資料存在 window.__PRELOADED_STATE__ = { ... } 中
+                let videoUrl = null;
+                let imageUrl = null;
 
-                // 圖片邏輯: 搜尋縮圖網址並去除參數
-                const imageRegex = /https:\/\/voom-obs\.line-cdn\.net\/[^"']+\/m\d+x\d+/g;
-                const imageMatch = html.match(imageRegex);
-                let extractedImage = imageMatch ? imageMatch[0] : null;
-
-                if (!extractedImage && extractedVideo) {
-                    // 如果沒抓到縮圖但有影片，試著將 mp4 換成預設縮圖後綴
-                    extractedImage = extractedVideo.replace('/mp4', '/m800x1200');
+                try {
+                    const stateMatch = html.match(/window\.__PRELOADED_STATE__\s*=\s*(\{.*?\});/);
+                    if (stateMatch) {
+                        const state = JSON.parse(stateMatch[1]);
+                        // 層級結構 post -> post -> contents
+                        const content = state.post?.post?.contents?.[0];
+                        if (content) {
+                            if (content.type === 'VIDEO') {
+                                videoUrl = content.video?.url;
+                                imageUrl = content.video?.previewUrl;
+                            } else if (content.type === 'IMAGE') {
+                                imageUrl = content.image?.url;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn("JSON 解析失敗，嘗試正則匹配回退方案");
                 }
 
-                result.value = {
-                    videoUrl: extractedVideo,
-                    imageUrl: extractedImage
-                };
-
-                // 3. 獲取圖片真實尺寸
-                if (extractedImage) {
-                    const img = new Image();
-                    img.onload = () => {
-                        realSize.w = img.naturalWidth;
-                        realSize.h = img.naturalHeight;
-                    };
-                    img.src = extractedImage;
+                // 3. 回退方案：Regex 正則匹配 (相容 scdn 與 cdn 網域)
+                if (!videoUrl) {
+                    const vMatch = html.match(/https:\/\/voom-obs\.line-(s)?cdn\.net\/[^\/\"\'\s]+\/mp4/);
+                    videoUrl = vMatch ? vMatch[0] : null;
                 }
+                if (!imageUrl) {
+                    const iMatch = html.match(/https:\/\/voom-obs\.line-(s)?cdn\.net\/[^\/\"\'\s]+\/m\d+x\d+/);
+                    imageUrl = iMatch ? iMatch[0] : null;
+                }
+
+                // 如果找到圖片但網址包含縮圖參數 m800x1200，嘗試提取原始路徑 (通常是拿掉後綴)
+                // 但為了確保相容性，這裡保留原始抓取到的網址，由 Image.naturalWidth 偵測真實尺寸
+
+                if (!videoUrl && !imageUrl) throw new Error("找不到任何資源網址");
+
+                result.value = { videoUrl, imageUrl };
+                showToast("分析完成！");
 
             } catch (err) {
                 console.error(err);
-                showToast("解析失敗，可能該貼文不支援公開擷取");
+                showToast("解析失敗，請確認網址是否有效或具有權限");
             } finally {
                 loading.value = false;
             }
         };
 
         return { 
-            isSidebarCollapsed, isCardMenuOpen, voomUrl, loading, result, realSize, toast,
-            startExtract, copyText 
+            isSidebarCollapsed, isCardMenuOpen, voomUrl, loading, result, 
+            realSize, toast, imgLoaded, startExtract, copyText, detectSize 
         };
     }
 }).mount('#app');
