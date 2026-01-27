@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電商型插件開發 - LINEOA CMS</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f7f6; overflow: hidden; }
+        .line-green { color: #00B900; }
+        .bg-line-green { background-color: #00B900; }
+        .sidebar-container { background-color: #1e2124; height: 100vh; width: 256px; display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; }
+        .sidebar-item-active { background-color: #374151; color: white; border-left: 4px solid #00B900; }
+        .chat-room-bg { background-color: #8c9bad; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 60px 20px; }
+        .flex-bubble-container { width: 100%; max-width: 300px; position: relative; }
+        .flex-bubble { background: #FFFFFF; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
+        .input-label { @apply block text-[11px] font-bold text-gray-500 uppercase mb-1 ml-1 tracking-wider; }
+        input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; cursor: pointer; background: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="app" class="flex h-screen overflow-hidden text-gray-800">
+    <!-- 側邊欄導覽 -->
+    <aside class="sidebar-container text-gray-400 shadow-2xl">
+        <div class="h-16 flex items-center px-6 border-b border-gray-700 shrink-0">
+            <i class="fab fa-line text-3xl line-green"></i>
+            <span class="ml-4 text-white font-bold tracking-tighter uppercase font-mono">Market Pro</span>
+        </div>
+        <nav class="mt-6 flex-grow overflow-y-auto no-scrollbar">
+            <a href="index.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors">
+                <i class="fas fa-file-alt w-8 text-center"></i>
+                <span class="ml-2 font-medium">文章 Flex 開發</span>
+            </a>
+            <a href="video.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors">
+                <i class="fas fa-video w-8 text-center"></i>
+                <span class="ml-2 font-medium">影片名片開發</span>
+            </a>
+            <div class="sidebar-item-active flex items-center py-4 px-6">
+                <i class="fas fa-shopping-cart w-8 text-center"></i>
+                <span class="ml-2 font-medium">電商插件開發</span>
+            </div>
+            <a href="mix.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors">
+                <i class="fas fa-clone w-8 text-center"></i>
+                <span class="ml-2 font-medium">混合多頁開發</span>
+            </a>
+            <a href="project.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-colors mt-4">
+                <i class="fas fa-box w-8 text-center"></i>
+                <span class="ml-2 font-medium">專案管理系統</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#f8fafc]">
+        <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
+            <h2 class="text-xl font-bold text-gray-800">電商模組開發</h2>
+            <div class="flex items-center gap-4">
+                <button @click="showSaveModal = true" class="px-5 py-2 border border-line-green text-line-green rounded-xl text-sm font-bold hover:bg-green-50 flex items-center gap-2 transition-all">
+                    <i class="fas fa-cloud-upload-alt"></i> 儲存專案
+                </button>
+                <button @click="copyJson" class="px-5 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2 transition-all">
+                    <i class="fas fa-copy"></i> 複製 JSON
+                </button>
+                <button @click="pushEcom" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all">
+                    <i class="fas fa-paper-plane"></i> 🚀 直接推播
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-grow flex overflow-hidden">
+            <!-- 編輯器區 -->
+            <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
+                <div class="max-w-4xl mx-auto space-y-8 pb-20">
+                    
+                    <!-- Hero 配置 -->
+                    <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
+                        <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-image mr-2 text-line-green"></i> 頂部視覺 Hero</h4>
+                        <div class="flex bg-slate-100 p-1 rounded-lg border">
+                            <button v-for="t in ['image', 'video']" @click="state.hero.type = t" :class="state.hero.type===t?'bg-white shadow-sm text-line-green':'text-slate-400'" class="flex-1 py-1.5 text-xs font-bold rounded transition-all">{{ t.toUpperCase() }}</button>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4">
+                            <div><label class="input-label">底圖/封面連結</label><input type="text" v-model="state.hero.url" class="w-full border rounded p-2 text-xs shadow-sm"></div>
+                            <div v-if="state.hero.type === 'video'"><label class="input-label text-blue-600">影片連結 (.mp4)</label><input type="text" v-model="state.hero.videoUrl" class="w-full border-2 border-blue-100 rounded p-2 text-xs"></div>
+                        </div>
+                    </div>
+
+                    <!-- 商品設定 -->
+                    <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-sm font-bold">商品網格管理</h4>
+                            <button @click="addItem" class="text-xs text-line-green font-bold hover:underline">+ 新增商品</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="input-label">顯示欄數</label><select v-model="state.body.columns" class="w-full border rounded p-2 text-xs"><option :value="3">3 欄</option><option :value="4">4 欄</option></select></div>
+                            <div><label class="input-label">網格底色</label><div class="flex items-center gap-2 bg-white p-1 border rounded shadow-sm px-2"><input type="color" v-model="state.body.bgColor"><span class="text-[10px] font-mono">{{state.body.bgColor}}</span></div></div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div v-for="(item, idx) in state.body.items" :key="idx" class="p-4 bg-white border rounded-2xl relative shadow-sm group hover:border-line-green transition-all">
+                                <button @click="state.body.items.splice(idx,1)" class="text-gray-300 hover:text-red-500 absolute top-2 right-2"><i class="fas fa-times-circle"></i></button>
+                                <div class="flex gap-4 mb-3">
+                                    <img :src="item.img" class="w-14 h-14 rounded-lg object-cover border">
+                                    <div class="flex-1"><label class="input-label">品名</label><input v-model="item.title" class="w-full border-b text-sm font-bold"></div>
+                                </div>
+                                <div><label class="input-label">圖片/點擊連結</label><input v-model="item.img" class="w-full border rounded p-1.5 text-[10px] bg-slate-50 mb-1" placeholder="圖片網址"><input v-model="item.url" class="w-full border rounded p-1.5 text-[10px] bg-slate-50" placeholder="點擊跳轉網址"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 底部按鈕 -->
+                    <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
+                        <h4 class="text-sm font-bold">底部主按鈕設定</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div v-for="b in [state.footer.btn1, state.footer.btn2]" class="p-4 bg-white border rounded-xl space-y-2">
+                                <div class="flex items-center justify-between"><input type="text" v-model="b.label" class="text-xs font-bold border-b w-24"><input type="color" v-model="b.color"></div>
+                                <input type="text" v-model="b.uri" class="w-full border rounded p-1.5 text-[10px]" placeholder="URL">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 預覽區 -->
+            <div class="w-[450px] shrink-0 chat-room-bg no-scrollbar shadow-inner">
+                <div class="flex-bubble-container">
+                    <div class="flex-bubble flex flex-col">
+                        <!-- Hero -->
+                        <div class="w-full aspect-video bg-black relative shrink-0">
+                            <img :src="state.hero.url" class="w-full h-full object-cover opacity-60">
+                            <i v-if="state.hero.type === 'video'" class="fas fa-play-circle text-white text-4xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+                        </div>
+                        <!-- Body -->
+                        <div class="p-[5px]" :style="{ backgroundColor: state.body.bgColor }">
+                            <div class="flex flex-col gap-[5px]">
+                                <div v-for="(row, rIdx) in chunkedItems" :key="rIdx" class="flex gap-[5px]">
+                                    <div v-for="(item, iIdx) in row" :key="iIdx" class="flex-1 bg-white rounded-sm overflow-hidden flex flex-col shadow-sm">
+                                        <img :src="item.img" class="w-full aspect-square object-cover">
+                                        <div class="bg-black py-1 px-1 text-center truncate text-[6px] text-white font-bold">{{item.title}}</div>
+                                    </div>
+                                    <div v-for="n in (state.body.columns - row.length)" :key="n" class="flex-1 opacity-0"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Footer -->
+                        <div class="p-1.5 bg-white border-t flex gap-2" style="padding: 5px !important;">
+                            <button v-for="b in [state.footer.btn1, state.footer.btn2]" :style="{ backgroundColor: b.color }" class="flex-1 py-1.5 rounded text-[10px] font-bold text-white shadow-sm">{{ b.label }}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 儲存彈窗 -->
+    <div v-if="showSaveModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] backdrop-blur-sm">
+        <div class="bg-white rounded-[32px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in duration-300">
+            <h3 class="text-2xl font-bold mb-2">儲存電商專案</h3>
+            <p class="text-xs text-gray-400 mb-8 font-medium">資料將同步至雲端 cards 工作表</p>
+            <input type="text" v-model="projectName" class="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-line-green text-lg font-bold mb-10" placeholder="專案名稱...">
+            <div class="flex gap-3">
+                <button @click="showSaveModal = false" class="flex-1 py-3 text-gray-400 font-bold">取消</button>
+                <button @click="confirmSave" :disabled="isSaving" class="flex-[2] py-3 bg-line-green text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2">
+                    <i v-if="isSaving" class="fas fa-circle-notch animate-spin"></i>
+                    <span>{{ isSaving ? '傳送中...' : '確認儲存' }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+const workerUrl = "https://lineoa.fangwl591021.workers.dev";
+const forceHttps = (u) => { 
+    if (!u || String(u).trim() === "" || u === "#") return "https://line.me"; 
+    let url = String(u).trim(); 
+    if (url.startsWith("http://")) return url.replace("http://", "https://"); 
+    return url.startsWith("https://") ? url : "https://" + url; 
+};
+
+createApp({
+    setup() {
+        const isLoggedIn = ref(false);
+        const userProfile = ref({ userId: '', displayName: '', pictureUrl: '' });
+        const showSaveModal = ref(false);
+        const isSaving = ref(false);
+        const projectName = ref('');
+
+        const state = ref({
+            hero: { type: 'image', url: 'https://lihi.cc/5OXMZ', videoUrl: '' },
+            body: { columns: 3, bgColor: '#F8F8F8', items: [
+                { title: '商品 A', img: 'https://lihi.cc/mwMvo', url: 'https://line.me' },
+                { title: '商品 B', img: 'https://lihi.cc/2Nu8G', url: 'https://line.me' }
+            ]},
+            footer: { 
+                btn1: { label: '官網', color: '#000000', uri: 'https://line.me' },
+                btn2: { label: '分享', color: '#CC0000', uri: 'https://line.me' }
+            }
+        });
+
+        const chunkedItems = computed(() => {
+            const size = state.value.body.columns;
+            const res = [];
+            for (let i = 0; i < state.value.body.items.length; i += size) res.push(state.value.body.items.slice(i, i + size));
+            return res;
+        });
+
+        const flexJson = computed(() => {
+            const cur = state.value; const rows = []; const cols = cur.body.columns;
+            for (let i = 0; i < cur.body.items.length; i += cols) {
+                const chunk = cur.body.items.slice(i, i + cols);
+                const rowBox = { type: "box", layout: "horizontal", spacing: "sm", margin: i === 0 ? "none" : "sm", contents: [] };
+                chunk.forEach(item => {
+                    rowBox.contents.push({
+                        type: "box", layout: "vertical", flex: 1, 
+                        contents: [
+                            { type: "image", url: forceHttps(item.img), aspectRatio: "1:1", aspectMode: "cover", size: "full" },
+                            { type: "box", layout: "vertical", backgroundColor: "#000000", paddingAll: "xs", contents: [{ type: "text", text: item.title, color: "#FFFFFF", size: "xxs", align: "center", weight: "bold", wrap: true }] }
+                        ],
+                        action: { type: "uri", label: item.title, uri: forceHttps(item.url) }
+                    });
+                });
+                while (rowBox.contents.length < cols) rowBox.contents.push({ type: "box", layout: "vertical", flex: 1, contents: [] });
+                rows.push(rowBox);
+            }
+            const bubble = { 
+                type: "bubble", size: "mega",
+                hero: cur.hero.type === 'video' ? { type: "video", url: forceHttps(cur.hero.videoUrl), previewUrl: forceHttps(cur.hero.url), aspectRatio: "16:9", altContent: { type: "image", url: forceHttps(cur.hero.url), size: "full", aspectMode: "cover" } } : { type: "image", url: forceHttps(cur.hero.url), size: "full", aspectRatio: "16:9", aspectMode: "cover" },
+                body: { type: "box", layout: "vertical", paddingAll: "5px", backgroundColor: cur.body.bgColor, contents: rows },
+                footer: { type: "box", layout: "vertical", paddingAll: "5px", contents: [{ type: "box", layout: "horizontal", spacing: "md", contents: [ { type: "button", style: "primary", height: "sm", color: cur.footer.btn1.color, action: { type: "uri", label: cur.footer.btn1.label, uri: forceHttps(cur.footer.btn1.uri) } }, { type: "button", style: "primary", height: "sm", color: cur.footer.btn2.color, action: { type: "uri", label: cur.footer.btn2.label, uri: forceHttps(cur.footer.btn2.uri) } } ] }] }
+            };
+            return bubble;
+        });
+
+        const confirmSave = async () => {
+            if(!projectName.value) return;
+            isSaving.value = true;
+            const now = new Date().toISOString();
+            const payload = {
+                userId: userProfile.value.userId || 'GUEST',
+                displayName: userProfile.value.displayName || '訪客',
+                cardId: 'ID_' + Date.now(),
+                cardType: 'ecommerce',
+                cardTitle: projectName.value,
+                'hero.image.url': state.value.hero.url,
+                cardJson: JSON.stringify(flexJson.value),
+                flexPayload: flexJson.value,
+                createdAt: now, updatedAt: now
+            };
+            try {
+                const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await res.json();
+                if(result.status === 'success') { alert("儲存成功！"); showSaveModal.value = false; }
+            } catch (e) { alert("儲存失敗"); }
+            finally { isSaving.value = false; }
+        };
+
+        const pushEcom = () => {
+            if(!liff.isLoggedIn()) { liff.login(); return; }
+            liff.shareTargetPicker([{ type: "flex", altText: "商城特惠", contents: flexJson.value }]).then(res => { if(res) alert("推播成功！"); });
+        };
+
+        onMounted(() => { liff.init({ liffId: "2008541971-Wgvz6gD8" }).then(() => { if(liff.isLoggedIn()) liff.getProfile().then(p => userProfile.value = p); }); });
+
+        return { state, chunkedItems, flexJson, showSaveModal, projectName, isSaving, addItem: () => state.value.body.items.push({title:'新商品',img:'https://lihi.cc/mwMvo',url:'https://line.me'}), confirmSave, pushEcom, copyJson: () => { navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); alert("JSON 已複製"); } };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
