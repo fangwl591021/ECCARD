@@ -65,9 +65,12 @@
 
     <!-- 側邊欄 -->
     <aside :class="isSidebarCollapsed ? 'w-collapsed' : 'w-expanded'" class="sidebar-container text-gray-400 shadow-2xl">
+        <!-- 修正：點擊標頭連結回首頁 -->
         <div class="h-16 flex items-center border-b border-gray-700 shrink-0 overflow-hidden" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
-            <i class="fab fa-line text-3xl line-green"></i>
-            <span v-if="!isSidebarCollapsed" class="ml-4 text-white font-bold uppercase font-mono tracking-tighter sidebar-link-text">LINEOA CMS</span>
+            <a href="index.html" class="flex items-center hover:opacity-80 transition-opacity">
+                <i class="fab fa-line text-3xl line-green"></i>
+                <span v-if="!isSidebarCollapsed" class="ml-4 text-white font-bold uppercase font-mono tracking-tighter sidebar-link-text">LINEOA CMS</span>
+            </a>
         </div>
         
         <nav class="mt-6 flex-grow overflow-y-auto no-scrollbar">
@@ -165,15 +168,15 @@
                             </div>
                         </div>
 
-                        <!-- 標題與描述編輯區 -->
-                        <div class="space-y-4">
+                        <!-- 修正：標題與加大描述編輯區 (獨立分行) -->
+                        <div class="space-y-6">
                             <div>
                                 <label class="input-label">標題內容 (限30字)</label>
                                 <input type="text" v-model="data.title" maxlength="30" class="w-full border rounded p-2 text-sm font-bold shadow-sm focus:ring-1 focus:ring-line-green outline-none">
                             </div>
                             
                             <div>
-                                <label class="input-label">描述文字 (xs 字級預覽)</label>
+                                <label class="input-label">描述文字 (xs 字級預覽 / 加大編輯空間)</label>
                                 <textarea v-model="data.subtitle" rows="6" class="w-full border rounded p-2 text-sm shadow-sm focus:ring-1 focus:ring-line-green outline-none" placeholder="請輸入訊息內容..."></textarea>
                             </div>
                         </div>
@@ -222,9 +225,9 @@
                         </div>
                         <div class="p-3 text-center">
                             <div class="text-base font-bold truncate text-gray-800">{{ data.title || '標題內容' }}</div>
-                            <div class="text-[9px] text-gray-500 mt-2 leading-relaxed whitespace-pre-wrap">{{ data.subtitle || '請輸入描述內容...' }}</div>
+                            <div class="text-[9px] text-gray-500 mt-2 leading-relaxed whitespace-pre-wrap text-left px-2">{{ data.subtitle || '請輸入描述內容...' }}</div>
                         </div>
-                        <!-- 修正：Footer 預覽背景色即時同步 -->
+                        <!-- Footer 預覽即時同步 -->
                         <div class="space-y-1" :style="{ backgroundColor: data.footerBgColor, padding: '5px' }">
                             <button v-for="btn in data.buttons" 
                                 class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm transition-transform active:scale-95"
@@ -283,8 +286,8 @@ createApp({
         
         const data = ref({ 
             imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/781206b661aebf645c633e618db3960b.png', 
-            title: '標準版插件標題', 
-            subtitle: '描述文字大小已設定為 xs，呈現精緻質感。分享標籤已置中。',
+            title: '標準版分頁標題', 
+            subtitle: '描述文字大小已設定為 xs，呈現精緻質感。分享標籤已置中。本版圖片支援 animated 屬性並提供加大編輯區。',
             showBadge: true,
             badgeText: '分享',
             badgeColor: '#FF0000',
