@@ -175,7 +175,7 @@
                             </div>
                         </div>
 
-                        <!-- 2. 商務型名片模組編輯 (更新預設與限制) -->
+                        <!-- 2. 商務型名片模組編輯 -->
                         <div v-if="activeBubble.type === 'card'" class="space-y-6">
                             <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-6">
                                 <h4 class="text-sm font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-id-card text-line-green"></i> 品牌身份與 Header 配色</h4>
@@ -189,7 +189,7 @@
                                 </div>
                             </div>
                             <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                                <div class="flex justify-between items-center mb-4"><h4 class="text-sm font-bold text-gray-700">商務功能網格 (邊界已切齊)</h4><input type="color" v-model="activeBubble.gridBgColor"></div>
+                                <div class="flex justify-between items-center mb-4"><h4 class="text-sm font-bold text-gray-700">商務功能網格</h4><input type="color" v-model="activeBubble.gridBgColor"></div>
                                 <div class="grid grid-cols-2 gap-3">
                                     <div v-for="(grid, idx) in activeBubble.gridButtons" :key="idx" class="p-3 bg-white border rounded-xl space-y-2 shadow-sm">
                                         <div class="flex gap-2"><input type="text" v-model="grid.emoji" class="w-8 border rounded text-xs text-center"><input type="text" v-model="grid.label" class="flex-1 border rounded p-1 text-xs"></div>
@@ -199,7 +199,7 @@
                             </div>
                         </div>
 
-                        <!-- 3. 電商商城型編輯 (轉移說明開關) -->
+                        <!-- 3. 電商商城型編輯 -->
                         <div v-if="activeBubble.type === 'ecommerce'" class="space-y-6">
                             <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                                 <h4 class="text-sm font-bold">電商商品與說明設定</h4>
@@ -231,7 +231,7 @@
                             </div>
                         </div>
 
-                        <!-- 底部按鈕管理 -->
+                        <!-- 底部按鈕管理 (所有分頁共用邏輯) -->
                         <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                             <div class="flex justify-between items-center mb-4">
                                 <h4 class="text-sm font-bold text-gray-700">分頁底部按鈕 (全寬排列)</h4>
@@ -242,7 +242,7 @@
                                     <input type="color" v-model="btn.color" class="shrink-0">
                                     <input type="text" v-model="btn.label" maxlength="30" class="w-32 border-b p-1 text-sm font-bold" placeholder="文字">
                                     <input type="text" v-model="btn.uri" class="flex-1 border-b p-1 text-sm text-gray-400" placeholder="HTTPS 連結">
-                                    <button @click.stop="activeBubble.buttons.splice(idx,1)" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>
+                                    <button @click.stop="activeBubble.buttons.splice(idx,1)" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><i class="fas fa-trash"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -267,7 +267,7 @@
                                 </div>
                             </template>
 
-                            <!-- 2. 商務型預覽 (邊界切齊修正) -->
+                            <!-- 2. 商務型預覽 (邊界切齊) -->
                             <template v-else-if="bubble.type === 'card'">
                                 <div class="header-box shadow-sm" :style="{ backgroundColor: bubble.headerBgColor }">
                                     <img :src="bubble.headerImg" class="w-10 h-10 rounded-full object-cover border border-white/20">
@@ -277,7 +277,6 @@
                                     </div>
                                 </div>
                                 <img :src="bubble.imageUrl" class="w-full aspect-video object-cover shrink-0">
-                                <!-- Grid 邊界 5px 切齊 -->
                                 <div class="grid-box flex-grow" :style="{ backgroundColor: bubble.headerBgColor, padding: '5px !important' }">
                                     <div v-for="grid in bubble.gridButtons" class="grid-item text-[8px] text-gray-300 shadow-sm flex flex-col items-center justify-center transition-all" :style="{ backgroundColor: bubble.gridBgColor }">
                                         <div class="text-lg">{{grid.emoji}}</div><div class="truncate w-full uppercase font-bold">{{grid.label}}</div>
@@ -302,7 +301,7 @@
                                 </div>
                             </template>
                             
-                            <!-- Footer 固定 5px Padding，按鈕全寬，邊界切齊 -->
+                            <!-- Footer 固定 5px Padding，邊界切齊 -->
                             <div class="space-y-1 mt-auto" :style="{ backgroundColor: bubble.footerBgColor, padding: '5px !important' }">
                                 <button v-for="btn in bubble.buttons" :style="{ backgroundColor: btn.color }" class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm transition-all active:scale-95">{{ btn.label || '查看詳情' }}</button>
                             </div>
@@ -369,6 +368,8 @@ const forceHttps = (u) => {
     return (url.startsWith("https://") || url.startsWith("line://")) ? url : "https://" + url; 
 };
 
+const cleanJson = (obj) => JSON.parse(JSON.stringify(obj));
+
 createApp({
     setup() {
         const isSidebarCollapsed = ref(false);
@@ -414,22 +415,16 @@ createApp({
                     headerBgColor: '#1A1B1E', 
                     headerTextColor: '#D4AF37', 
                     gridBgColor: '#2A2C31', 
-                    gridButtons: [{emoji:'🤖',label:'AI',uri:'https://line.me'},{emoji:'🎥',label:'影',uri:'https://line.me'},{emoji:'🧾',label:'單',uri:'https://line.me'},{emoji:'📍',label:'圖',uri:'https://line.me'}] 
+                    gridButtons: [{emoji:'🤖',label:'AI',uri:'https://line.me'},{emoji:'🎥',label:'影',uri:'https://line.me'},{emoji:'🧾',label:'單',uri:'https://line.me'},{emoji:'📍',label:'圖',uri:'https://line.me'}],
+                    footerBgColor: '#1A1B1E'
                 });
             } else if (type === 'ecommerce') {
-                Object.assign(b, { imageUrl: 'https://lihi.cc/5OXMZ', bgColor: '#F8F8F8', columns: 3, showText: false, bodyTitle: '本月特選', bodySubtitle: '限時優惠中', items: [{ title: '商品A', img: 'https://lihi.cc/mwMvo', url: 'https://line.me' }, { title: '商品B', img: 'https://lihi.cc/2Nu8G', url: 'https://line.me' }, { title: '商品C', img: 'https://lihi.cc/mwMvo', url: 'https://line.me' }] });
+                Object.assign(b, { imageUrl: 'https://lihi.cc/5OXMZ', bgColor: '#F8F8F8', columns: 3, showText: false, bodyTitle: '本月特選', bodySubtitle: '限時優惠中', items: [{ title: '商品A', img: 'https://lihi.cc/mwMvo', url: 'https://line.me' }, { title: '商品B', img: 'https://lihi.cc/2Nu8G', url: 'https://line.me' }, { title: '商品C', img: 'https://lihi.cc/mwMvo', url: 'https://line.me' }], footerBgColor: '#FFFFFF' });
             }
             
             carousel.value.bubbles.push(b);
             activeIndex.value = carousel.value.bubbles.length - 1;
             showAddModal.value = false;
-        };
-
-        const removeBubble = (idx) => { 
-            if (carousel.value.bubbles.length > 1) { 
-                carousel.value.bubbles.splice(idx, 1); 
-                if (activeIndex.value >= carousel.value.bubbles.length) activeIndex.value = carousel.value.bubbles.length - 1; 
-            } 
         };
 
         const fullFlexJson = computed(() => {
@@ -476,7 +471,13 @@ createApp({
                     }
                     bubble.body = { type: "box", layout: "vertical", paddingAll: "5px", backgroundColor: b.bgColor || "#F8F8F8", contents: bodyRows };
                 }
-                bubble.footer = { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: b.footerBgColor || "#FFFFFF", contents: b.buttons.map(btn => ({ type: "button", style: "primary", height: "sm", color: btn.color, action: { type: "uri", label: btn.label || "按鈕", uri: forceHttps(btn.uri) } })) };
+                
+                // 統一應用分頁自訂的 Footer 底色與 5px 內距
+                bubble.footer = { 
+                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", 
+                    backgroundColor: b.footerBgColor || "#FFFFFF", 
+                    contents: b.buttons.map(btn => ({ type: "button", style: "primary", height: "sm", color: btn.color, action: { type: "uri", label: btn.label || "按鈕", uri: forceHttps(btn.uri) } })) 
+                };
                 return bubble;
             });
             return { type: "carousel", contents: contents };
