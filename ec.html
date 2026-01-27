@@ -110,6 +110,44 @@
                         </div>
                     </div>
 
+                    <!-- 內文說明設定 (加入開關) -->
+                    <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-font mr-2 text-line-green"></i> 內文說明設定</h4>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">顯示區塊</span>
+                                <input type="checkbox" v-model="state.body.showText" class="accent-line-green">
+                            </label>
+                        </div>
+                        
+                        <div v-if="state.body.showText" class="grid grid-cols-1 gap-4 animate-in slide-in-from-top-2 duration-300">
+                            <div>
+                                <label class="input-label">標題內容 (xl 字級)</label>
+                                <input type="text" v-model="state.body.title" class="w-full border rounded p-2 text-sm shadow-sm outline-none focus:ring-1 focus:ring-line-green" placeholder="例如：本季熱銷排行榜">
+                            </div>
+                            <div>
+                                <label class="input-label">描述文字 (xs 字級)</label>
+                                <textarea v-model="state.body.subtitle" rows="3" class="w-full border rounded p-2 text-sm shadow-sm outline-none focus:ring-1 focus:ring-line-green" placeholder="請輸入活動說明或副標題..."></textarea>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="flex-1">
+                                    <label class="input-label">標題文字顏色</label>
+                                    <div class="flex items-center gap-2 bg-white p-1 border rounded shadow-sm px-2">
+                                        <input type="color" v-model="state.body.titleColor">
+                                        <span class="text-[10px] font-mono text-gray-400">{{state.body.titleColor}}</span>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <label class="input-label">描述文字顏色</label>
+                                    <div class="flex items-center gap-2 bg-white p-1 border rounded shadow-sm px-2">
+                                        <input type="color" v-model="state.body.subtitleColor">
+                                        <span class="text-[10px] font-mono text-gray-400">{{state.body.subtitleColor}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 商品設定 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                         <div class="flex justify-between items-center">
@@ -136,7 +174,6 @@
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                         <div class="flex justify-between items-center mb-2">
                             <h4 class="text-sm font-bold text-gray-700">底部操作按鈕設定</h4>
-                            <!-- 已增加：Footer 調色盤 -->
                             <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase">Footer 底色</span><input type="color" v-model="state.footer.bgColor"></div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -158,6 +195,13 @@
                             <img :src="state.hero.url" class="w-full h-full object-cover opacity-60">
                             <i v-if="state.hero.type === 'video'" class="fas fa-play-circle text-white text-4xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow-2xl opacity-90"></i>
                         </div>
+                        
+                        <!-- 文字說明預覽 (勾選後才出現) -->
+                        <div v-if="state.body.showText && (state.body.title || state.body.subtitle)" class="p-3 text-center border-b border-gray-100" :style="{ backgroundColor: state.body.bgColor }">
+                            <div v-if="state.body.title" class="text-base font-bold truncate" :style="{ color: state.body.titleColor }">{{ state.body.title }}</div>
+                            <div v-if="state.body.subtitle" class="text-[9px] mt-1 leading-relaxed whitespace-pre-wrap" :style="{ color: state.body.subtitleColor }">{{ state.body.subtitle }}</div>
+                        </div>
+
                         <!-- Body 網格預覽 -->
                         <div class="p-[5px] flex-grow" :style="{ backgroundColor: state.body.bgColor }">
                             <div class="flex flex-col gap-[5px]">
@@ -166,18 +210,17 @@
                                         <img :src="item.img" class="w-full aspect-square object-cover">
                                         <div class="bg-black py-1 px-1 text-center truncate text-[6px] text-white font-bold">{{item.title}}</div>
                                     </div>
-                                    <!-- 補位透明格 -->
                                     <div v-for="n in (state.body.columns - row.length)" :key="n" class="flex-1 opacity-0 pointer-events-none"></div>
                                 </div>
                             </div>
                         </div>
-                        <!-- Footer 按鈕預覽：應用 Footer 背景色與 5px 內距 -->
+                        <!-- Footer 按鈕預覽 -->
                         <div class="p-1.5 border-t flex gap-2" :style="{ backgroundColor: state.footer.bgColor, padding: '5px !important' }">
                             <button v-for="(b, idx) in [state.footer.btn1, state.footer.btn2]" :key="idx" :style="{ backgroundColor: b.color }" class="flex-1 py-1.5 rounded text-[10px] font-bold text-white shadow-md transition-transform active:scale-95">{{ b.label }}</button>
                         </div>
                     </div>
                 </div>
-                <div class="mt-8 text-white/40 text-[10px] font-bold tracking-widest uppercase">Live E-commerce Simulation</div>
+                <div class="mt-8 text-white/40 text-[10px] font-bold tracking-widest uppercase text-center">Live Market Simulator</div>
             </div>
         </div>
     </main>
@@ -185,7 +228,7 @@
     <!-- 儲存彈窗 -->
     <div v-if="showSaveModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] backdrop-blur-sm">
         <div class="bg-white rounded-[32px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in duration-300">
-            <h3 class="text-2xl font-bold mb-2 text-gray-800 tracking-tighter">儲存電商模組專案</h3>
+            <h3 class="text-2xl font-bold mb-2 text-gray-800 tracking-tighter">儲存電商插件專案</h3>
             <p class="text-xs text-gray-400 mb-8 font-medium">資料將同步至雲端 cards 工作表 (ecommerce)</p>
             <div class="space-y-6">
                 <div>
@@ -197,7 +240,7 @@
                 <button @click="showSaveModal = false" class="flex-1 py-3 text-gray-400 font-bold hover:text-gray-600 transition-colors">取消</button>
                 <button @click="confirmSave" :disabled="isSaving" class="flex-[2] py-3 bg-line-green text-white rounded-2xl font-bold shadow-lg hover:brightness-110 transition-all flex items-center justify-center gap-2">
                     <i v-if="isSaving" class="fas fa-circle-notch animate-spin"></i>
-                    <span>{{ isSaving ? '儲存中...' : '確認儲存' }}</span>
+                    <span>確認儲存</span>
                 </button>
             </div>
         </div>
@@ -224,7 +267,6 @@ createApp({
         const isSaving = ref(false);
         const projectName = ref('');
 
-        // 初始狀態：第三個商品使用與第一個相同的圖片與連結
         const state = ref({
             hero: { 
                 type: 'video', 
@@ -232,12 +274,17 @@ createApp({
                 videoUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/mp4' 
             },
             body: { 
+                showText: false, // 預設關閉說明文字
                 columns: 3, 
-                bgColor: '#F8F8F8', 
+                bgColor: '#F8F8F8',
+                title: '本月特選商城', 
+                subtitle: '感謝支持，全站商品限時特惠中。', 
+                titleColor: '#333333',
+                subtitleColor: '#999999',
                 items: [
                     { title: '精選商品 A', img: 'https://lihi.cc/mwMvo', url: 'https://line.me' },
                     { title: '熱銷商品 B', img: 'https://lihi.cc/2Nu8G', url: 'https://line.me' },
-                    { title: '新品推薦 C', img: 'https://lihi.cc/mwMvo', url: 'https://line.me' }
+                    { title: '精選商品 C', img: 'https://lihi.cc/mwMvo', url: 'https://line.me' } // 對齊商品 A
                 ]
             },
             footer: { 
@@ -258,9 +305,20 @@ createApp({
 
         const flexJson = computed(() => {
             const cur = state.value; const rows = []; const cols = cur.body.columns;
+            
+            // 勾選開關後才加入文字說明
+            if (cur.body.showText) {
+                if (cur.body.title) {
+                    rows.push({ type: "text", text: cur.body.title, weight: "bold", size: "xl", align: "center", color: cur.body.titleColor, margin: "md" });
+                }
+                if (cur.body.subtitle) {
+                    rows.push({ type: "text", text: cur.body.subtitle, size: "xs", align: "center", color: cur.body.subtitleColor, wrap: true, margin: "xs" });
+                }
+            }
+
             for (let i = 0; i < cur.body.items.length; i += cols) {
                 const chunk = cur.body.items.slice(i, i + cols);
-                const rowBox = { type: "box", layout: "horizontal", spacing: "sm", margin: i === 0 ? "none" : "sm", contents: [] };
+                const rowBox = { type: "box", layout: "horizontal", spacing: "sm", margin: "md", contents: [] };
                 chunk.forEach(item => {
                     rowBox.contents.push({
                         type: "box", layout: "vertical", flex: 1, 
@@ -274,6 +332,7 @@ createApp({
                 while (rowBox.contents.length < cols) rowBox.contents.push({ type: "box", layout: "vertical", flex: 1, contents: [] });
                 rows.push(rowBox);
             }
+            
             return { 
                 type: "bubble", size: "mega",
                 hero: cur.hero.type === 'video' ? { type: "video", url: forceHttps(cur.hero.videoUrl), previewUrl: forceHttps(cur.hero.url), aspectRatio: "16:9", altContent: { type: "image", url: forceHttps(cur.hero.url), size: "full", aspectMode: "cover" } } : { type: "image", url: forceHttps(cur.hero.url), size: "full", aspectRatio: "16:9", aspectMode: "cover" },
@@ -307,18 +366,14 @@ createApp({
             try {
                 const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify(payload) });
                 const result = await res.json();
-                if(result.status === 'success') { 
-                    alert("電商專案已成功儲存至雲端！"); 
-                    showSaveModal.value = false;
-                    projectName.value = '';
-                }
-            } catch (e) { alert("儲存失敗，請檢查網路連線。"); }
+                if(result.status === 'success') { alert("儲存成功！"); showSaveModal.value = false; }
+            } catch (e) { alert("儲存失敗"); }
             finally { isSaving.value = false; }
         };
 
         const pushEcom = () => {
             if(!liff.isLoggedIn()) { liff.login(); return; }
-            liff.shareTargetPicker([{ type: "flex", altText: "電商特惠推薦", contents: flexJson.value }]).then(res => { if(res) alert("推播成功發送！"); });
+            liff.shareTargetPicker([{ type: "flex", altText: "電商推薦訊息", contents: flexJson.value }]).then(res => { if(res) alert("推播成功！"); });
         };
 
         onMounted(() => { 
@@ -327,15 +382,7 @@ createApp({
             }); 
         });
 
-        return { 
-            isSidebarCollapsed, state, chunkedItems, flexJson, showSaveModal, projectName, isSaving, 
-            addItem: () => state.value.body.items.push({title:'新商品',img:'https://lihi.cc/mwMvo',url:'https://line.me'}), 
-            confirmSave, pushEcom, 
-            copyJson: () => { 
-                const raw = JSON.stringify(flexJson.value, null, 2);
-                navigator.clipboard.writeText(raw).then(() => alert("JSON 代碼已成功複製"));
-            } 
-        };
+        return { isSidebarCollapsed, state, chunkedItems, flexJson, showSaveModal, projectName, isSaving, addItem: () => state.value.body.items.push({title:'新商品',img:'https://lihi.cc/mwMvo',url:'https://line.me'}), confirmSave, pushEcom, copyJson: () => { navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); alert("JSON 已複製"); } };
     }
 }).mount('#app');
 </script>
