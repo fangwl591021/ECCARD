@@ -54,7 +54,7 @@
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
         /* 社群按鈕專用 */
-        .social-icon-box { @apply w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm transition-transform active:scale-90; }
+        .social-icon-box { @apply w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm transition-transform active:scale-90; }
     </style>
 </head>
 <body>
@@ -75,22 +75,18 @@
                 <i class="fas fa-file-alt w-8 text-center text-lg"></i>
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">標準版插件開發</span>
             </div>
-            
             <a href="card.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
                 <i class="fas fa-id-card w-8 text-center text-lg"></i>
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">商務版名片開發</span>
             </a>
-            
             <a href="ec.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
                 <i class="fas fa-shopping-cart w-8 text-center text-lg"></i>
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">電商插件開發</span>
             </a>
-            
             <a href="mix.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
                 <i class="fas fa-clone w-8 text-center text-lg"></i>
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">混合多頁開發</span>
             </a>
-            
             <a href="project.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400 mt-4 border-t border-gray-800" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
                 <i class="fas fa-box w-8 text-center text-lg"></i>
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">專案管理系統</span>
@@ -126,38 +122,35 @@
         </header>
 
         <div class="flex-grow flex overflow-hidden">
-            <!-- 編輯器 -->
             <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
                 <div class="max-w-4xl mx-auto space-y-8 pb-20">
+                    <!-- 基本設定 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                         <label class="input-label">主圖連結 (支援動畫圖片)</label>
-                        <input type="text" v-model="data.imageUrl" class="w-full border rounded p-2 text-sm shadow-sm focus:ring-1 focus:ring-line-green outline-none mb-4">
+                        <input type="text" v-model="data.imageUrl" class="w-full border rounded p-2 text-sm shadow-sm outline-none focus:ring-1 focus:ring-line-green mb-4">
                         
                         <div class="bg-white/50 p-4 rounded-xl border border-dashed space-y-4 mb-4">
                             <div class="flex justify-between items-center">
-                                <label class="text-xs font-bold text-gray-600 flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" v-model="data.showBadge" class="accent-line-green"> 顯示分享標籤
-                                </label>
+                                <label class="text-xs font-bold text-gray-600 flex items-center gap-2 cursor-pointer"><input type="checkbox" v-model="data.showBadge" class="accent-line-green"> 顯示分享標籤</label>
                                 <div v-if="data.showBadge" class="flex bg-slate-100 p-0.5 rounded-lg border">
                                     <button @click="data.badgeAlign = 'left'" :class="data.badgeAlign === 'left' ? 'bg-white text-line-green shadow-sm' : 'text-gray-400'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all">靠左</button>
                                     <button @click="data.badgeAlign = 'right'" :class="data.badgeAlign === 'right' ? 'bg-white text-line-green shadow-sm' : 'text-gray-400'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all">靠右</button>
                                 </div>
                             </div>
-                            
                             <div v-if="data.showBadge" class="grid grid-cols-2 gap-3 pl-6 animate-in fade-in duration-200">
-                                <div><label class="text-[10px] text-gray-400 font-bold block mb-1 uppercase tracking-tighter">標籤文字</label><input type="text" v-model="data.badgeText" maxlength="10" class="w-full border rounded p-1.5 text-xs shadow-sm outline-none" placeholder="分享"></div>
-                                <div><label class="text-[10px] text-gray-400 font-bold block mb-1 uppercase tracking-tighter">標籤顏色</label><div class="flex items-center gap-2"><input type="color" v-model="data.badgeColor" class="w-full"><span class="text-[10px] font-mono text-gray-400">{{data.badgeColor}}</span></div></div>
-                                <div class="col-span-2"><label class="text-[10px] text-gray-400 font-bold block mb-1 uppercase tracking-tighter">點擊連結 (HTTPS)</label><input type="text" v-model="data.badgeUri" class="w-full border rounded p-1.5 text-[10px] shadow-sm outline-none" placeholder="https://..."></div>
+                                <div><label class="text-[10px] text-gray-400 font-bold block mb-1">標籤文字</label><input type="text" v-model="data.badgeText" maxlength="10" class="w-full border rounded p-1.5 text-xs shadow-sm outline-none"></div>
+                                <div><label class="text-[10px] text-gray-400 font-bold block mb-1">標籤顏色</label><div class="flex items-center gap-2"><input type="color" v-model="data.badgeColor" class="w-full"></div></div>
+                                <div class="col-span-2"><label class="text-[10px] text-gray-400 font-bold block mb-1">點擊連結</label><input type="text" v-model="data.badgeUri" class="w-full border rounded p-1.5 text-[10px] shadow-sm"></div>
                             </div>
                         </div>
 
                         <div class="space-y-6">
-                            <div><label class="input-label">標題內容 (限30字)</label><input type="text" v-model="data.title" maxlength="30" class="w-full border rounded p-2 text-sm font-bold shadow-sm focus:ring-1 focus:ring-line-green outline-none"></div>
-                            <div><label class="input-label">描述文字 (xs 字級預覽)</label><textarea v-model="data.subtitle" rows="6" class="w-full border rounded p-2 text-sm shadow-sm focus:ring-1 focus:ring-line-green outline-none"></textarea></div>
+                            <div><label class="input-label">標題內容 (限30字)</label><input type="text" v-model="data.title" maxlength="30" class="w-full border rounded p-2 text-sm font-bold shadow-sm outline-none focus:ring-1 focus:ring-line-green"></div>
+                            <div><label class="input-label">描述文字 (加大預覽)</label><textarea v-model="data.subtitle" rows="6" class="w-full border rounded p-2 text-sm shadow-sm outline-none focus:ring-1 focus:ring-line-green"></textarea></div>
                         </div>
                     </div>
 
-                    <!-- 社群按鈕區塊 -->
+                    <!-- 社群按鈕列 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                         <div class="flex justify-between items-center">
                             <h4 class="text-sm font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-share-alt text-blue-500"></i> 社群按鈕列設定</h4>
@@ -166,29 +159,27 @@
                                 <input type="checkbox" v-model="data.social.enabled" class="accent-line-green">
                             </label>
                         </div>
-                        
                         <div v-if="data.social.enabled" class="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
                             <div v-for="(val, key) in socialTypes" :key="key" class="p-3 bg-white border rounded-xl shadow-sm flex items-center gap-3">
-                                <div :style="{ backgroundColor: val.color }" class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0">
-                                    <i :class="val.icon"></i>
-                                </div>
+                                <div :style="{ backgroundColor: val.color }" class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0"><i :class="val.icon"></i></div>
                                 <div class="flex-grow">
-                                    <label class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">{{ val.label }} 網址 / 號碼</label>
-                                    <input type="text" v-model="data.social.links[key]" class="w-full border-b text-[10px] outline-none focus:border-line-green" :placeholder="key === 'tel' ? '0912345678' : 'https://...'">
+                                    <label class="text-[9px] font-bold text-gray-400 uppercase">{{ val.label }}</label>
+                                    <input type="text" v-model="data.social.links[key]" class="w-full border-b text-[10px] outline-none" :placeholder="key === 'tel' ? '0912345678' : 'https://...'">
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- 按鈕與 Footer 配色 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                         <div class="flex justify-between items-center">
-                            <h4 class="text-sm font-bold text-gray-700">底部操作按鈕設定</h4>
+                            <h4 class="text-sm font-bold text-gray-700">底部按鈕設定</h4>
                             <div class="flex items-center gap-3 bg-white p-1 rounded-lg border border-slate-200 px-3 shadow-sm">
-                                <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Footer 背景底色</span>
+                                <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Footer 底色</span>
                                 <input type="color" v-model="data.footerBgColor">
                             </div>
                         </div>
-                        <div class="flex justify-end"><button @click="addButton" class="text-xs text-line-green font-bold hover:underline">+ 新增按鈕 (最多4個)</button></div>
+                        <div class="flex justify-end"><button @click="addButton" class="text-xs text-line-green font-bold hover:underline">+ 新增主按鈕</button></div>
                         <div class="space-y-3">
                             <div v-for="(btn, idx) in data.buttons" :key="idx" class="flex gap-3 items-center bg-white p-3 rounded-xl border group transition-all hover:border-line-green shadow-sm">
                                 <input type="color" v-model="btn.color"><input type="text" v-model="btn.label" class="w-32 border-b p-1 text-sm font-bold outline-none"><input type="text" v-model="btn.uri" class="flex-1 border-b p-1 text-[11px] text-gray-400 outline-none">
@@ -199,7 +190,7 @@
                 </div>
             </div>
 
-            <!-- 右側預覽區 -->
+            <!-- 右側預覽 -->
             <div class="w-[450px] shrink-0 chat-room-bg no-scrollbar shadow-inner">
                 <div class="flex-bubble-container">
                     <div class="flex-bubble relative animate-in zoom-in duration-300">
@@ -208,24 +199,26 @@
                             <div v-if="data.showBadge" class="flex-badge-preview" :class="data.badgeAlign === 'left' ? 'badge-left' : 'badge-right'" :style="{ backgroundColor: data.badgeColor }">{{ data.badgeText || '分享' }}</div>
                         </div>
                         <div class="p-3 text-center">
-                            <div class="text-base font-bold truncate text-gray-800">{{ data.title || '標題內容' }}</div>
-                            <div class="text-[9px] text-gray-500 mt-2 leading-relaxed whitespace-pre-wrap text-left px-2">{{ data.subtitle || '請輸入描述內容...' }}</div>
+                            <div class="text-base font-bold truncate text-gray-800">{{ data.title || '標題' }}</div>
+                            <div class="text-[9px] text-gray-500 mt-2 leading-relaxed whitespace-pre-wrap text-left px-2">{{ data.subtitle || '內容...' }}</div>
                         </div>
                         
-                        <!-- Footer 預覽 -->
                         <div :style="{ backgroundColor: data.footerBgColor, padding: '5px' }" class="space-y-2">
-                            <!-- 社群按鈕列預覽 -->
+                            <!-- 社群圖示預覽 -->
                             <div v-if="data.social.enabled && hasSocialLinks" class="flex justify-center gap-3 py-1">
                                 <template v-for="(val, key) in socialTypes">
-                                    <div v-if="data.social.links[key]" :style="{ backgroundColor: val.color }" class="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-sm text-sm">
-                                        <i :class="val.icon"></i>
+                                    <div v-if="data.social.links[key]" :style="{ backgroundColor: val.color }" class="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm text-xs">
+                                        <span v-if="key==='fb'">f</span>
+                                        <span v-else-if="key==='ig'">IG</span>
+                                        <i v-else-if="key==='tel'" class="fas fa-phone-alt scale-75"></i>
+                                        <i v-else-if="key==='web'" class="fas fa-globe scale-75"></i>
+                                        <span v-else>L</span>
                                     </div>
                                 </template>
                             </div>
-
                             <!-- 主按鈕預覽 -->
                             <div class="space-y-1">
-                                <button v-for="btn in data.buttons" class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm transition-transform active:scale-95" :style="{ backgroundColor: btn.color }">{{ btn.label || '了解更多' }}</button>
+                                <button v-for="btn in data.buttons" class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm transition-transform active:scale-95" :style="{ backgroundColor: btn.color }">{{ btn.label }}</button>
                             </div>
                         </div>
                     </div>
@@ -237,12 +230,10 @@
     <!-- 儲存彈窗 -->
     <div v-if="showSaveModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] backdrop-blur-sm">
         <div class="bg-white rounded-[32px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in duration-300">
-            <h3 class="text-2xl font-bold mb-2 text-gray-800">儲存標準版專案</h3>
+            <h3 class="text-2xl font-bold mb-6 text-gray-800">儲存專案</h3>
             <input type="text" v-model="projectName" class="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-line-green text-lg font-bold mb-10 shadow-sm" placeholder="專案名稱...">
-            <div class="flex gap-3">
-                <button @click="showSaveModal = false" class="flex-1 py-3 text-gray-400 font-bold hover:text-gray-600 transition-colors">取消</button>
-                <button @click="confirmSave" :disabled="isSaving" class="flex-[2] py-3 bg-line-green text-white rounded-2xl font-bold shadow-lg hover:brightness-110 transition-all flex items-center justify-center gap-2"><i v-if="isSaving" class="fas fa-circle-notch animate-spin"></i><span>確認儲存</span></button>
-            </div>
+            <div class="flex gap-3"><button @click="showSaveModal = false" class="flex-1 py-3 text-gray-400 font-bold">取消</button>
+            <button @click="confirmSave" :disabled="isSaving" class="flex-[2] py-3 bg-line-green text-white rounded-2xl font-bold shadow-lg hover:brightness-110 flex items-center justify-center gap-2"><i v-if="isSaving" class="fas fa-circle-notch animate-spin"></i><span>確認儲存</span></button></div>
         </div>
     </div>
 </div>
@@ -263,27 +254,19 @@ createApp({
         const toast = ref({ show: false, text: '', color: '#333' });
 
         const socialTypes = {
-            fb: { label: 'Facebook', icon: 'fab fa-facebook-f', color: '#1877F2' },
-            ig: { label: 'Instagram', icon: 'fab fa-instagram', color: '#E4405F' },
-            tel: { label: 'TEL 電話', icon: 'fas fa-phone-alt', color: '#34A853' },
-            web: { label: 'WEB 官網', icon: 'fas fa-globe', color: '#555555' },
-            line: { label: 'LINE 好友', icon: 'fab fa-line', color: '#00B900' }
+            fb: { label: 'Facebook', icon: 'fab fa-facebook-f', color: '#1877F2', symbol: 'f' },
+            ig: { label: 'Instagram', icon: 'fab fa-instagram', color: '#E4405F', symbol: 'IG' },
+            tel: { label: 'TEL 電話', icon: 'fas fa-phone-alt', color: '#34A853', symbol: '📞' },
+            web: { label: 'WEB 官網', icon: 'fas fa-globe', color: '#555555', symbol: '🌐' },
+            line: { label: 'LINE 好友', icon: 'fab fa-line', color: '#00B900', symbol: 'L' }
         };
 
         const data = ref({ 
             imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/781206b661aebf645c633e618db3960b.png', 
-            title: '標準版分頁標題', 
-            subtitle: '內容描述文字預覽大小為 xs，呈現精緻質感。本版已新增社群按鈕列支援。',
+            title: '標準版分頁標題', subtitle: '內容描述文字預覽大小為 xs。',
             showBadge: true, badgeText: '分享', badgeColor: '#FF0000', badgeUri: 'https://line.me', badgeAlign: 'right',
-            footerBgColor: '#FFFFFF',
-            social: {
-                enabled: false,
-                links: { fb: '', ig: '', tel: '', web: '', line: '' }
-            },
-            buttons: [
-                { label: '了解更多', uri: 'https://line.me', color: '#00B900' },
-                { label: '立即購買', uri: 'https://line.me', color: '#000000' }
-            ]
+            footerBgColor: '#FFFFFF', social: { enabled: false, links: { fb: '', ig: '', tel: '', web: '', line: '' } },
+            buttons: [{ label: '了解更多', uri: 'https://line.me', color: '#00B900' }, { label: '立即購買', uri: 'https://line.me', color: '#000000' }]
         });
 
         const hasSocialLinks = computed(() => Object.values(data.value.social.links).some(l => l.trim() !== ''));
@@ -291,66 +274,44 @@ createApp({
         const flexJson = computed(() => {
             const cur = data.value;
             const bodyContents = [{ type: "image", url: forceHttps(cur.imageUrl), size: "full", aspectRatio: "20:13", aspectMode: "cover", animated: true }, { type: "box", layout: "vertical", paddingAll: "5px", contents: [{ type: "text", text: cur.title || "標題", weight: "bold", size: "xl", align: "center", wrap: true }, { type: "text", text: cur.subtitle || "內容", size: "xs", margin: "sm", color: "#666666", wrap: true }] }];
-            
             if (cur.showBadge) {
-                const badge = { type: "box", layout: "vertical", position: "absolute", backgroundColor: cur.badgeColor, cornerRadius: "xl", paddingTop: "7px", paddingBottom: "7px", paddingStart: "20px", paddingEnd: "20px", offsetTop: "10px", action: { type: "uri", label: "badge", uri: forceHttps(cur.badgeUri) }, contents: [{ type: "text", text: cur.badgeText || "分享", color: "#ffffff", size: "10px", weight: "bold" }] };
-                if (cur.badgeAlign === 'left') badge.offsetStart = "10px"; else badge.offsetEnd = "10px";
-                bodyContents.push(badge);
+                const b = { type: "box", layout: "vertical", position: "absolute", backgroundColor: cur.badgeColor, cornerRadius: "xl", paddingTop: "7px", paddingBottom: "7px", paddingStart: "20px", paddingEnd: "20px", offsetTop: "10px", action: { type: "uri", label: "badge", uri: forceHttps(cur.badgeUri) }, contents: [{ type: "text", text: cur.badgeText || "分享", color: "#ffffff", size: "10px", weight: "bold" }] };
+                if (cur.badgeAlign === 'left') b.offsetStart = "10px"; else b.offsetEnd = "10px";
+                bodyContents.push(b);
             }
 
             const footerContents = [];
-            
-            // 加入社群按鈕列
             if (cur.social.enabled && hasSocialLinks.value) {
                 const socialRow = { type: "box", layout: "horizontal", spacing: "md", justifyContent: "center", margin: "sm", contents: [] };
-                
-                // 社群圖示對應 (Emoji 方案確保相容性與美觀)
-                const emojiMap = { fb: "🔵", ig: "📸", tel: "📞", web: "🌐", line: "🟢" };
-                
                 Object.keys(socialTypes).forEach(key => {
                     const link = cur.social.links[key];
                     if (link && link.trim()) {
-                        const actionUri = key === 'tel' ? `tel:${link.trim()}` : forceHttps(link);
                         socialRow.contents.push({
-                            type: "box", layout: "vertical", width: "32px", height: "32px", backgroundColor: socialTypes[key].color, 
-                            cornerRadius: "xxl", // 已依照要求將 FULL 改為 xxl
-                            alignItems: "center", justifyContent: "center",
-                            action: { type: "uri", label: key, uri: actionUri },
-                            contents: [{ type: "text", text: emojiMap[key], size: "sm", align: "center", gravity: "center" }]
+                            type: "box", layout: "vertical", width: "32px", height: "32px", backgroundColor: socialTypes[key].color, cornerRadius: "xxl", alignItems: "center", justifyContent: "center",
+                            action: { type: "uri", label: key, uri: key==='tel' ? `tel:${link.trim()}` : forceHttps(link) },
+                            contents: [{ type: "text", text: socialTypes[key].symbol, color: "#ffffff", size: "xs", weight: "bold", align: "center", gravity: "center" }]
                         });
                     }
                 });
                 footerContents.push(socialRow);
             }
+            cur.buttons.forEach(btn => { footerContents.push({ type: "button", style: "primary", color: btn.color, height: "sm", margin: "sm", action: { type: "uri", label: btn.label, uri: forceHttps(btn.uri) } }); });
 
-            // 加入主按鈕
-            cur.buttons.forEach(btn => {
-                footerContents.push({ type: "button", style: "primary", color: btn.color, height: "sm", margin: "sm", action: { type: "uri", label: btn.label || "按鈕", uri: forceHttps(btn.uri) } });
-            });
-
-            return {
-                type: "bubble", 
-                body: { type: "box", layout: "vertical", paddingAll: "0px", contents: bodyContents },
-                footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.footerBgColor, contents: footerContents }
-            };
+            return { type: "bubble", body: { type: "box", layout: "vertical", paddingAll: "0px", contents: bodyContents }, footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.footerBgColor, contents: footerContents } };
         });
 
-        const addButton = () => { if (data.value.buttons.length >= 4) return; data.value.buttons.push({ label: '新按鈕', uri: 'https://line.me', color: '#00B900' }); };
+        const addButton = () => { if (data.value.buttons.length < 4) data.value.buttons.push({ label: '新按鈕', uri: 'https://line.me', color: '#00B900' }); };
         const showToast = (text, color = '#00B900') => { toast.value = { show: true, text, color }; setTimeout(() => { toast.value.show = false; }, 3000); };
 
         const confirmSave = async () => {
             if(!projectName.value) return;
             isSaving.value = true;
             const payload = { userId: userProfile.value.userId || 'GUEST', displayName: userProfile.value.displayName || '訪客', cardId: 'ID_' + Date.now(), cardType: 'article', cardTitle: projectName.value, cardJson: JSON.stringify(flexJson.value), flexPayload: flexJson.value, 'hero.image.url': data.value.imageUrl, createdAt: new Date().toISOString() };
-            try { 
-                const res = await fetch(workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); 
-                const result = await res.json();
-                if (result.status === 'success') { showToast("儲存成功"); showSaveModal.value = false; }
-            } catch (e) { showToast("錯誤", "#ef4444"); } 
-            finally { isSaving.value = false; }
+            try { const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify(payload) }); if ((await res.json()).status === 'success') { showToast("儲存成功"); showSaveModal.value = false; } } 
+            catch (e) { showToast("錯誤", "#ef4444"); } finally { isSaving.value = false; }
         };
 
-        const handlePush = () => { if(!liff.isLoggedIn()) { liff.login(); return; } liff.shareTargetPicker([{ type: "flex", altText: data.value.title || "標準版訊息", contents: flexJson.value }]).then(res => { if(res) showToast("推播成功！"); }); };
+        const handlePush = () => { if(!liff.isLoggedIn()) { liff.login(); return; } liff.shareTargetPicker([{ type: "flex", altText: data.value.title || "標準版", contents: flexJson.value }]).then(res => { if(res) showToast("推播成功！"); }); };
         const copyJson = () => { navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)).then(() => showToast("JSON 已複製")); };
 
         onMounted(async () => { try { await liff.init({ liffId: "2008541971-Wgvz6gD8" }); if(liff.isLoggedIn()) { userProfile.value = await liff.getProfile(); isLoggedIn.value = true; } } catch (e) {} });
