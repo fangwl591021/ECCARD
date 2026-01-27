@@ -40,8 +40,10 @@
         
         .header-box { padding: 10px; display: flex; align-items: center; gap: 10px; }
         .hero-box { position: relative; background: #000; width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
-        .grid-item { padding: 10px; border-radius: 10px; text-align: center; }
+        
+        /* 預覽網格：調整為 5px 邊距與按鈕切齊 */
+        .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; }
+        .grid-item { padding: 8px; border-radius: 8px; text-align: center; }
 
         .input-label { @apply block text-[11px] font-bold text-gray-500 uppercase mb-1 ml-1 tracking-wider; }
         input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; cursor: pointer; background: none; }
@@ -143,7 +145,6 @@
                         <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> 品牌身份與 Header 配色</h4>
                         <div class="grid grid-cols-2 gap-4">
                             <div><label class="input-label">姓名/單位</label><input type="text" v-model="data.headerName" class="w-full px-4 py-2 border rounded-lg text-sm shadow-sm"></div>
-                            <!-- 已更新：字數增加到 50 字 -->
                             <div><label class="input-label">職稱/描述 (50字)</label><input type="text" v-model="data.headerDescription" maxlength="50" class="w-full px-4 py-2 border rounded-lg text-sm shadow-sm"></div>
                             <div class="col-span-2"><label class="input-label">頭像連結 (1:1 佳)</label><input type="text" v-model="data.headerImg" class="w-full px-4 py-2 border rounded-lg text-sm shadow-sm"></div>
                             <div><label class="input-label">Header 背景色</label><input type="color" v-model="data.headerBgColor" class="w-full h-10 border rounded"></div>
@@ -151,7 +152,7 @@
                         </div>
                     </div>
 
-                    <!-- 功能網格 -->
+                    <!-- 功能網格：寬度與按鈕切齊 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="text-sm font-bold text-gray-700">商務功能網格設定</h4>
@@ -165,7 +166,7 @@
                         </div>
                     </div>
 
-                    <!-- 底部按鈕：加入調色盤 -->
+                    <!-- 底部按鈕 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                         <div class="flex justify-between items-center">
                             <h4 class="text-sm font-bold text-gray-700">底部行為按鈕設定</h4>
@@ -180,7 +181,7 @@
                 </div>
             </div>
 
-            <!-- 右側：即時預覽 -->
+            <!-- 右側：即時預覽 (修正對齊) -->
             <div class="w-[450px] shrink-0 open-preview-area shadow-inner bg-slate-200/50 overflow-y-auto no-scrollbar">
                 <div class="chat-room-bg no-scrollbar">
                     <div class="flex-bubble-container animate-in zoom-in duration-300">
@@ -198,18 +199,16 @@
                                 <img :src="data.previewUrl" class="w-full h-full object-cover opacity-60">
                                 <i v-if="data.visualMode === 'video'" class="fas fa-play-circle text-white text-4xl absolute opacity-90 drop-shadow-2xl"></i>
                             </div>
-                            <!-- Grid 預覽 -->
-                            <div class="grid-box" :style="{ backgroundColor: data.headerBgColor }">
+                            <!-- Grid 預覽：調整 padding 至 5px 以對齊下方按鈕 -->
+                            <div class="grid-box" :style="{ backgroundColor: data.headerBgColor, padding: '5px !important' }">
                                 <div v-for="grid in data.gridButtons" class="grid-item shadow-md transition-transform active:scale-95" :style="{ backgroundColor: data.gridBgColor }">
-                                    <div class="text-xl mb-1">{{ grid.emoji }}</div>
+                                    <div class="text-lg mb-1">{{ grid.emoji }}</div>
                                     <div class="text-[8px] text-gray-300 font-bold uppercase truncate px-1">{{ grid.label || '選單' }}</div>
                                 </div>
                             </div>
-                            <!-- Footer 預覽 (5px 內距) -->
-                            <div class="p-3 pt-0 space-y-1.5" :style="{ backgroundColor: data.footerBgColor }">
-                                <div style="padding: 5px !important;">
-                                    <button v-for="vBtn in data.videoFooterButtons" class="w-full py-2 text-[10px] font-bold rounded shadow-md text-white transition-transform active:scale-95 mb-1.5 last:mb-0" :style="{ backgroundColor: vBtn.color }">{{ vBtn.label }}</button>
-                                </div>
+                            <!-- Footer 預覽：統一使用 5px 內距與網格切齊 -->
+                            <div class="space-y-1.5" :style="{ backgroundColor: data.footerBgColor, padding: '5px !important' }">
+                                <button v-for="vBtn in data.videoFooterButtons" class="w-full py-2 text-[10px] font-bold rounded shadow-md text-white transition-transform active:scale-95 mb-1.5 last:mb-0" :style="{ backgroundColor: vBtn.color }">{{ vBtn.label }}</button>
                             </div>
                         </div>
                     </div>
@@ -266,11 +265,11 @@ createApp({
             visualMode: 'video', 
             imageActionUrl: 'https://line.me',
             headerName: 'TONY',
-            headerDescription: '系統開發與 AI 顧問服務，提供專業的自動化解決方案。', // 預設描述變長
+            headerDescription: '系統開發與 AI 顧問服務，提供專業的自動化解決方案。',
             headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png',
             headerBgColor: '#1A1B1E',
             headerTextColor: '#D4AF37',
-            footerBgColor: '#1A1B1E', // 新增：Footer 背景色
+            footerBgColor: '#1A1B1E',
             gridBgColor: '#2A2C31',
             videoUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/mp4',
             previewUrl: 'https://voom-obs.line-scdn.net/ho1sEMNWDLB8UUD8RLAYrZjJoJzAxV3cPGT8MeBQ_J2YzD3JIGgELJDl3bm4xeSUUJy9_IhBjCiYfajYJIBEMORdaCXUceRQXDigUOQpZHg/m800x1200',
@@ -319,7 +318,7 @@ createApp({
                     }]
                 },
                 footer: {
-                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.footerBgColor, // 已應用 Footer 背景色與 5px 內距
+                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.footerBgColor,
                     contents: cur.videoFooterButtons.map(b => ({
                         type: "button", style: "primary", height: "sm", color: b.color,
                         action: { type: "uri", label: b.label || "了解更多", uri: forceHttps(b.uri) }
