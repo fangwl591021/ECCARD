@@ -33,13 +33,15 @@
         .flex-bubble-container { width: 100%; max-width: 300px; position: relative; }
         .flex-bubble { background: #FFFFFF; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
         
-        /* 標籤視覺：支援左右對齊 */
+        /* 標籤視覺：支援左右對齊與垂直置中 */
         .flex-badge-preview { 
             position: absolute; top: 10px; color: white; 
-            padding: 5px 20px 3px 20px; border-radius: 30px; 
+            /* 修正：paddingTop 7px, paddingBottom 7px 達成置中 */
+            padding: 7px 20px 7px 20px; border-radius: 30px; 
             font-size: 11px; font-weight: bold; z-index: 20; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
-            display: inline-block; white-space: nowrap; width: auto;
+            display: flex; align-items: center; justify-content: center;
+            white-space: nowrap; width: auto; line-height: 1;
         }
         .badge-right { right: 10px; }
         .badge-left { left: 10px; }
@@ -295,7 +297,9 @@ createApp({
             if (data.value.showBadge) {
                 const badgeBox = {
                     type: "box", layout: "vertical", position: "absolute", backgroundColor: data.value.badgeColor,
-                    cornerRadius: "xl", paddingTop: "5px", paddingBottom: "3px", paddingStart: "20px", paddingEnd: "20px",
+                    cornerRadius: "xl", 
+                    /* 修正：paddingTop 與 paddingBottom 改成 7px 以置中 */
+                    paddingTop: "7px", paddingBottom: "7px", paddingStart: "20px", paddingEnd: "20px",
                     offsetTop: "10px",
                     action: { type: "uri", label: "badge", uri: forceHttps(data.value.badgeUri) },
                     contents: [{ type: "text", text: data.value.badgeText || "分享", color: "#ffffff", size: "10px", weight: "bold" }]
