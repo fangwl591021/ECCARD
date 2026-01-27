@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>混合多頁管理 - Mixer Pro</title>
+    <title>LINEOA CMS - 標準版</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -29,13 +29,11 @@
         .w-collapsed { width: 80px; }
         
         .sidebar-item-active { background-color: #374151; color: white; border-left: 4px solid #00B900; }
-        .chat-room-bg { background-color: #7988a0; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 40px 10px; }
+        .chat-room-bg { background-color: #8c9bad; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 60px 20px; }
+        .flex-bubble-container { width: 100%; max-width: 300px; position: relative; }
+        .flex-bubble { background: #FFFFFF; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
         
-        /* 預覽容器 */
-        .carousel-preview-container { display: flex; gap: 15px; padding: 20px; width: 100%; overflow-x: auto; scroll-snap-type: x mandatory; }
-        .preview-bubble { flex: 0 0 280px; scroll-snap-align: center; background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; position: relative; min-height: 480px; }
-        
-        /* 標籤視覺：支援置中與 7px Padding */
+        /* 標籤視覺：支援左右對齊與垂直置中 */
         .flex-badge-preview { 
             position: absolute; top: 10px; color: white; 
             padding: 7px 20px 7px 20px; border-radius: 30px; 
@@ -46,61 +44,70 @@
         }
         .badge-right { right: 10px; }
         .badge-left { left: 10px; }
-
-        .header-box { padding: 10px; display: flex; align-items: center; gap: 8px; }
-        .hero-box { position: relative; background: #000; width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         
-        /* 預覽網格：5px 邊距以對齊按鈕 */
-        .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; }
-        .grid-item { padding: 8px; border-radius: 8px; text-align: center; }
-
         .input-label { @apply block text-[11px] font-bold text-gray-500 uppercase mb-1 ml-1 tracking-wider; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
         input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; cursor: pointer; background: none; }
         input[type="color"]::-webkit-color-swatch { border-radius: 4px; border: 1px solid #ddd; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
+
+        /* 自訂訊息框 */
+        .toast-msg { position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 12px 24px; border-radius: 12px; background: #333; color: white; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div id="app" class="flex h-screen overflow-hidden text-gray-800">
+    <!-- 提示訊息 -->
+    <div v-if="toast.show" class="toast-msg" :style="{ backgroundColor: toast.color }">{{ toast.text }}</div>
+
     <!-- 側邊欄 -->
     <aside :class="isSidebarCollapsed ? 'w-collapsed' : 'w-expanded'" class="sidebar-container text-gray-400 shadow-2xl">
         <div class="h-16 flex items-center border-b border-gray-700 shrink-0 overflow-hidden" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
             <i class="fab fa-line text-3xl line-green"></i>
-            <span v-if="!isSidebarCollapsed" class="ml-4 text-white font-bold uppercase font-mono tracking-tighter sidebar-link-text">Mixer Pro</span>
+            <span v-if="!isSidebarCollapsed" class="ml-4 text-white font-bold uppercase font-mono tracking-tighter sidebar-link-text">LINEOA CMS</span>
         </div>
-        <nav class="mt-6 flex-grow overflow-y-auto no-scrollbar whitespace-nowrap">
-            <a href="index.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
+        
+        <nav class="mt-6 flex-grow overflow-y-auto no-scrollbar">
+            <div class="sidebar-item-active flex items-center py-4 transition-all" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
                 <i class="fas fa-file-alt w-8 text-center text-lg"></i>
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">標準版插件開發</span>
-            </a>
+            </div>
+            
             <a href="card.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
                 <i class="fas fa-id-card w-8 text-center text-lg"></i>
-                <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">商務型名片開發</span>
+                <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">商務版名片開發</span>
             </a>
+            
             <a href="ec.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
                 <i class="fas fa-shopping-cart w-8 text-center text-lg"></i>
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">電商插件開發</span>
             </a>
-            <div class="sidebar-item-active flex items-center py-4 transition-all" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
+            
+            <a href="mix.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
                 <i class="fas fa-clone w-8 text-center text-lg"></i>
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">混合多頁開發</span>
-            </div>
+            </a>
+            
             <a href="project.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400 mt-4 border-t border-gray-800" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
                 <i class="fas fa-box w-8 text-center text-lg"></i>
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">專案管理系統</span>
             </a>
         </nav>
-        <button @click="isSidebarCollapsed = !isSidebarCollapsed" class="p-4 w-full flex items-center border-t border-gray-700 hover:text-white transition-colors bg-gray-900/30" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
+
+        <button @click="isSidebarCollapsed = !isSidebarCollapsed" 
+            class="p-4 w-full flex items-center border-t border-gray-700 hover:text-white transition-colors bg-gray-900/30"
+            :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
             <i class="fas" :class="isSidebarCollapsed ? 'fa-indent text-xl' : 'fa-outdent text-lg'"></i>
             <span v-if="!isSidebarCollapsed" class="ml-3 text-xs font-bold uppercase tracking-widest">收合選單</span>
         </button>
     </aside>
 
-    <main class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#f8fafc]">
+    <main class="flex-grow flex flex-col h-full bg-[#f8fafc] overflow-hidden">
         <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
-            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">多頁混合開發管理 <span class="px-2 py-0.5 bg-green-100 text-green-600 text-[10px] rounded uppercase font-bold tracking-widest">Mixer Pro</span></h2>
+            <h2 class="text-xl font-bold text-gray-800">標準版插件開發</h2>
             <div class="flex items-center gap-4">
                 <div v-if="isLoggedIn" class="flex items-center gap-2 px-3 py-1 bg-green-50 rounded-full border border-green-100">
                     <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
@@ -112,245 +119,135 @@
                 <button @click="copyJson" class="px-5 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2 transition-all">
                     <i class="fas fa-copy"></i> 複製 JSON
                 </button>
-                <button @click="pushMix" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all">
-                    <i class="fas fa-paper-plane"></i> 🚀 多頁推播
+                <button @click="handlePush" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all">
+                    <i class="fas fa-paper-plane"></i> 直接推播
                 </button>
             </div>
         </header>
 
         <div class="flex-grow flex overflow-hidden">
-            <!-- 左側編輯器 -->
+            <!-- 編輯器 -->
             <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
                 <div class="max-w-4xl mx-auto space-y-8 pb-20">
-                    <!-- altText 設定 -->
-                    <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 mb-8 shadow-sm">
-                        <label class="input-label text-blue-800">聊天室通知文字 (altText)</label>
-                        <input type="text" v-model="carousel.altText" class="w-full px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-200 shadow-sm">
+                    <!-- 基本圖文設定 -->
+                    <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
+                        <label class="input-label">主圖連結 (支援動畫圖片)</label>
+                        <input type="text" v-model="data.imageUrl" class="w-full border rounded p-2 text-sm shadow-sm focus:ring-1 focus:ring-line-green outline-none mb-4">
+                        
+                        <!-- 分享標籤管理 -->
+                        <div class="bg-white/50 p-4 rounded-xl border border-dashed space-y-4 mb-4">
+                            <div class="flex justify-between items-center">
+                                <label class="text-xs font-bold text-gray-600 flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" v-model="data.showBadge" class="accent-line-green"> 顯示分享標籤
+                                </label>
+                                <div v-if="data.showBadge" class="flex bg-slate-100 p-0.5 rounded-lg border">
+                                    <button @click="data.badgeAlign = 'left'" :class="data.badgeAlign === 'left' ? 'bg-white text-line-green shadow-sm' : 'text-gray-400'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all">靠左</button>
+                                    <button @click="data.badgeAlign = 'right'" :class="data.badgeAlign === 'right' ? 'bg-white text-line-green shadow-sm' : 'text-gray-400'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all">靠右</button>
+                                </div>
+                            </div>
+                            
+                            <div v-if="data.showBadge" class="grid grid-cols-2 gap-3 pl-6 animate-in fade-in duration-200">
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold block mb-1 uppercase tracking-tighter">標籤文字</label>
+                                    <input type="text" v-model="data.badgeText" maxlength="10" class="w-full border rounded p-1.5 text-xs shadow-sm outline-none" placeholder="分享">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold block mb-1 uppercase tracking-tighter">標籤顏色</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="color" v-model="data.badgeColor" class="w-full">
+                                        <span class="text-[10px] font-mono text-gray-400">{{data.badgeColor}}</span>
+                                    </div>
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-[10px] text-gray-400 font-bold block mb-1 uppercase tracking-tighter">點擊連結 (HTTPS)</label>
+                                    <input type="text" v-model="data.badgeUri" class="w-full border rounded p-1.5 text-[10px] shadow-sm outline-none" placeholder="https://...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 修正：標題與描述分行顯示，並加大編輯區 -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="input-label">標題內容 (限30字)</label>
+                                <input type="text" v-model="data.title" maxlength="30" class="w-full border rounded p-2 text-sm font-bold shadow-sm focus:ring-1 focus:ring-line-green outline-none">
+                            </div>
+                            
+                            <div>
+                                <label class="input-label">描述文字 (xs 字級預覽)</label>
+                                <textarea v-model="data.subtitle" rows="6" class="w-full border rounded p-2 text-sm shadow-sm focus:ring-1 focus:ring-line-green outline-none" placeholder="請輸入訊息內容..."></textarea>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- 分頁標籤導航 -->
-                    <div class="flex items-center gap-2 mb-8 overflow-x-auto pb-4 no-scrollbar border-b">
-                        <div v-for="(bubble, index) in carousel.bubbles" :key="bubble.id" class="relative group shrink-0 flex flex-col items-center gap-1">
-                            <button @click="activeIndex = index" :class="activeIndex === index ? 'bg-line-green text-white shadow-md' : 'bg-gray-100 text-gray-500'" class="w-32 py-2 rounded-xl text-xs font-bold truncate px-3 transition-all">{{ index + 1 }}. {{ getTypeName(bubble.type) }}</button>
-                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button @click.stop="moveLeft(index)" v-if="index > 0" class="w-5 h-5 bg-white border rounded text-[8px] shadow-sm"><i class="fas fa-chevron-left"></i></button>
-                                <button @click.stop="removeBubble(index)" v-if="carousel.bubbles.length > 1" class="w-5 h-5 bg-red-100 text-red-500 border border-red-200 rounded text-[8px] shadow-sm"><i class="fas fa-trash"></i></button>
-                                <button @click.stop="moveRight(index)" v-if="index < carousel.bubbles.length - 1" class="w-5 h-5 bg-white border rounded text-[8px] shadow-sm"><i class="fas fa-chevron-right"></i></button>
-                            </div>
-                        </div>
-                        <button @click="showAddModal = true" class="w-10 h-10 border-2 border-dashed border-gray-300 rounded-xl hover:border-line-green hover:text-line-green transition-all shrink-0 self-start shadow-sm"><i class="fas fa-plus"></i></button>
-                    </div>
-
-                    <!-- 模組編輯區域 -->
-                    <div v-if="activeBubble" class="space-y-8 animate-in fade-in duration-300">
-                        <div class="flex items-center justify-between border-b pb-4">
-                            <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2"><i :class="getTypeIcon(activeBubble.type)" class="text-line-green"></i> 分頁 {{ activeIndex + 1 }}：{{ getTypeName(activeBubble.type) }}</h3>
-                            <!-- 統一 Footer 調色盤 -->
-                            <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase">Footer 底色</span><input type="color" v-model="activeBubble.footerBgColor"></div>
-                        </div>
-
-                        <!-- 1. 標準版型模組編輯 -->
-                        <div v-if="activeBubble.type === 'standard'" class="space-y-6">
-                            <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
-                                <div><label class="input-label">主圖連結</label><input type="text" v-model="activeBubble.imageUrl" class="w-full px-4 py-2 border rounded-xl text-sm shadow-sm focus:ring-1 focus:ring-line-green"></div>
-                                
-                                <div class="bg-white/50 p-4 rounded-lg border border-dashed space-y-4">
-                                    <div class="flex justify-between items-center">
-                                        <label class="text-xs font-bold text-gray-600 flex items-center gap-2 cursor-pointer"><input type="checkbox" v-model="activeBubble.showBadge" class="accent-line-green"> 顯示分享標籤</label>
-                                        <div v-if="activeBubble.showBadge" class="flex bg-slate-100 p-0.5 rounded-md border text-[9px] font-bold">
-                                            <button @click="activeBubble.badgeAlign = 'left'" :class="activeBubble.badgeAlign==='left'?'bg-white text-line-green shadow-sm':'text-gray-400'" class="px-3 py-1 rounded">靠左</button>
-                                            <button @click="activeBubble.badgeAlign = 'right'" :class="activeBubble.badgeAlign==='right'?'bg-white text-line-green shadow-sm':'text-gray-400'" class="px-3 py-1 rounded">靠右</button>
-                                        </div>
-                                    </div>
-                                    <div v-if="activeBubble.showBadge" class="grid grid-cols-2 gap-3 pl-6">
-                                        <input type="text" v-model="activeBubble.badgeText" maxlength="10" class="border rounded p-1.5 text-xs shadow-sm" placeholder="文字">
-                                        <input type="color" v-model="activeBubble.badgeColor" class="w-full h-8">
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div><label class="input-label">標題內容 (限30字)</label><input type="text" v-model="activeBubble.title" maxlength="30" class="w-full px-4 py-2 border rounded-xl text-sm font-bold shadow-sm"></div>
-                                    <div><label class="input-label">描述文字 (xs 字級)</label><input type="text" v-model="activeBubble.subtitle" class="w-full px-4 py-2 border rounded-xl text-sm shadow-sm"></div>
-                                </div>
+                    <!-- 按鈕管理 -->
+                    <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-sm font-bold text-gray-700">底部操作按鈕設定</h4>
+                            <div class="flex items-center gap-3 bg-white p-1 rounded-lg border border-slate-200 px-3 shadow-sm">
+                                <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Footer 背景底色</span>
+                                <input type="color" v-model="data.footerBgColor">
                             </div>
                         </div>
 
-                        <!-- 2. 商務型名片模組編輯 -->
-                        <div v-if="activeBubble.type === 'card'" class="space-y-6">
-                            <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-6">
-                                <h4 class="text-sm font-bold text-gray-700 flex items-center gap-2"><i class="fas fa-id-card text-line-green"></i> 品牌身份與 Header 配色</h4>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div><label class="input-label">姓名/單位</label><input type="text" v-model="activeBubble.headerName" maxlength="30" class="w-full border rounded p-2 text-sm shadow-sm"></div>
-                                    <div><label class="input-label">職稱/描述 (50字)</label><input type="text" v-model="activeBubble.headerDescription" maxlength="50" class="w-full border rounded p-2 text-sm shadow-sm"></div>
-                                    <div class="col-span-2"><label class="input-label">頭像網址</label><input type="text" v-model="activeBubble.headerImg" class="w-full border rounded p-2 text-sm shadow-sm"></div>
-                                    <div><label class="input-label">Header 背景色</label><input type="color" v-model="activeBubble.headerBgColor" class="w-full"></div>
-                                    <div><label class="input-label">Header 文字顏色</label><input type="color" v-model="activeBubble.headerTextColor" class="w-full"></div>
-                                    <div class="col-span-2 pt-2 border-t"><label class="input-label">主圖片網址 (形象展示)</label><input type="text" v-model="activeBubble.imageUrl" class="w-full border rounded p-2 text-sm"></div>
-                                </div>
-                            </div>
-                            <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                                <div class="flex justify-between items-center mb-4"><h4 class="text-sm font-bold text-gray-700">商務功能網格</h4><input type="color" v-model="activeBubble.gridBgColor"></div>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div v-for="(grid, idx) in activeBubble.gridButtons" :key="idx" class="p-3 bg-white border rounded-xl space-y-2 shadow-sm">
-                                        <div class="flex gap-2"><input type="text" v-model="grid.emoji" class="w-8 border rounded text-xs text-center"><input type="text" v-model="grid.label" class="flex-1 border rounded p-1 text-xs"></div>
-                                        <input type="text" v-model="grid.uri" class="w-full border rounded p-1 text-[10px]" placeholder="HTTPS 連結">
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="flex justify-end">
+                            <button @click="addButton" class="text-xs text-line-green font-bold hover:underline">+ 新增按鈕 (最多4個)</button>
                         </div>
 
-                        <!-- 3. 電商商城型編輯 -->
-                        <div v-if="activeBubble.type === 'ecommerce'" class="space-y-6">
-                            <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
-                                <h4 class="text-sm font-bold">電商商品與說明設定</h4>
-                                <div class="bg-white/50 p-4 rounded-xl border border-dashed mb-4">
-                                    <label class="flex items-center gap-2 cursor-pointer mb-3"><input type="checkbox" v-model="activeBubble.showText" class="accent-line-green"><span class="text-xs font-bold text-gray-600">顯示內文說明區塊</span></label>
-                                    <div v-if="activeBubble.showText" class="space-y-3 animate-in fade-in">
-                                        <input type="text" v-model="activeBubble.bodyTitle" class="w-full border rounded p-1.5 text-sm" placeholder="說明標題 (xl)">
-                                        <textarea v-model="activeBubble.bodySubtitle" rows="2" class="w-full border rounded p-1.5 text-xs" placeholder="詳細描述 (xs)"></textarea>
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4 border-b pb-4">
-                                    <div><label class="input-label">頂部 Hero 圖片</label><input type="text" v-model="activeBubble.imageUrl" class="w-full border rounded p-2 text-xs shadow-sm"></div>
-                                    <div><label class="input-label">網格底色</label><input type="color" v-model="activeBubble.bgColor" class="w-full h-8"></div>
-                                </div>
-                                <div class="pt-4 flex justify-between items-center">
-                                    <label class="input-label mb-0 uppercase">商品清單管理 (預設3項)</label>
-                                    <button @click.stop="activeBubble.items.push({title:'新商品',img:'https://lihi.cc/mwMvo',url:'https://line.me'})" class="text-xs text-line-green font-bold hover:underline">+ 新增</button>
-                                </div>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div v-for="(item, idx) in activeBubble.items" :key="idx" class="p-3 bg-white border rounded-xl flex items-center gap-3 relative shadow-sm group">
-                                        <img :src="item.img" class="w-10 h-10 rounded border object-cover">
-                                        <div class="flex-1">
-                                            <input v-model="item.title" class="w-full text-xs font-bold border-b mb-1" placeholder="品名">
-                                            <input v-model="item.url" class="w-full text-[9px] text-gray-400" placeholder="連結">
-                                        </div>
-                                        <button @click.stop="activeBubble.items.splice(idx,1)" class="text-red-400 absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-trash-alt"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 底部按鈕管理 (所有分頁共用邏輯) -->
-                        <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                            <div class="flex justify-between items-center mb-4">
-                                <h4 class="text-sm font-bold text-gray-700">分頁底部按鈕 (全寬排列)</h4>
-                                <button @click.stop="activeBubble.buttons.push({label:'按鈕',uri:'https://line.me',color:'#00B900'})" class="text-xs text-line-green font-bold hover:underline">+ 新增按鈕</button>
-                            </div>
-                            <div class="space-y-3">
-                                <div v-for="(btn, idx) in activeBubble.buttons" :key="idx" class="flex gap-3 items-center bg-white p-4 rounded-xl border shadow-sm group hover:border-line-green transition-all">
-                                    <input type="color" v-model="btn.color" class="shrink-0">
-                                    <input type="text" v-model="btn.label" maxlength="30" class="w-32 border-b p-1 text-sm font-bold" placeholder="文字">
-                                    <input type="text" v-model="btn.uri" class="flex-1 border-b p-1 text-sm text-gray-400" placeholder="HTTPS 連結">
-                                    <button @click.stop="activeBubble.buttons.splice(idx,1)" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>
-                                </div>
+                        <div class="space-y-3">
+                            <div v-for="(btn, idx) in data.buttons" :key="idx" class="flex gap-3 items-center bg-white p-3 rounded-xl border group transition-all hover:border-line-green shadow-sm">
+                                <input type="color" v-model="btn.color" title="顏色">
+                                <input type="text" v-model="btn.label" class="w-32 border-b p-1 text-sm font-bold outline-none" placeholder="按鈕文字">
+                                <input type="text" v-model="btn.uri" class="flex-1 border-b p-1 text-[11px] text-gray-400 outline-none" placeholder="https://...">
+                                <button @click="data.buttons.splice(idx, 1)" class="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 右側預覽 -->
-            <div class="w-[420px] shrink-0 bg-slate-100 relative flex flex-col shadow-inner overflow-hidden">
-                <div class="chat-room-bg no-scrollbar">
-                    <div class="carousel-preview-container no-scrollbar">
-                        <div v-for="bubble in carousel.bubbles" :key="bubble.id" class="preview-bubble animate-in zoom-in duration-300">
-                            <!-- 1. 標準版預覽 -->
-                            <template v-if="bubble.type === 'standard'">
-                                <div class="relative w-full shrink-0 overflow-hidden">
-                                    <img :src="bubble.imageUrl" class="w-full aspect-[20/13] object-cover" onerror="this.src='https://lihi.cc/mwMvo'">
-                                    <div v-if="bubble.showBadge" class="flex-badge-preview" :class="bubble.badgeAlign==='left'?'badge-left':'badge-right'" :style="{ backgroundColor: bubble.badgeColor }">{{ bubble.badgeText || '分享' }}</div>
-                                </div>
-                                <div class="p-3 text-center">
-                                    <div class="text-base font-bold truncate mt-1">{{ bubble.title || '最新焦點' }}</div>
-                                    <div class="text-[10px] text-gray-500 mt-2 h-12 overflow-hidden leading-tight whitespace-pre-wrap">{{ bubble.subtitle || '內容描述文字...' }}</div>
-                                </div>
-                            </template>
-
-                            <!-- 2. 商務型預覽 -->
-                            <template v-else-if="bubble.type === 'card'">
-                                <div class="header-box shadow-sm" :style="{ backgroundColor: bubble.headerBgColor }">
-                                    <img :src="bubble.headerImg" class="w-10 h-10 rounded-full object-cover border border-white/20">
-                                    <div class="flex flex-col overflow-hidden">
-                                        <span class="text-[11px] font-bold truncate" :style="{ color: bubble.headerTextColor }">{{ bubble.headerName || '姓名' }}</span>
-                                        <span class="text-[8px] leading-tight truncate" :style="{ color: bubble.headerTextColor, opacity: 0.8 }">{{ bubble.headerDescription || '敘述' }}</span>
-                                    </div>
-                                </div>
-                                <img :src="bubble.imageUrl" class="w-full aspect-video object-cover shrink-0">
-                                <div class="grid-box flex-grow" :style="{ backgroundColor: bubble.headerBgColor, padding: '5px !important' }">
-                                    <div v-for="grid in bubble.gridButtons" class="grid-item text-[8px] text-gray-300 shadow-sm flex flex-col items-center justify-center transition-all" :style="{ backgroundColor: bubble.gridBgColor }">
-                                        <div class="text-lg">{{grid.emoji}}</div><div class="truncate w-full uppercase font-bold">{{grid.label}}</div>
-                                    </div>
-                                </div>
-                            </template>
-
-                            <!-- 3. 電商型預覽 -->
-                            <template v-else-if="bubble.type === 'ecommerce'">
-                                <img :src="bubble.imageUrl" class="w-full aspect-video object-cover shrink-0">
-                                <div v-if="bubble.showText" class="p-2 text-center border-b" :style="{ backgroundColor: bubble.bgColor }">
-                                    <div class="text-sm font-bold truncate">{{ bubble.bodyTitle }}</div>
-                                    <div class="text-[8px] text-gray-400">{{ bubble.bodySubtitle }}</div>
-                                </div>
-                                <div class="p-[5px] flex-grow" :style="{ backgroundColor: bubble.bgColor }">
-                                    <div class="grid grid-cols-3 gap-[5px]">
-                                        <div v-for="item in bubble.items" class="bg-white rounded-sm overflow-hidden shadow-sm flex flex-col">
-                                            <img :src="item.img" class="w-full aspect-square object-cover">
-                                            <div class="bg-black text-white text-[5px] font-bold py-0.5 text-center truncate px-0.5">{{item.title}}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                            
-                            <!-- Footer 固定 5px Padding，邊界切齊 -->
-                            <div class="space-y-1 mt-auto" :style="{ backgroundColor: bubble.footerBgColor, padding: '5px !important' }">
-                                <button v-for="btn in bubble.buttons" :style="{ backgroundColor: btn.color }" class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm transition-all active:scale-95">{{ btn.label || '查看詳情' }}</button>
+            <!-- 右側預覽區 -->
+            <div class="w-[450px] shrink-0 chat-room-bg no-scrollbar shadow-inner">
+                <div class="flex-bubble-container">
+                    <div class="flex-bubble relative animate-in zoom-in duration-300">
+                        <div class="relative w-full overflow-hidden">
+                            <img :src="data.imageUrl" class="w-full aspect-[20/13] object-cover" onerror="this.src='https://lihi.cc/mwMvo'">
+                            <div v-if="data.showBadge" 
+                                class="flex-badge-preview" 
+                                :class="data.badgeAlign === 'left' ? 'badge-left' : 'badge-right'"
+                                :style="{ backgroundColor: data.badgeColor }">
+                                {{ data.badgeText || '分享' }}
                             </div>
+                        </div>
+                        <div class="p-3 text-center">
+                            <div class="text-base font-bold truncate text-gray-800">{{ data.title || '標題內容' }}</div>
+                            <div class="text-[9px] text-gray-500 mt-2 leading-relaxed whitespace-pre-wrap">{{ data.subtitle || '請輸入描述內容...' }}</div>
+                        </div>
+                        <div class="p-[5px] pt-0 space-y-1">
+                            <button v-for="btn in data.buttons" 
+                                class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm transition-transform active:scale-95"
+                                :style="{ backgroundColor: btn.color }">
+                                {{ btn.label || '了解更多' }}
+                            </button>
                         </div>
                     </div>
                 </div>
-                <div class="bg-slate-800 text-white text-[9px] py-1.5 text-center font-bold tracking-widest uppercase opacity-90">Carousel Simulation Area</div>
             </div>
         </div>
     </main>
 
-    <!-- 版型選擇彈窗 (列表式) -->
-    <div v-if="showAddModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] backdrop-blur-sm animate-in fade-in duration-200">
-        <div class="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl">
-            <h3 class="text-xl font-bold mb-6 text-center text-gray-800 tracking-tighter">新增分頁模組</h3>
-            <div class="grid grid-cols-1 gap-3">
-                <button @click="addNewBubble('standard')" class="p-4 border-2 rounded-2xl hover:border-line-green hover:bg-green-50 text-left transition-all flex items-center gap-4 group">
-                    <i class="fas fa-file-alt text-2xl text-gray-400 group-hover:text-line-green"></i>
-                    <div class="font-bold text-gray-700">標準圖文版型</div>
-                </button>
-                <button @click="addNewBubble('card')" class="p-4 border-2 rounded-2xl hover:border-line-green hover:bg-green-50 text-left transition-all flex items-center gap-4 group">
-                    <i class="fas fa-id-card text-2xl text-gray-400 group-hover:text-line-green"></i>
-                    <div class="font-bold text-gray-700">商務型名片版型</div>
-                </button>
-                <button @click="addNewBubble('ecommerce')" class="p-4 border-2 rounded-2xl hover:border-line-green hover:bg-green-50 text-left transition-all flex items-center gap-4 group">
-                    <i class="fas fa-shopping-cart text-2xl text-gray-400 group-hover:text-line-green"></i>
-                    <div class="font-bold text-gray-700">電商商品網格版型</div>
-                </button>
-            </div>
-            <button @click="showAddModal = false" class="w-full mt-8 py-2 text-gray-400 font-bold hover:text-gray-600 text-xs tracking-widest uppercase">取消</button>
-        </div>
-    </div>
-
-    <!-- 儲存專案彈窗 -->
+    <!-- 儲存彈窗 -->
     <div v-if="showSaveModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] backdrop-blur-sm">
         <div class="bg-white rounded-[32px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in duration-300">
-            <h3 class="text-2xl font-bold mb-2 text-gray-800 tracking-tighter text-center">儲存混合多頁專案</h3>
-            <p class="text-xs text-gray-400 mb-8 font-medium text-center">資料將寫入雲端 cards 工作表 (mix)</p>
-            <div class="space-y-6">
-                <div>
-                    <label class="input-label">專案標題 (cardTitle)</label>
-                    <input type="text" v-model="projectName" class="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-line-green text-lg font-bold shadow-sm" placeholder="例如：新春活動合輯">
-                </div>
-            </div>
-            <div class="flex gap-3 mt-10">
+            <h3 class="text-2xl font-bold mb-2 text-gray-800">儲存標準版專案</h3>
+            <p class="text-xs text-gray-400 mb-8">儲存後可於專案管理系統再次編輯</p>
+            <input type="text" v-model="projectName" class="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-line-green text-lg font-bold mb-10 shadow-sm" placeholder="專案名稱...">
+            <div class="flex gap-3">
                 <button @click="showSaveModal = false" class="flex-1 py-3 text-gray-400 font-bold hover:text-gray-600 transition-colors">取消</button>
                 <button @click="confirmSave" :disabled="isSaving" class="flex-[2] py-3 bg-line-green text-white rounded-2xl font-bold shadow-lg hover:brightness-110 transition-all flex items-center justify-center gap-2">
                     <i v-if="isSaving" class="fas fa-circle-notch animate-spin"></i>
-                    <span>確認儲存</span>
+                    <span>{{ isSaving ? '處理中...' : '確認儲存' }}</span>
                 </button>
             </div>
         </div>
@@ -368,124 +265,157 @@ const forceHttps = (u) => {
     return (url.startsWith("https://") || url.startsWith("line://")) ? url : "https://" + url; 
 };
 
-const cleanJson = (obj) => JSON.parse(JSON.stringify(obj));
-
 createApp({
     setup() {
         const isSidebarCollapsed = ref(false);
-        const activeIndex = ref(0);
-        const showAddModal = ref(false);
-        const showSaveModal = ref(false);
-        const isSaving = ref(false);
-        const projectName = ref('');
-        const isLoggedIn = ref(false);
+        const isLoggedIn = ref(false); 
         const userProfile = ref({ userId: '', displayName: '', pictureUrl: '' });
+        const showSaveModal = ref(false); 
+        const isSaving = ref(false); 
+        const projectName = ref('');
+        const toast = ref({ show: false, text: '', color: '#333' });
 
-        const carousel = ref({ 
-            altText: '精選多頁推薦', 
-            bubbles: [{ 
-                id: Date.now(), 
-                type: 'standard', 
-                imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/781206b661aebf645c633e618db3960b.png', 
-                title: '標準版分頁標題', 
-                subtitle: '描述文字大小已設定為 xs，呈現精緻質感。分享標籤已置中。', 
-                showBadge: true, badgeText: '分享', badgeColor: '#FF0000', badgeAlign: 'right', badgeUri: 'https://line.me',
-                footerBgColor: '#FFFFFF',
-                buttons: [
-                    { label: '了解更多', uri: 'https://line.me', color: '#00B900' },
-                    { label: '立即購買', uri: 'https://line.me', color: '#000000' }
-                ] 
-            }] 
-        });
-
-        const activeBubble = computed(() => carousel.value.bubbles[activeIndex.value] || null);
-        
-        const addNewBubble = (type) => {
-            if (carousel.value.bubbles.length >= 10) { alert("上限 10 個分頁"); return; }
-            const b = { id: Date.now(), type, footerBgColor: '#FFFFFF', buttons: [{ label: '查看詳情', uri: 'https://line.me', color: '#00B900' }] };
-            
-            if (type === 'standard') {
-                Object.assign(b, { imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/781206b661aebf645c633e618db3960b.png', title: '新標準分頁', subtitle: '內容描述...', showBadge: true, badgeText: 'HOT', badgeColor: '#FF0000', badgeAlign: 'right', buttons: [{ label: '了解更多', uri: 'https://line.me', color: '#00B900' },{ label: '立即購買', uri: 'https://line.me', color: '#000000' }] });
-            } else if (type === 'card') {
-                Object.assign(b, { imageUrl: 'https://lihi.cc/mwMvo', headerName: '商務精英', headerDescription: '專業顧問服務，提供領先業界的解決方案', headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png', headerBgColor: '#1A1B1E', headerTextColor: '#D4AF37', gridBgColor: '#2A2C31', gridButtons: [{emoji:'🤖',label:'AI',uri:'https://line.me'},{emoji:'🎥',label:'影',uri:'https://line.me'},{emoji:'🧾',label:'單',uri:'https://line.me'},{emoji:'📍',label:'圖',uri:'https://line.me'}] });
-            } else if (type === 'ecommerce') {
-                Object.assign(b, { imageUrl: 'https://lihi.cc/5OXMZ', bgColor: '#F8F8F8', columns: 3, showText: false, bodyTitle: '本月特選', bodySubtitle: '限時優惠中', items: [{ title: '商品A', img: 'https://lihi.cc/mwMvo', url: 'https://line.me' }, { title: '商品B', img: 'https://lihi.cc/2Nu8G', url: 'https://line.me' }, { title: '商品C', img: 'https://lihi.cc/mwMvo', url: 'https://line.me' }] });
-            }
-            
-            carousel.value.bubbles.push(b);
-            activeIndex.value = carousel.value.bubbles.length - 1;
-            showAddModal.value = false;
+        const showToast = (text, color = '#00B900') => {
+            toast.value = { show: true, text, color };
+            setTimeout(() => { toast.value.show = false; }, 3000);
         };
-
-        const fullFlexJson = computed(() => {
-            const contents = carousel.value.bubbles.map(b => {
-                const bubble = { type: "bubble", size: "mega" };
-                
-                if (b.type === 'standard') {
-                    const bodyContents = [
-                        { type: "image", url: forceHttps(b.imageUrl), size: "full", aspectRatio: "20:13", aspectMode: "cover" },
-                        { type: "box", layout: "vertical", paddingAll: "5px", contents: [
-                            { type: "text", text: b.title || "標題", weight: "bold", size: "xl", align: "center", wrap: true },
-                            { type: "text", text: b.subtitle || "描述", size: "xs", margin: "sm", color: "#666666", wrap: true }
-                        ]}
-                    ];
-                    if (b.showBadge) {
-                        const badge = { type: "box", layout: "vertical", position: "absolute", backgroundColor: b.badgeColor, cornerRadius: "xl", paddingTop: "7px", paddingBottom: "7px", paddingStart: "20px", paddingEnd: "20px", offsetTop: "10px", action: { type: "uri", label: "badge", uri: forceHttps(b.badgeUri) }, contents: [{ type: "text", text: b.badgeText || "分享", color: "#ffffff", size: "10px", weight: "bold" }] };
-                        if (b.badgeAlign === 'left') badge.offsetStart = "10px"; else badge.offsetEnd = "10px";
-                        bodyContents.push(badge);
-                    }
-                    bubble.body = { type: "box", layout: "vertical", paddingAll: "0px", contents: bodyContents };
-                } else if (b.type === 'card') {
-                    bubble.header = { type: "box", layout: "horizontal", paddingAll: "8px", backgroundColor: b.headerBgColor, contents: [{ type: "image", url: forceHttps(b.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", flex: 3, margin: "md", contents: [{ type: "text", text: b.headerName || "姓名", weight: "bold", color: b.headerTextColor, size: "lg" }, { type: "text", text: b.headerDescription || "敘述", size: "xs", color: b.headerTextColor, wrap: true }] }] };
-                    bubble.hero = { type: "image", url: forceHttps(b.imageUrl), size: "full", aspectRatio: "16:9", aspectMode: "cover" };
-                    bubble.body = { type: "box", layout: "vertical", backgroundColor: b.headerBgColor, paddingAll: "5px", contents: [
-                        { type: "box", layout: "horizontal", spacing: "sm", contents: b.gridButtons.slice(0, 2).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: b.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "選單", size: "sm", align: "center", color: "#E6E6E6" }] })) },
-                        { type: "box", layout: "horizontal", spacing: "sm", margin: "sm", contents: b.gridButtons.slice(2, 4).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: b.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "選單", size: "sm", align: "center", color: "#E6E6E6" }] })) }
-                    ]};
-                } else if (b.type === 'ecommerce') {
-                    bubble.hero = { type: "image", url: forceHttps(b.imageUrl), size: "full", aspectRatio: "16:9", aspectMode: "cover" };
-                    const bodyRows = [];
-                    if (b.showText) {
-                        if (b.bodyTitle) bodyRows.push({ type: "text", text: b.bodyTitle, weight: "bold", size: "xl", align: "center", margin: "md" });
-                        if (b.bodySubtitle) bodyRows.push({ type: "text", text: b.bodySubtitle, size: "xs", align: "center", color: "#666666", wrap: true, margin: "xs" });
-                    }
-                    const cols = 3;
-                    for (let i = 0; i < (b.items || []).length; i += cols) {
-                        const chunk = b.items.slice(i, i + cols);
-                        const rowBox = { type: "box", layout: "horizontal", spacing: "sm", margin: i === 0 && !b.showText ? "none" : "md", contents: [] };
-                        chunk.forEach(item => {
-                            rowBox.contents.push({ type: "box", layout: "vertical", flex: 1, contents: [{ type: "image", url: forceHttps(item.img), aspectRatio: "1:1", aspectMode: "cover", size: "full" }, { type: "box", layout: "vertical", backgroundColor: "#000000", paddingAll: "xs", contents: [{ type: "text", text: item.title, color: "#FFFFFF", size: "xxs", align: "center", weight: "bold", wrap: true }] }], action: { type: "uri", label: "item", uri: forceHttps(item.url) } });
-                        });
-                        while (rowBox.contents.length < cols) rowBox.contents.push({ type: "box", layout: "vertical", flex: 1, contents: [] });
-                        bodyRows.push(rowBox);
-                    }
-                    bubble.body = { type: "box", layout: "vertical", paddingAll: "5px", backgroundColor: b.bgColor || "#F8F8F8", contents: bodyRows };
-                }
-                bubble.footer = { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: b.footerBgColor || "#FFFFFF", contents: b.buttons.map(btn => ({ type: "button", style: "primary", height: "sm", color: btn.color, action: { type: "uri", label: btn.label || "按鈕", uri: forceHttps(btn.uri) } })) };
-                return bubble;
-            });
-            return { type: "carousel", contents: contents };
+        
+        const data = ref({ 
+            imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/781206b661aebf645c633e618db3960b.png', 
+            title: '標準版插件標題', 
+            subtitle: '描述文字大小已設定為 xs，呈現精緻質感。分享標籤已置中。',
+            showBadge: true,
+            badgeText: '分享',
+            badgeColor: '#FF0000',
+            badgeUri: 'https://line.me',
+            badgeAlign: 'right',
+            footerBgColor: '#FFFFFF',
+            buttons: [
+                { label: '了解更多', uri: 'https://line.me', color: '#00B900' },
+                { label: '立即購買', uri: 'https://line.me', color: '#000000' }
+            ]
         });
+
+        const flexJson = computed(() => {
+            const bodyContents = [
+                { 
+                    type: "image", 
+                    url: forceHttps(data.value.imageUrl), 
+                    size: "full", 
+                    aspectRatio: "20:13", 
+                    aspectMode: "cover",
+                    animated: true 
+                }, 
+                { 
+                    type: "box", layout: "vertical", paddingAll: "5px", 
+                    contents: [
+                        { type: "text", text: data.value.title || "標題", weight: "bold", size: "xl", align: "center", wrap: true }, 
+                        { type: "text", text: data.value.subtitle || "內容", size: "xs", margin: "sm", color: "#666666", wrap: true }
+                    ] 
+                }
+            ];
+
+            if (data.value.showBadge) {
+                const badgeBox = {
+                    type: "box", layout: "vertical", position: "absolute", backgroundColor: data.value.badgeColor,
+                    cornerRadius: "xl", 
+                    paddingTop: "7px", paddingBottom: "7px", paddingStart: "20px", paddingEnd: "20px",
+                    offsetTop: "10px",
+                    action: { type: "uri", label: "badge", uri: forceHttps(data.value.badgeUri) },
+                    contents: [{ type: "text", text: data.value.badgeText || "分享", color: "#ffffff", size: "10px", weight: "bold" }]
+                };
+                if (data.value.badgeAlign === 'left') badgeBox.offsetStart = "10px"; else badgeBox.offsetEnd = "10px";
+                bodyContents.push(badgeBox);
+            }
+
+            return {
+                type: "bubble", 
+                body: { type: "box", layout: "vertical", paddingAll: "0px", contents: bodyContents },
+                footer: {
+                    type: "box", 
+                    layout: "vertical", 
+                    spacing: "sm", 
+                    paddingAll: "5px",
+                    backgroundColor: data.value.footerBgColor,
+                    contents: data.value.buttons.map(btn => ({
+                        type: "button", style: "primary", color: btn.color, height: "sm",
+                        action: { type: "uri", label: btn.label || "按鈕", uri: forceHttps(btn.uri) }
+                    }))
+                }
+            };
+        });
+
+        const addButton = () => {
+            if (data.value.buttons.length >= 4) { showToast("標準版最多支援 4 個按鈕", "#ef4444"); return; }
+            data.value.buttons.push({ label: '新按鈕', uri: 'https://line.me', color: '#00B900' });
+        };
 
         const confirmSave = async () => {
-            if(!projectName.value) { alert("請輸入專案名稱"); return; }
+            if(!projectName.value) { showToast("請輸入專案名稱", "#ef4444"); return; }
             isSaving.value = true;
-            const payload = { userId: userProfile.value.userId || 'GUEST', displayName: userProfile.value.displayName || '訪客', cardId: 'ID_' + Date.now(), cardType: 'mix', cardTitle: projectName.value, cardJson: JSON.stringify(fullFlexJson.value), flexPayload: fullFlexJson.value, createdAt: new Date().toISOString() };
+            const payload = { 
+                userId: userProfile.value.userId || 'GUEST', 
+                displayName: userProfile.value.displayName || '訪客',
+                cardId: 'ID_' + Date.now(),
+                cardType: 'article', 
+                cardTitle: projectName.value, 
+                cardJson: JSON.stringify(flexJson.value),
+                flexPayload: flexJson.value,
+                'hero.image.url': data.value.imageUrl,
+                'header.subtitle': data.value.title,
+                'header.description': data.value.subtitle,
+                'header.bgColor': data.value.footerBgColor,
+                createdAt: new Date().toISOString()
+            };
             try { 
-                const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify(payload) }); 
+                const res = await fetch(workerUrl, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload) 
+                }); 
                 const result = await res.json();
-                if (result.status === 'success') { alert("混合多頁專案已儲存成功"); showSaveModal.value = false; }
-            } catch (e) { alert("連線失敗"); } finally { isSaving.value = false; }
+                if (result.status === 'success') {
+                    showToast("標準版專案已儲存成功"); 
+                    showSaveModal.value = false;
+                    projectName.value = '';
+                } else {
+                    showToast("儲存失敗: " + result.message, "#ef4444");
+                }
+            } catch (e) { showToast("連線異常", "#ef4444"); } 
+            finally { isSaving.value = false; }
         };
 
-        const pushMix = () => { 
+        const handlePush = () => { 
             if(!liff.isLoggedIn()) { liff.login(); return; } 
-            liff.shareTargetPicker([{ type: "flex", altText: carousel.value.altText || "精選推薦", contents: fullFlexJson.value }]).then(res => { if(res) alert("推播發送成功！"); }); 
+            liff.shareTargetPicker([{ type: "flex", altText: data.value.title || "標準版訊息", contents: flexJson.value }])
+            .then(res => { if(res) showToast("推播成功發送！"); }); 
         };
 
-        onMounted(() => { liff.init({ liffId: "2008541971-Wgvz6gD8" }).then(() => { if(liff.isLoggedIn()) liff.getProfile().then(p => { userProfile.value = p; isLoggedIn.value = true; }); }); });
+        const copyJson = () => { 
+            const raw = JSON.stringify(flexJson.value, null, 2);
+            const el = document.createElement('textarea');
+            el.value = raw;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            showToast("JSON 代碼已複製");
+        };
 
-        return { isSidebarCollapsed, carousel, activeIndex, activeBubble, showAddModal, addNewBubble, removeBubble: (idx) => { if(carousel.value.bubbles.length > 1) { carousel.value.bubbles.splice(idx, 1); if(activeIndex.value >= carousel.value.bubbles.length) activeIndex.value = carousel.value.bubbles.length - 1; }}, pushMix, copyJson: () => { navigator.clipboard.writeText(JSON.stringify(fullFlexJson.value, null, 2)); alert("JSON 已複製"); }, showSaveModal, projectName, isSaving, confirmSave, isLoggedIn, userProfile, moveLeft: (idx) => { const b = carousel.value.bubbles.splice(idx, 1)[0]; carousel.value.bubbles.splice(idx-1, 0, b); activeIndex.value = idx-1; }, moveRight: (idx) => { const b = carousel.value.bubbles.splice(idx, 1)[0]; carousel.value.bubbles.splice(idx+1, 0, b); activeIndex.value = idx+1; }, getTypeName: (t) => ({'standard':'標準版型','card':'商務型名片','ecommerce':'電商商城型'}[t]), getTypeIcon: (t) => ({'standard':'fa-file-alt','card':'fa-id-card','ecommerce':'fa-shopping-cart'}[t]) };
+        onMounted(async () => { 
+            try {
+                await liff.init({ liffId: "2008541971-Wgvz6gD8" }); 
+                if(liff.isLoggedIn()) {
+                    userProfile.value = await liff.getProfile();
+                    isLoggedIn.value = true;
+                }
+            } catch (e) {}
+        });
+
+        return { 
+            isSidebarCollapsed, data, flexJson, showSaveModal, projectName, isSaving, 
+            confirmSave, handlePush, isLoggedIn, userProfile, addButton, toast, copyJson
+        };
     }
 }).mount('#app');
 </script>
