@@ -153,6 +153,32 @@
                             </div>
                         </div>
 
+                        <!-- 3. 電商型編輯 (Ecommerce) -->
+                        <div v-if="editState.cardType === 'ecommerce'" class="space-y-6 animate-in fade-in">
+                            <div class="bg-white p-6 rounded-2xl border shadow-sm space-y-4">
+                                <h4 class="text-sm font-bold text-gray-700">電商頂部視覺 Hero</h4>
+                                <input type="text" v-model="editState.params.imageUrl" class="w-full border rounded-lg p-2 text-sm" placeholder="頂部 Hero 圖片網址">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div><label class="input-label">商品背景底色</label><input type="color" v-model="editState.params.bodyBgColor" class="w-full h-8 border rounded shadow-sm"></div>
+                                    <div><label class="input-label">每欄顯示數量</label><select v-model="editState.params.columns" class="w-full border rounded p-1 text-sm"><option :value="3">3 欄</option><option :value="4">4 欄</option></select></div>
+                                </div>
+                            </div>
+                            <!-- 商品管理區 -->
+                            <div class="bg-white p-6 rounded-2xl border shadow-sm space-y-4">
+                                <div class="flex justify-between items-center"><h4 class="text-sm font-bold text-gray-700">商品列表管理</h4><button @click="addEcomItem" class="text-xs text-line-green font-bold hover:underline">+ 新增商品</button></div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div v-for="(item, idx) in editState.params.items" :key="idx" class="p-3 bg-slate-50 border rounded-xl flex items-center gap-3 relative group">
+                                        <img :src="item.img" class="w-10 h-10 rounded border object-cover shadow-sm">
+                                        <div class="flex-1">
+                                            <input v-model="item.title" class="w-full text-xs font-bold border-b bg-transparent mb-1" placeholder="商品名稱">
+                                            <input v-model="item.url" class="w-full text-[9px] text-gray-400 bg-transparent" placeholder="點擊連結">
+                                        </div>
+                                        <button @click="editState.params.items.splice(idx,1)" class="text-red-300 absolute top-1 right-1 opacity-0 group-hover:opacity-100"><i class="fas fa-times-circle"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- 共同欄位：底部按鈕 -->
                         <div class="bg-white p-6 rounded-2xl border shadow-sm">
                             <h4 class="text-sm font-bold mb-4 flex justify-between items-center text-gray-700"><span>底部功能按鈕 (Footer)</span><button @click="addButton" class="text-xs text-line-green font-bold hover:underline">+ 新增</button></h4>
@@ -210,6 +236,25 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 預覽：電商型 -->
+                    <div v-if="editState.cardType === 'ecommerce'" class="flex-bubble animate-in zoom-in duration-300">
+                        <img :src="editState.params.imageUrl" class="w-full aspect-video object-cover shrink-0 shadow-sm">
+                        <div class="p-[5px] flex-grow" :style="{ backgroundColor: editState.params.bodyBgColor }">
+                            <div class="flex flex-col gap-[5px]">
+                                <div v-for="(row, rIdx) in chunkedItems" :key="rIdx" class="flex gap-[5px]">
+                                    <div v-for="(item, iIdx) in row" :key="iIdx" class="flex-1 bg-white rounded-sm overflow-hidden flex flex-col shadow-sm">
+                                        <img :src="item.img" class="w-full aspect-square object-cover">
+                                        <div class="bg-black py-1 px-1 text-center truncate text-[6px] text-white font-bold">{{item.title}}</div>
+                                    </div>
+                                    <div v-for="n in (editState.params.columns - row.length)" :key="n" class="flex-1 opacity-0"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-1.5 bg-white border-t flex gap-2" style="padding: 5px !important;">
+                            <button v-for="btn in editState.params.buttons" class="flex-1 py-1.5 text-white text-[10px] font-bold rounded shadow-sm" :style="{ backgroundColor: btn.color }">{{ btn.label }}</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mt-auto bg-black/10 text-white/30 text-[9px] py-4 text-center w-full uppercase tracking-tighter">Synchronized with GAS & Sheet API</div>
@@ -238,7 +283,17 @@ createApp({
         const projects = ref([]);
         const selectedProject = ref(null);
         
-        const editState = ref({ cardId: '', cardTitle: '', cardType: '', params: {} });
+        const editState = ref({ cardId: '', cardTitle: '', cardType: '', params: { items: [], buttons: [] } });
+
+        const chunkedItems = computed(() => {
+            if (!editState.value.params.items) return [];
+            const size = editState.value.params.columns || 3;
+            const res = [];
+            for (let i = 0; i < editState.value.params.items.length; i += size) {
+                res.push(editState.value.params.items.slice(i, i + size));
+            }
+            return res;
+        });
 
         const fetchProjects = async () => {
             loading.value = true;
@@ -252,13 +307,9 @@ createApp({
             finally { loading.value = false; }
         };
 
-        // 修正：增加 String() 強制轉型，防止數字標題報錯
         const filteredProjects = computed(() => {
             const query = String(searchQuery.value).toLowerCase();
-            return projects.value.filter(p => {
-                const title = String(p.cardTitle || "").toLowerCase();
-                return title.includes(query);
-            });
+            return projects.value.filter(p => String(p.cardTitle || "").toLowerCase().includes(query));
         });
 
         const formatDate = (d) => {
@@ -268,10 +319,9 @@ createApp({
 
         const loadProject = (p) => {
             selectedProject.value = p;
-            let params = {};
+            let params = { items: [], buttons: [] };
             const rawJson = typeof p.cardJson === 'string' ? JSON.parse(p.cardJson) : p.cardJson;
             
-            // 修正：所有的 cardTitle 和其他文字欄位都應視為可能為數字
             const projectTitle = String(p.cardTitle || "");
 
             if (p.cardType === 'article') {
@@ -280,11 +330,7 @@ createApp({
                     title: p['header.subtitle'] || projectTitle,
                     subtitle: p['header.description'] || '',
                     showBadge: true, badgeText: 'HOT', badgeColor: '#FF0000',
-                    buttons: rawJson.footer?.contents?.map(c => ({ 
-                        label: String(c.action.label || ""), 
-                        uri: c.action.uri, 
-                        color: c.color 
-                    })) || []
+                    buttons: rawJson.footer?.contents?.map(c => ({ label: String(c.action.label || ""), uri: c.action.uri, color: c.color })) || []
                 };
             } else if (p.cardType === 'card') {
                 const bodyBox = rawJson.body?.contents?.[0];
@@ -305,27 +351,38 @@ createApp({
                     visualMode: p['hero.mode'] || 'video',
                     previewUrl: p['hero.image.url'] || '',
                     videoUrl: p['hero.video.url'] || '',
-                    gridBgColor: p['gridBgColor'] || '#2A2C31',
-                    gridButtons: grids.length >= 4 ? grids : [
-                        {emoji:'🤖',label:'AI',uri:'https://line.me'},
-                        {emoji:'🎥',label:'影',uri:'https://line.me'},
-                        {emoji:'🧾',label:'單',uri:'https://line.me'},
-                        {emoji:'📍',label:'圖',uri:'https://line.me'}
-                    ],
-                    buttons: (rawJson.footer?.contents || []).map(c => ({ 
-                        label: String(c.action.label || ""), 
-                        uri: c.action.uri, 
-                        color: c.color 
-                    }))
+                    gridBgColor: '#2A2C31',
+                    gridButtons: grids.length >= 4 ? grids : [{emoji:'🤖',label:'AI',uri:'https://line.me'},{emoji:'🎥',label:'影',uri:'https://line.me'},{emoji:'🧾',label:'單',uri:'https://line.me'},{emoji:'📍',label:'圖',uri:'https://line.me'}],
+                    buttons: (rawJson.footer?.contents || []).map(c => ({ label: String(c.action.label || ""), uri: c.action.uri, color: c.color }))
+                };
+            } else if (p.cardType === 'ecommerce') {
+                // 修正：從 Flex JSON 中還原商品項目
+                const items = [];
+                const bodyContents = rawJson.body?.contents || [];
+                bodyContents.forEach(row => {
+                    if (row.type === 'box' && row.layout === 'horizontal') {
+                        row.contents.forEach(itemBox => {
+                            if (itemBox.contents && itemBox.contents.length > 0) {
+                                items.push({
+                                    img: itemBox.contents[0].url,
+                                    title: itemBox.contents[1].contents[0].text,
+                                    url: itemBox.action.uri
+                                });
+                            }
+                        });
+                    }
+                });
+
+                params = {
+                    imageUrl: p['hero.image.url'] || '',
+                    bodyBgColor: rawJson.body?.backgroundColor || '#F8F8F8',
+                    columns: bodyContents[0]?.contents?.length || 3,
+                    items: items,
+                    buttons: rawJson.footer?.contents?.[0]?.contents?.map(c => ({ label: c.action.label, uri: c.action.uri, color: c.color })) || []
                 };
             }
             
-            editState.value = { 
-                cardId: p.cardId, 
-                cardTitle: projectTitle, 
-                cardType: p.cardType, 
-                params: JSON.parse(JSON.stringify(params)) 
-            };
+            editState.value = { cardId: p.cardId, cardTitle: projectTitle, cardType: p.cardType, params: JSON.parse(JSON.stringify(params)) };
         };
 
         const updateProject = async () => {
@@ -353,6 +410,8 @@ createApp({
                 payload['hero.mode'] = s.params.visualMode;
                 payload['hero.video.url'] = s.params.videoUrl;
                 payload['hero.image.url'] = s.params.previewUrl;
+            } else if (s.cardType === 'ecommerce') {
+                payload['hero.image.url'] = s.params.imageUrl;
             } else {
                 payload['header.subtitle'] = s.params.title;
                 payload['header.description'] = s.params.subtitle;
@@ -363,7 +422,7 @@ createApp({
                 const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify(payload) });
                 const result = await res.json();
                 if (result.status === 'success') {
-                    alert("雲端資料已覆蓋更新成功！");
+                    alert("雲端更新成功！");
                     await fetchProjects();
                 } else { throw new Error(result.message); }
             } catch (e) { alert("更新失敗：" + e.message); }
@@ -382,6 +441,11 @@ createApp({
             editState.value.params.buttons.push({ label: '了解更多', uri: 'https://line.me', color: '#00B900' });
         };
 
+        const addEcomItem = () => {
+            if(!editState.value.params.items) editState.value.params.items = [];
+            editState.value.params.items.push({ title: '新商品', img: 'https://lihi.cc/mwMvo', url: 'https://line.me' });
+        };
+
         const generateFlex = (s) => {
             const cur = s.params;
             if (s.cardType === 'article') {
@@ -398,41 +462,52 @@ createApp({
                     footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", contents: cur.buttons.map(b => ({ type: "button", style: "primary", color: b.color, height: "sm", action: { type: "uri", label: b.label, uri: forceHttps(b.uri) } })) }
                 };
             } else if (s.cardType === 'card') {
-                const bubble = {
+                return {
                     type: "bubble", size: "mega",
                     header: { type: "box", layout: "horizontal", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "image", url: forceHttps(cur.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover" }, { type: "box", layout: "vertical", margin: "md", flex: 3, contents: [{ type: "text", text: cur.headerName || "姓名", weight: "bold", color: cur.headerTextColor }, { type: "text", text: cur.headerDescription || "描述", size: "xs", color: cur.headerTextColor, wrap: true }] }] },
+                    hero: cur.visualMode === 'video' ? { type: "video", url: forceHttps(cur.videoUrl), previewUrl: forceHttps(cur.previewUrl), aspectRatio: "16:9", altContent: { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectMode: "cover" } } : { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectRatio: "16:9", aspectMode: "cover" },
                     body: { type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "box", layout: "vertical", spacing: "sm", contents: [{ type: "box", layout: "horizontal", spacing: "sm", contents: cur.gridButtons.slice(0, 2).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label, uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji, align: "center", size: "xl" }, { type: "text", text: g.label, size: "sm", align: "center", color: "#E6E6E6" }] })) }, { type: "box", layout: "horizontal", spacing: "sm", contents: cur.gridButtons.slice(2, 4).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label, uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji, align: "center", size: "xl" }, { type: "text", text: g.label, size: "sm", align: "center", color: "#E6E6E6" }] })) }] }] },
                     footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: (cur.buttons||[]).map(b => ({ type: "button", style: "primary", height: "sm", color: b.color, action: { type: "uri", label: b.label, uri: forceHttps(b.uri) } })) }
                 };
-                if (cur.visualMode === 'video') bubble.hero = { type: "video", url: forceHttps(cur.videoUrl), previewUrl: forceHttps(cur.previewUrl), aspectRatio: "16:9", altContent: { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectMode: "cover" } };
-                else bubble.hero = { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectRatio: "16:9", aspectMode: "cover", action: { type: "uri", label: "hero", uri: "https://line.me" } };
-                return bubble;
+            } else if (s.cardType === 'ecommerce') {
+                const rows = []; const cols = cur.columns || 3;
+                for (let i = 0; i < cur.items.length; i += cols) {
+                    const chunk = cur.items.slice(i, i + cols);
+                    const rowBox = { type: "box", layout: "horizontal", spacing: "sm", margin: i === 0 ? "none" : "sm", contents: [] };
+                    chunk.forEach(item => {
+                        rowBox.contents.push({
+                            type: "box", layout: "vertical", flex: 1, contents: [
+                                { type: "image", url: forceHttps(item.img), aspectRatio: "1:1", aspectMode: "cover", size: "full" },
+                                { type: "box", layout: "vertical", backgroundColor: "#000000", paddingAll: "xs", contents: [{ type: "text", text: item.title, color: "#FFFFFF", size: "xxs", align: "center", weight: "bold", wrap: true }] }
+                            ],
+                            action: { type: "uri", label: item.title, uri: forceHttps(item.url) }
+                        });
+                    });
+                    while (rowBox.contents.length < cols) { rowBox.contents.push({ type: "box", layout: "vertical", flex: 1, contents: [] }); }
+                    rows.push(rowBox);
+                }
+                return {
+                    type: "bubble", size: "mega",
+                    hero: { type: "image", url: forceHttps(cur.imageUrl), size: "full", aspectRatio: "16:9", aspectMode: "cover" },
+                    body: { type: "box", layout: "vertical", paddingAll: "5px", backgroundColor: cur.bodyBgColor, contents: rows },
+                    footer: { type: "box", layout: "vertical", paddingAll: "5px", contents: [{ type: "box", layout: "horizontal", spacing: "md", contents: cur.buttons.map(b => ({ type: "button", style: "primary", height: "sm", color: b.color, action: { type: "uri", label: b.label, uri: forceHttps(b.uri) } })) }] }
+                };
             }
             return { type: "bubble", body: { type: "text", text: "暫不支援預覽" } };
         };
 
         const deleteProject = async (p) => {
-            if (!confirm(`確定從雲端資料庫徹底刪除「${p.cardTitle}」？`)) return;
+            if (!confirm(`確定徹底刪除「${p.cardTitle}」？`)) return;
             try {
                 const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify({ action: 'delete', cardId: p.cardId }) });
                 const result = await res.json();
-                if (result.status === 'success') {
-                    fetchProjects();
-                    selectedProject.value = null;
-                }
+                if (result.status === 'success') { fetchProjects(); selectedProject.value = null; }
             } catch (e) { alert("刪除失敗"); }
         };
 
-        onMounted(() => { 
-            liff.init({ liffId: "2008541971-Wgvz6gD8" });
-            fetchProjects(); 
-        });
+        onMounted(() => { liff.init({ liffId: "2008541971-Wgvz6gD8" }); fetchProjects(); });
 
-        return { 
-            loading, projects, filteredProjects, searchQuery, selectedProject, editState, formatDate,
-            loadProject, updateProject, pushProject, addButton, isSaving, deleteProject,
-            getTypeBadgeClass: (t) => ({ 'article':'bg-blue-100 text-blue-600', 'card':'bg-purple-100 text-purple-600', 'ecommerce':'bg-orange-100 text-orange-600' }[t])
-        };
+        return { loading, projects, filteredProjects, searchQuery, selectedProject, editState, formatDate, loadProject, updateProject, pushProject, addButton, addEcomItem, isSaving, deleteProject, chunkedItems, getTypeBadgeClass: (t) => ({ 'article':'bg-blue-100 text-blue-600', 'card':'bg-purple-100 text-purple-600', 'ecommerce':'bg-orange-100 text-orange-600' }[t]) };
     }
 }).mount('#app');
 </script>
