@@ -32,12 +32,24 @@
         .chat-room-bg { background-color: #8c9bad; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 60px 20px; }
         .flex-bubble-container { width: 100%; max-width: 300px; position: relative; }
         .flex-bubble { background: #FFFFFF; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
-        .flex-badge-preview { position: absolute; top: 10px; right: 10px; color: white; padding: 5px 20px 3px 20px; border-radius: 30px; font-size: 11px; font-weight: bold; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: inline-block; white-space: nowrap; width: auto; }
+        
+        /* 標籤視覺優化：支援左右對齊 */
+        .flex-badge-preview { 
+            position: absolute; top: 10px; color: white; 
+            padding: 5px 20px 3px 20px; border-radius: 30px; 
+            font-size: 11px; font-weight: bold; z-index: 20; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
+            display: inline-block; white-space: nowrap; width: auto;
+        }
+        .badge-right { right: 10px; }
+        .badge-left { left: 10px; }
+        
         .input-label { @apply block text-[11px] font-bold text-gray-500 uppercase mb-1 ml-1 tracking-wider; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
         .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
         input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; cursor: pointer; background: none; }
+        input[type="color"]::-webkit-color-swatch { border-radius: 4px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
@@ -77,7 +89,6 @@
             </a>
         </nav>
 
-        <!-- 收合切換按鈕 -->
         <button @click="isSidebarCollapsed = !isSidebarCollapsed" 
             class="p-4 w-full flex items-center border-t border-gray-700 hover:text-white transition-colors bg-gray-900/30"
             :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
@@ -107,7 +118,7 @@
         </header>
 
         <div class="flex-grow flex overflow-hidden">
-            <!-- 編輯器邏輯 -->
+            <!-- 編輯器區塊 -->
             <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
                 <div class="max-w-4xl mx-auto space-y-8 pb-20">
                     <!-- 基本設定 -->
@@ -115,6 +126,37 @@
                         <label class="input-label">主圖連結</label>
                         <input type="text" v-model="data.imageUrl" class="w-full border rounded p-2 text-sm shadow-sm focus:ring-1 focus:ring-line-green outline-none">
                         
+                        <!-- 分享標籤管理：新增左右設定 -->
+                        <div class="bg-white/50 p-4 rounded-xl border border-dashed space-y-4">
+                            <div class="flex justify-between items-center">
+                                <label class="text-xs font-bold text-gray-600 flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" v-model="data.showBadge" class="accent-line-green"> 顯示分享標籤
+                                </label>
+                                <div v-if="data.showBadge" class="flex bg-slate-100 p-0.5 rounded-lg border">
+                                    <button @click="data.badgeAlign = 'left'" :class="data.badgeAlign === 'left' ? 'bg-white text-line-green shadow-sm' : 'text-gray-400'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all">靠左</button>
+                                    <button @click="data.badgeAlign = 'right'" :class="data.badgeAlign === 'right' ? 'bg-white text-line-green shadow-sm' : 'text-gray-400'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all">靠右</button>
+                                </div>
+                            </div>
+                            
+                            <div v-if="data.showBadge" class="grid grid-cols-2 gap-3 pl-6 animate-in fade-in duration-200">
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold block mb-1 uppercase">標籤文字</label>
+                                    <input type="text" v-model="data.badgeText" maxlength="10" class="w-full border rounded p-1.5 text-xs shadow-sm outline-none" placeholder="分享">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-400 font-bold block mb-1 uppercase">標籤底色</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="color" v-model="data.badgeColor" class="w-full">
+                                        <span class="text-[10px] font-mono text-gray-400">{{data.badgeColor}}</span>
+                                    </div>
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-[10px] text-gray-400 font-bold block mb-1 uppercase">點擊連結 (選填)</label>
+                                    <input type="text" v-model="data.badgeUri" class="w-full border rounded p-1.5 text-[10px] shadow-sm outline-none" placeholder="https://...">
+                                </div>
+                            </div>
+                        </div>
+
                         <label class="input-label">標題內容 (限30字)</label>
                         <input type="text" v-model="data.title" maxlength="30" class="w-full border rounded p-2 text-sm font-bold shadow-sm focus:ring-1 focus:ring-line-green outline-none">
                         
@@ -122,7 +164,7 @@
                         <textarea v-model="data.subtitle" rows="4" class="w-full border rounded p-2 text-sm shadow-sm focus:ring-1 focus:ring-line-green outline-none" placeholder="請輸入訊息內容..."></textarea>
                     </div>
 
-                    <!-- 按鈕管理：補回新增按鈕功能 -->
+                    <!-- 按鈕管理 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="text-sm font-bold text-gray-700">底部操作按鈕</h4>
@@ -145,13 +187,22 @@
             <!-- 預覽區 -->
             <div class="w-[450px] shrink-0 chat-room-bg no-scrollbar shadow-inner">
                 <div class="flex-bubble-container">
-                    <div class="flex-bubble">
-                        <img :src="data.imageUrl" class="w-full aspect-[20/13] object-cover" onerror="this.src='https://lihi.cc/mwMvo'">
+                    <div class="flex-bubble relative">
+                        <div class="relative w-full overflow-hidden">
+                            <img :src="data.imageUrl" class="w-full aspect-[20/13] object-cover" onerror="this.src='https://lihi.cc/mwMvo'">
+                            <!-- 預覽標籤視覺：支援靠左靠右 -->
+                            <div v-if="data.showBadge" 
+                                class="flex-badge-preview" 
+                                :class="data.badgeAlign === 'left' ? 'badge-left' : 'badge-right'"
+                                :style="{ backgroundColor: data.badgeColor }">
+                                {{ data.badgeText || '分享' }}
+                            </div>
+                        </div>
                         <div class="p-3 text-center">
                             <div class="text-base font-bold truncate text-gray-800">{{ data.title || '標題內容' }}</div>
                             <div class="text-[9px] text-gray-500 mt-2 leading-relaxed whitespace-pre-wrap">{{ data.subtitle || '請輸入描述內容...' }}</div>
                         </div>
-                        <!-- 預覽按鈕清單 -->
+                        <!-- 按鈕清單 -->
                         <div class="p-1.5 pt-0 space-y-1">
                             <button v-for="btn in data.buttons" 
                                 class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm transition-transform active:scale-95"
@@ -202,39 +253,63 @@ createApp({
         const isSaving = ref(false); 
         const projectName = ref('');
         
-        // 初始資料更新為最新圖片連結
         const data = ref({ 
             imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/186e0b95c2db2349fc96d76e66be1bc5.png', 
             title: '標準版插件標題', 
             subtitle: '這是一段描述文字的範例內容，顯示大小已調整為 xs。您可以點擊下方按鈕進行操作。',
+            showBadge: true,
+            badgeText: '分享',
+            badgeColor: '#FF0000',
+            badgeUri: 'https://line.me',
+            badgeAlign: 'right', // 預設靠右
             buttons: [
                 { label: '了解更多', uri: 'https://line.me', color: '#00B900' }
             ]
         });
 
-        const flexJson = computed(() => ({
-            type: "bubble", 
-            body: { 
-                type: "box", layout: "vertical", paddingAll: "0px", 
-                contents: [
-                    { type: "image", url: forceHttps(data.value.imageUrl), size: "full", aspectRatio: "20:13", aspectMode: "cover" }, 
-                    { 
-                        type: "box", layout: "vertical", paddingAll: "5px", 
-                        contents: [
-                            { type: "text", text: data.value.title || "標題", weight: "bold", size: "xl", align: "center", wrap: true }, 
-                            { type: "text", text: data.value.subtitle || "內容", size: "xs", margin: "sm", color: "#666666", wrap: true }
-                        ] 
-                    }
-                ] 
-            },
-            footer: {
-                type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px",
-                contents: data.value.buttons.map(btn => ({
-                    type: "button", style: "primary", color: btn.color, height: "sm",
-                    action: { type: "uri", label: btn.label || "了解更多", uri: forceHttps(btn.uri) }
-                }))
+        const flexJson = computed(() => {
+            const bodyContents = [
+                { type: "image", url: forceHttps(data.value.imageUrl), size: "full", aspectRatio: "20:13", aspectMode: "cover" }, 
+                { 
+                    type: "box", layout: "vertical", paddingAll: "5px", 
+                    contents: [
+                        { type: "text", text: data.value.title || "標題", weight: "bold", size: "xl", align: "center", wrap: true }, 
+                        { type: "text", text: data.value.subtitle || "內容", size: "xs", margin: "sm", color: "#666666", wrap: true }
+                    ] 
+                }
+            ];
+
+            if (data.value.showBadge) {
+                const badgeBox = {
+                    type: "box", layout: "vertical", position: "absolute", backgroundColor: data.value.badgeColor,
+                    cornerRadius: "xl", paddingTop: "5px", paddingBottom: "3px", paddingStart: "20px", paddingEnd: "20px",
+                    offsetTop: "10px",
+                    action: { type: "uri", label: "badge", uri: forceHttps(data.value.badgeUri) },
+                    contents: [{ type: "text", text: data.value.badgeText || "分享", color: "#ffffff", size: "10px", weight: "bold" }]
+                };
+                
+                // 根據對齊設定屬性
+                if (data.value.badgeAlign === 'left') {
+                    badgeBox.offsetStart = "10px";
+                } else {
+                    badgeBox.offsetEnd = "10px";
+                }
+                
+                bodyContents.push(badgeBox);
             }
-        }));
+
+            return {
+                type: "bubble", 
+                body: { type: "box", layout: "vertical", paddingAll: "0px", contents: bodyContents },
+                footer: {
+                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px",
+                    contents: data.value.buttons.map(btn => ({
+                        type: "button", style: "primary", color: btn.color, height: "sm",
+                        action: { type: "uri", label: btn.label || "按鈕", uri: forceHttps(btn.uri) }
+                    }))
+                }
+            };
+        });
 
         const addButton = () => {
             if (data.value.buttons.length >= 4) {
@@ -277,7 +352,7 @@ createApp({
 
         const handlePush = () => { 
             if(!liff.isLoggedIn()) { liff.login(); return; } 
-            liff.shareTargetPicker([{ type: "flex", altText: data.value.title || "精選訊息", contents: flexJson.value }])
+            liff.shareTargetPicker([{ type: "flex", altText: data.value.title || "標準版訊息", contents: flexJson.value }])
             .then(res => { if(res) alert("推播成功發送！"); }); 
         };
 
