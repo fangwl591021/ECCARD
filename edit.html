@@ -161,7 +161,7 @@
 
 <script>
 const { createApp, ref, onMounted } = Vue;
-const workerUrl = "https://lineoa.fangwl591021.workers.dev"; // 指向您的 Worker
+const workerUrl = "https://lineoa.fangwl591021.workers.dev";
 
 createApp({
     setup() {
@@ -183,11 +183,10 @@ createApp({
             ],
             footerBtns: [
                 { label: '🚀 立即啟動 AI 合作', color: '#C9A24D', uri: 'https://line.me' },
-                { label: '📤 推薦給好友', color: '#2A2C31', uri: 'https://line.me' } // 這裡之後會被後端覆寫，但編輯時可改文字
+                { label: '📤 推薦給好友', color: '#2A2C31', uri: 'https://line.me' } 
             ]
         });
 
-        // 編輯彈窗 State
         const editing = ref({ show: false, type: '', key: '', title: '' });
         const tempValue = ref('');
         const tempGrid = ref({});
@@ -219,24 +218,20 @@ createApp({
                 
                 if (result.status === 'success' && result.data) {
                     const d = result.data;
-                    // 如果有存過的 JSON 就用存過的，否則用 Profile 預設值
                     if (d.cardJson) {
                         try {
                             const saved = JSON.parse(d.cardJson);
-                            card.value = saved; // 直接覆蓋
+                            card.value = saved; // 恢復儲存的狀態
                         } catch(e) {
-                            console.error("JSON parse error", e);
                             useDefaultData(d);
                         }
                     } else {
                         useDefaultData(d);
                     }
                 } else {
-                    // 全新用戶
                     useDefaultData({ displayName: '訪客', statusMessage: '歡迎聯繫', pictureUrl: 'https://via.placeholder.com/150' });
                 }
             } catch (e) {
-                console.error(e);
                 alert("讀取資料失敗");
             } finally {
                 loading.value = false;
@@ -273,18 +268,22 @@ createApp({
             editing.value.show = false;
         };
 
+        // 修正：儲存時同步傳送 displayName, statusMessage, pictureUrl
         const saveCard = async () => {
             saving.value = true;
             try {
                 const payload = {
                     action: 'saveUserCard',
                     userId: userId.value,
-                    cardJson: JSON.stringify(card.value) // 將目前的設定存起來
+                    cardJson: JSON.stringify(card.value),
+                    displayName: card.value.name,       // 同步更新姓名
+                    statusMessage: card.value.desc,     // 同步更新描述
+                    pictureUrl: card.value.headImg      // 同步更新頭像
                 };
                 const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify(payload) });
                 const result = await res.json();
                 if (result.status === 'success') {
-                    alert("名片設定已儲存！下次「顯示名片」時將套用新設定。");
+                    alert("名片設定已儲存！");
                     liff.closeWindow();
                 } else {
                     alert("儲存失敗");
