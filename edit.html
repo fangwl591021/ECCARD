@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>編輯我的名片</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #1A1B1E; color: white; overflow-x: hidden; }
+        
+        .card-container { max-width: 400px; margin: 0 auto; padding: 20px; }
+        .edit-highlight { border: 2px dashed #00B900; cursor: pointer; transition: all 0.2s; position: relative; }
+        .edit-highlight:hover { background-color: rgba(0, 185, 0, 0.1); }
+        .edit-icon { position: absolute; top: -10px; right: -10px; background: #00B900; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; z-index: 10; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
+        .modal-content { background: white; color: #333; padding: 24px; border-radius: 20px; width: 90%; max-width: 320px; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* 模擬 Flex Message 的樣式 */
+        .flex-bubble { background: #1A1B1E; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333; }
+        .header-box { padding: 20px; display: flex; align-items: center; gap: 15px; }
+        .hero-img { width: 100%; aspect-ratio: 20/13; object-fit: cover; }
+        .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
+        .grid-item { background-color: #2A2C31; border-radius: 12px; padding: 12px; text-align: center; }
+        .footer-box { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .action-btn { width: 100%; padding: 10px; border-radius: 8px; font-weight: bold; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div v-if="loading" class="fixed inset-0 bg-black z-[200] flex flex-col items-center justify-center text-green-500">
+        <i class="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
+        <p class="text-xs font-bold tracking-widest uppercase">載入名片資料中...</p>
+    </div>
+
+    <!-- 頂部導覽 -->
+    <div class="sticky top-0 bg-[#1A1B1E]/90 backdrop-blur border-b border-gray-800 p-4 flex justify-between items-center z-50">
+        <h1 class="font-bold text-lg text-white"><i class="fas fa-edit text-green-500 mr-2"></i>編輯我的名片</h1>
+        <button @click="saveCard" :disabled="saving" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all disabled:opacity-50">
+            <span v-if="saving"><i class="fas fa-spinner fa-spin"></i></span>
+            <span v-else>儲存</span>
+        </button>
+    </div>
+
+    <!-- 編輯區域 (所見即所得) -->
+    <div class="card-container">
+        <p class="text-center text-gray-500 text-xs mb-4">點擊下方 <span class="text-green-500 border border-green-500 rounded px-1">虛線框</span> 區域即可修改內容</p>
+
+        <div class="flex-bubble">
+            <!-- Header -->
+            <div class="header-box">
+                <div class="relative group" @click="openEdit('image', 'headImg', '更換頭像')">
+                    <img :src="card.headImg" class="w-12 h-12 rounded-full object-cover border-2 border-gray-700 edit-highlight">
+                    <div class="edit-icon"><i class="fas fa-pen"></i></div>
+                </div>
+                <div class="flex-1 flex flex-col gap-1">
+                    <div class="relative w-fit" @click="openEdit('text', 'name', '修改姓名')">
+                        <span class="text-[#D4AF37] font-bold text-lg edit-highlight px-1 rounded">{{ card.name }}</span>
+                        <div class="edit-icon"><i class="fas fa-pen"></i></div>
+                    </div>
+                    <div class="relative w-full" @click="openEdit('text', 'desc', '修改描述')">
+                        <span class="text-[#D4AF37] text-xs edit-highlight px-1 rounded block">{{ card.desc }}</span>
+                        <div class="edit-icon"><i class="fas fa-pen"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero -->
+            <div class="relative group" @click="openEdit('image', 'heroImg', '更換封面圖片')">
+                <img :src="card.heroImg" class="hero-img edit-highlight">
+                <div class="edit-icon" style="top: 10px; right: 10px;"><i class="fas fa-image"></i></div>
+            </div>
+
+            <!-- Body (Grid) -->
+            <div class="grid-box">
+                <!-- 這裡示範 4 個按鈕，實際專案可改為 v-for -->
+                <div v-for="(btn, idx) in card.grids" :key="idx" class="grid-item relative edit-highlight" @click="openEdit('grid', idx, `編輯按鈕 ${idx+1}`)">
+                    <div class="text-2xl mb-1">{{ btn.emoji }}</div>
+                    <div class="text-gray-300 text-xs">{{ btn.label }}</div>
+                    <div class="edit-icon"><i class="fas fa-cog"></i></div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer-box">
+                <div v-for="(btn, idx) in card.footerBtns" :key="idx" class="relative edit-highlight" @click="openEdit('button', idx, `編輯底部按鈕 ${idx+1}`)">
+                    <div class="action-btn text-white" :style="{ backgroundColor: btn.color }">
+                        {{ btn.label }}
+                    </div>
+                    <div class="edit-icon"><i class="fas fa-pen"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯彈窗 -->
+    <div v-if="editing.show" class="modal-overlay" @click.self="editing.show = false">
+        <div class="modal-content">
+            <h3 class="font-bold text-lg mb-4 text-gray-800">{{ editing.title }}</h3>
+            
+            <!-- 文字編輯 -->
+            <div v-if="editing.type === 'text'">
+                <input v-model="tempValue" class="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-green-500 mb-4" placeholder="請輸入內容...">
+            </div>
+
+            <!-- 圖片編輯 -->
+            <div v-if="editing.type === 'image'">
+                <label class="block text-xs font-bold text-gray-500 mb-1">圖片網址 (URL)</label>
+                <input v-model="tempValue" class="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-green-500 mb-4 text-xs">
+                <img :src="tempValue" class="w-full h-32 object-cover rounded-lg bg-gray-100 mb-4" onerror="this.src='https://via.placeholder.com/300x200?text=Invalid+Image'">
+            </div>
+
+            <!-- 網格按鈕編輯 -->
+            <div v-if="editing.type === 'grid'">
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">圖示 (Emoji)</label>
+                    <input v-model="tempGrid.emoji" class="w-full border p-2 rounded-lg text-center text-xl">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">按鈕名稱</label>
+                    <input v-model="tempGrid.label" class="w-full border p-2 rounded-lg">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">連結 (URL)</label>
+                    <input v-model="tempGrid.uri" class="w-full border p-2 rounded-lg text-xs">
+                </div>
+            </div>
+
+            <!-- 底部按鈕編輯 -->
+            <div v-if="editing.type === 'button'">
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">按鈕文字</label>
+                    <input v-model="tempBtn.label" class="w-full border p-2 rounded-lg">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">按鈕顏色</label>
+                    <div class="flex items-center gap-2">
+                        <input type="color" v-model="tempBtn.color" class="h-8 w-12">
+                        <span class="text-xs text-gray-400">{{ tempBtn.color }}</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">連結 (URL)</label>
+                    <input v-model="tempBtn.uri" class="w-full border p-2 rounded-lg text-xs">
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button @click="editing.show = false" class="flex-1 py-2 text-gray-500 font-bold bg-gray-100 rounded-lg">取消</button>
+                <button @click="confirmEdit" class="flex-1 py-2 text-white font-bold bg-green-600 rounded-lg hover:bg-green-700">確定修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp, ref, onMounted } = Vue;
+const workerUrl = "https://lineoa.fangwl591021.workers.dev"; // 指向您的 Worker
+
+createApp({
+    setup() {
+        const loading = ref(true);
+        const saving = ref(false);
+        const userId = ref('');
+        
+        // 名片資料 State
+        const card = ref({
+            name: '載入中...',
+            desc: '...',
+            headImg: 'https://via.placeholder.com/100',
+            heroImg: 'https://via.placeholder.com/800x520',
+            grids: [
+                { emoji: '🤖', label: 'AI 諮詢', uri: 'https://line.me' },
+                { emoji: '🎥', label: '實績案例', uri: 'https://line.me' },
+                { emoji: '🧾', label: '服務項目', uri: 'https://line.me' },
+                { emoji: '📍', label: '預約面談', uri: 'https://line.me' }
+            ],
+            footerBtns: [
+                { label: '🚀 立即啟動 AI 合作', color: '#C9A24D', uri: 'https://line.me' },
+                { label: '📤 推薦給好友', color: '#2A2C31', uri: 'https://line.me' } // 這裡之後會被後端覆寫，但編輯時可改文字
+            ]
+        });
+
+        // 編輯彈窗 State
+        const editing = ref({ show: false, type: '', key: '', title: '' });
+        const tempValue = ref('');
+        const tempGrid = ref({});
+        const tempBtn = ref({});
+
+        const initLiff = async () => {
+            try {
+                await liff.init({ liffId: "2008924519-1qRqocsa" });
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
+                const profile = await liff.getProfile();
+                userId.value = profile.userId;
+                fetchUserData(profile.userId);
+            } catch (e) {
+                alert("LIFF 初始化失敗");
+                loading.value = false;
+            }
+        };
+
+        const fetchUserData = async (uid) => {
+            try {
+                const res = await fetch(workerUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getUserData', userId: uid })
+                });
+                const result = await res.json();
+                
+                if (result.status === 'success' && result.data) {
+                    const d = result.data;
+                    // 如果有存過的 JSON 就用存過的，否則用 Profile 預設值
+                    if (d.cardJson) {
+                        try {
+                            const saved = JSON.parse(d.cardJson);
+                            card.value = saved; // 直接覆蓋
+                        } catch(e) {
+                            console.error("JSON parse error", e);
+                            useDefaultData(d);
+                        }
+                    } else {
+                        useDefaultData(d);
+                    }
+                } else {
+                    // 全新用戶
+                    useDefaultData({ displayName: '訪客', statusMessage: '歡迎聯繫', pictureUrl: 'https://via.placeholder.com/150' });
+                }
+            } catch (e) {
+                console.error(e);
+                alert("讀取資料失敗");
+            } finally {
+                loading.value = false;
+            }
+        };
+
+        const useDefaultData = (d) => {
+            card.value.name = d.displayName || '使用者';
+            card.value.desc = d.statusMessage || '歡迎聯繫';
+            card.value.headImg = d.pictureUrl || 'https://via.placeholder.com/150';
+            card.value.heroImg = 'https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png';
+        };
+
+        const openEdit = (type, key, title) => {
+            editing.value = { show: true, type, key, title };
+            if (type === 'text' || type === 'image') {
+                tempValue.value = card.value[key];
+            } else if (type === 'grid') {
+                tempGrid.value = { ...card.value.grids[key] };
+            } else if (type === 'button') {
+                tempBtn.value = { ...card.value.footerBtns[key] };
+            }
+        };
+
+        const confirmEdit = () => {
+            const { type, key } = editing.value;
+            if (type === 'text' || type === 'image') {
+                card.value[key] = tempValue.value;
+            } else if (type === 'grid') {
+                card.value.grids[key] = { ...tempGrid.value };
+            } else if (type === 'button') {
+                card.value.footerBtns[key] = { ...tempBtn.value };
+            }
+            editing.value.show = false;
+        };
+
+        const saveCard = async () => {
+            saving.value = true;
+            try {
+                const payload = {
+                    action: 'saveUserCard',
+                    userId: userId.value,
+                    cardJson: JSON.stringify(card.value) // 將目前的設定存起來
+                };
+                const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert("名片設定已儲存！下次「顯示名片」時將套用新設定。");
+                    liff.closeWindow();
+                } else {
+                    alert("儲存失敗");
+                }
+            } catch (e) {
+                alert("連線錯誤");
+            } finally {
+                saving.value = false;
+            }
+        };
+
+        onMounted(() => {
+            initLiff();
+        });
+
+        return { loading, saving, card, editing, tempValue, tempGrid, tempBtn, openEdit, confirmEdit, saveCard };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
