@@ -15,7 +15,6 @@
         .line-green { color: #00B900; }
         .bg-line-green { background-color: #00B900; }
         
-        /* 側邊欄動畫控管 */
         .sidebar-container { 
             background-color: #1e2124; 
             height: 100vh; 
@@ -28,49 +27,27 @@
         }
         .w-expanded { width: 256px; }
         .w-collapsed { width: 80px; }
-        
         .sidebar-item-active { background-color: #374151; color: white; border-left: 4px solid #00B900; }
-        
-        /* 開放式預覽區 */
         .open-preview-area { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
         .chat-room-bg { background-color: #8c9bad; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 60px 20px; }
-        
         .flex-bubble-container { width: 100%; max-width: 300px; position: relative; }
         .flex-bubble { background: #FFFFFF; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
-        
         .header-box { padding: 10px; display: flex; align-items: center; gap: 10px; }
         .hero-box { position: relative; background: #000; width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        
-        /* 預覽網格 */
         .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; }
         .grid-item { padding: 8px; border-radius: 8px; text-align: center; }
-
         .input-label { @apply block text-[11px] font-bold text-gray-500 uppercase mb-1 ml-1 tracking-wider; }
         input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; cursor: pointer; background: none; }
         input[type="color"]::-webkit-color-swatch { border-radius: 4px; border: 1px solid #ddd; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
-
-        /* 自動模式遮罩 (全屏覆蓋) */
-        .auto-mode-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: #ffffff; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
     </style>
 </head>
 <body>
 
-<div id="app" :class="{ 'loaded': isLoaded }">
-    
-    <!-- 自動分享模式遮罩：當 isAutoMode 為真時顯示，遮擋下方內容 -->
-    <div v-if="isAutoMode" class="auto-mode-overlay">
-        <div class="text-line-green text-5xl mb-4"><i class="fas fa-paper-plane animate-bounce"></i></div>
-        <p class="text-gray-500 font-bold text-sm tracking-widest">啟動 LINE 分享中...</p>
-    </div>
-
-    <!-- 側邊欄導覽 (非自動模式才顯示) -->
-    <aside v-if="!isAutoMode" :class="isSidebarCollapsed ? 'w-collapsed' : 'w-expanded'" class="sidebar-container text-gray-400 shadow-2xl">
+<div id="app" class="flex h-screen overflow-hidden text-gray-800">
+    <!-- 側邊欄導覽 -->
+    <aside :class="isSidebarCollapsed ? 'w-collapsed' : 'w-expanded'" class="sidebar-container text-gray-400 shadow-2xl">
         <div class="h-16 flex items-center border-b border-gray-700 shrink-0 overflow-hidden" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
             <i class="fab fa-line text-3xl line-green"></i>
             <span v-if="!isSidebarCollapsed" class="ml-4 text-white font-bold tracking-tighter uppercase font-mono sidebar-link-text">Card Pro</span>
@@ -106,7 +83,7 @@
         </button>
     </aside>
 
-    <main v-if="!isAutoMode" class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#f8fafc]">
+    <main class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#f8fafc]">
         <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
             <h2 class="text-xl font-bold text-gray-800">商務型名片插件開發</h2>
             <div class="flex items-center gap-4">
@@ -273,8 +250,6 @@ createApp({
         const showSaveModal = ref(false);
         const isSaving = ref(false);
         const projectName = ref('');
-        const isAutoMode = ref(false);
-        const isLoaded = ref(false);
 
         const data = ref({
             altText: '商務名片訊息',
@@ -297,81 +272,9 @@ createApp({
             ], 
             videoFooterButtons: [ 
                 { label: '🚀 立即啟動 AI 合作', uri: 'https://line.me', color: '#C9A24D' }, 
-                // 修正：預設為 LIFF 分享連結
-                { label: '📤 推薦給好友', uri: 'https://liff.line.me/2008924519-1qRqocsa?page=card&action=share', color: '#2A2C31' } 
+                { label: '📤 推薦給好友', uri: 'https://line.me', color: '#2A2C31' } 
             ]
         });
-
-        // 關鍵函式：生成分享出去的名片 JSON (修正語法錯誤)
-        const generateOriginalCardJson = (name, img, desc, gridsStr, btnsStr) => {
-            const fixedHeroUrl = "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png";
-            
-            // 解析傳入的 JSON 字串，若失敗則使用預設值
-            let grids = [];
-            let btns = [];
-            try { grids = JSON.parse(gridsStr || '[]'); } catch(e) {}
-            try { btns = JSON.parse(btnsStr || '[]'); } catch(e) {}
-
-            // 建構分享連結 (確保參數傳遞)
-            const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&name=${encodeURIComponent(name)}&img=${encodeURIComponent(img)}&desc=${encodeURIComponent(desc)}&grids=${encodeURIComponent(gridsStr || '[]')}&btns=${encodeURIComponent(btnsStr || '[]')}`;
-
-            // 動態建構 Grid Rows
-            const gridRows = [];
-            for (let i = 0; i < grids.length; i += 2) {
-                const rowItems = grids.slice(i, i + 2).map(g => ({
-                    type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: "#2A2C31", cornerRadius: "12px",
-                    action: { type: "uri", label: g.label, uri: g.uri || "https://line.me" },
-                    contents: [
-                        { type: "text", text: g.emoji || "🔘", align: "center", size: "xl" },
-                        { type: "text", text: g.label || "按鈕", size: "sm", align: "center", color: "#E6E6E6" } // 修正語法：align: "center"
-                    ]
-                }));
-                gridRows.push({ type: "box", layout: "horizontal", spacing: "sm", contents: rowItems });
-            }
-
-            // 動態建構 Footer Buttons
-            const footerBtns = btns.map((btn, index) => {
-                let uri = btn.uri;
-                // 如果是標籤包含「推薦/分享」，則強制覆蓋為分享連結
-                if (btn.label.includes("推薦") || btn.label.includes("分享")) {
-                    uri = shareUrl;
-                }
-                return {
-                    type: "button", style: "primary", height: "sm", color: btn.color || "#00B900",
-                    action: { type: "uri", label: btn.label, uri: uri }
-                };
-            });
-
-            return {
-                type: "bubble",
-                size: "mega",
-                header: {
-                    type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", backgroundColor: "#1A1B1E",
-                    contents: [
-                        { type: "image", url: img, size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" },
-                        { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [
-                            { type: "text", text: name, weight: "bold", size: "lg", color: "#D4AF37" },
-                            { type: "text", text: desc, size: "xs", color: "#D4AF37", wrap: true }
-                        ]}
-                    ]
-                },
-                hero: {
-                    type: "image", url: fixedHeroUrl, size: "full", aspectRatio: "20:13", aspectMode: "cover",
-                    action: { type: "uri", label: "hero", uri: "https://lin.ee/qFYBr0z" }
-                },
-                body: {
-                    type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: "#1A1B1E",
-                    contents: [{
-                        type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: "#1A1B1E", cornerRadius: "14px",
-                        contents: gridRows
-                    }]
-                },
-                footer: {
-                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: "#1A1B1E",
-                    contents: footerBtns
-                }
-            };
-        };
 
         const flexJson = computed(() => {
             const cur = data.value;
@@ -458,28 +361,10 @@ createApp({
             finally { isSaving.value = false; }
         };
 
-        const pushCard = (specificFlexMessage = null) => {
-            const contentToSend = specificFlexMessage || flexJson.value;
-
-            return new Promise((resolve, reject) => {
-                if (!liff.isLoggedIn()) { liff.login(); return reject('Not logged in'); }
-                
-                liff.shareTargetPicker([{ type: "flex", altText: "名片分享", contents: contentToSend }])
-                .then(res => {
-                    if (res) {
-                        if (isAutoMode.value) liff.closeWindow();
-                        else alert("商務型名片推播成功！");
-                        resolve(res);
-                    } else {
-                        if (isAutoMode.value) liff.closeWindow();
-                        resolve(null);
-                    }
-                })
-                .catch(err => {
-                    if (isAutoMode.value) liff.closeWindow();
-                    reject(err);
-                });
-            });
+        const pushCard = () => {
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            liff.shareTargetPicker([{ type: "flex", altText: data.value.altText || "商務型名片", contents: flexJson.value }])
+            .then(res => { if (res) alert("商務型名片推播成功！"); });
         };
 
         onMounted(async () => {
@@ -487,28 +372,17 @@ createApp({
                 await liff.init({ liffId: "2008924519-1qRqocsa" }); 
                 isLoggedIn.value = liff.isLoggedIn();
                 if (isLoggedIn.value) userProfile.value = await liff.getProfile();
-
+                
+                // --- 新增自動分享判斷 ---
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('action') === 'share') {
-                    isAutoMode.value = true;
-                    
-                    const name = decodeURIComponent(params.get('name') || "訪客");
-                    const img = decodeURIComponent(params.get('img') || "https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png");
-                    const desc = decodeURIComponent(params.get('desc') || "歡迎聯繫");
-                    const gridsStr = decodeURIComponent(params.get('grids') || '[]');
-                    const btnsStr = decodeURIComponent(params.get('btns') || '[]');
-
-                    // 生成原始 JSON
-                    const originalFlex = generateOriginalCardJson(name, img, desc, gridsStr, btnsStr);
-
                     if (isLoggedIn.value) {
-                        pushCard(originalFlex);
+                         pushCard();
                     } else {
-                        liff.login({ redirectUri: window.location.href });
+                         liff.login({ redirectUri: window.location.href });
                     }
                 }
             } catch (e) {}
-            finally { isLoaded.value = true; }
         });
 
         return { 
@@ -517,7 +391,7 @@ createApp({
                 navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); 
                 alert("JSON 代碼已複製"); 
             }, 
-            initSave, confirmSave, showSaveModal, projectName, isSaving, isAutoMode, isLoaded 
+            initSave, confirmSave, showSaveModal, projectName, isSaving 
         };
     }
 }).mount('#app');
