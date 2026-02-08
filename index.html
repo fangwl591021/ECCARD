@@ -25,11 +25,14 @@
         .w-collapsed { width: 80px; }
         .sidebar-item-active { background-color: #374151; color: white; border-left: 4px solid #00B900; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        
         .dashboard-card { transition: all 0.3s ease; }
         .dashboard-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        
         .submenu-enter-active, .submenu-leave-active { transition: max-height 0.3s ease-out; overflow: hidden; }
         .submenu-enter-from, .submenu-leave-to { max-height: 0; }
         .submenu-enter-to, .submenu-leave-from { max-height: 300px; }
+        
         .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
     </style>
     <!-- 路由守衛：放在 head 最前面優先執行 -->
@@ -45,6 +48,10 @@
                 window.location.replace('stand.html' + window.location.search);
             } else if (page === 'ec') {
                 window.location.replace('ec.html' + window.location.search);
+            } else if (page === 'mix') {
+                window.location.replace('mix.html' + window.location.search);
+            } else if (page === 'edit') { 
+                window.location.replace('edit.html' + window.location.search);
             } else {
                 // 只有確定沒有要轉址時，才顯示 Body 內容
                 document.addEventListener('DOMContentLoaded', function() {
@@ -184,6 +191,16 @@
                         <h3 class="text-xl font-bold mb-2">混合多頁開發</h3>
                         <p class="text-gray-400 text-sm mb-6 flex-grow">Carousel 輪播型態訊息，可自由組合標準、商務與電商分頁。</p>
                         <span class="text-green-500 font-bold text-xs uppercase tracking-widest">進入開發 <i class="fas fa-arrow-right ml-1"></i></span>
+                    </a>
+
+                    <!-- 模組卡片：關鍵字回覆 (New) -->
+                    <a href="reply.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
+                        <div class="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-pink-500 transition-colors">
+                            <i class="fas fa-comments text-2xl text-pink-500 group-hover:text-white"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">關鍵字回覆</h3>
+                        <p class="text-gray-400 text-sm mb-6 flex-grow">設定 LINE 聊天室關鍵字，自動觸發圖文訊息或 Flex 內容。</p>
+                        <span class="text-pink-500 font-bold text-xs uppercase tracking-widest">進入設定 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
                     <!-- 模組卡片：VOOM -->
