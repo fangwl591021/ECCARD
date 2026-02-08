@@ -15,7 +15,6 @@
         .line-green { color: #00B900; }
         .bg-line-green { background-color: #00B900; }
         
-        /* 側邊欄動畫控管 */
         .sidebar-container { 
             background-color: #1e2124; 
             height: 100vh; 
@@ -28,23 +27,15 @@
         }
         .w-expanded { width: 256px; }
         .w-collapsed { width: 80px; }
-        
         .sidebar-item-active { background-color: #374151; color: white; border-left: 4px solid #00B900; }
-        
-        /* 開放式預覽區 */
         .open-preview-area { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
         .chat-room-bg { background-color: #8c9bad; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 60px 20px; }
-        
         .flex-bubble-container { width: 100%; max-width: 300px; position: relative; }
         .flex-bubble { background: #FFFFFF; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
-        
         .header-box { padding: 10px; display: flex; align-items: center; gap: 10px; }
         .hero-box { position: relative; background: #000; width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        
-        /* 預覽網格：調整為 5px 邊距與按鈕切齊 */
         .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; }
         .grid-item { padding: 8px; border-radius: 8px; text-align: center; }
-
         .input-label { @apply block text-[11px] font-bold text-gray-500 uppercase mb-1 ml-1 tracking-wider; }
         input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; cursor: pointer; background: none; }
         input[type="color"]::-webkit-color-swatch { border-radius: 4px; border: 1px solid #ddd; }
@@ -381,6 +372,16 @@ createApp({
                 await liff.init({ liffId: "2008924519-1qRqocsa" }); 
                 isLoggedIn.value = liff.isLoggedIn();
                 if (isLoggedIn.value) userProfile.value = await liff.getProfile();
+                
+                // --- 新增自動分享判斷 ---
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('action') === 'share') {
+                    if (isLoggedIn.value) {
+                         pushCard();
+                    } else {
+                         liff.login({ redirectUri: window.location.href });
+                    }
+                }
             } catch (e) {}
         });
 
