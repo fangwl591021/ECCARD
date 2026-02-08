@@ -20,7 +20,7 @@
         .chat-room-bg { background-color: #7988a0; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 40px 10px; }
         .carousel-preview-container { display: flex; gap: 15px; padding: 20px; width: 100%; overflow-x: auto; scroll-snap-type: x mandatory; }
         .preview-bubble { flex: 0 0 280px; scroll-snap-align: center; background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; position: relative; min-height: 480px; }
-        .flex-badge-preview { position: absolute; top: 10px; color: white; padding: 7px 20px 7px 20px; border-radius: 30px; font-size: 11px; font-weight: bold; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; white-space: nowrap; width: auto; line-height: 1; }
+        .flex-badge-preview { position: absolute; top: 10px; color: white; padding: 7px 20px; border-radius: 30px; font-size: 11px; font-weight: bold; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; white-space: nowrap; width: auto; line-height: 1; }
         .badge-right { right: 10px; }
         .badge-left { left: 10px; }
         .header-box { padding: 10px; display: flex; align-items: center; gap: 8px; }
@@ -77,7 +77,9 @@
                                 <button @click.stop="moveRight(index)" v-if="index < carousel.bubbles.length - 1" class="w-5 h-5 bg-white border rounded text-[8px] shadow-sm"><i class="fas fa-chevron-right"></i></button>
                             </div>
                         </div>
-                        <button @click="showAddModal = true" class="w-10 h-10 border-2 border-dashed border-gray-300 rounded-xl hover:border-line-green transition-all shrink-0 self-start shadow-sm"><i class="fas fa-plus"></i></button>
+                        <button @click="showAddModal = true" class="flex items-center gap-2 px-4 h-10 border-2 border-dashed border-line-green text-line-green bg-green-50 rounded-xl hover:bg-line-green hover:text-white transition-all shrink-0 shadow-sm self-start">
+                            <i class="fas fa-plus-circle"></i><span class="text-xs font-bold">新增分頁</span>
+                        </button>
                     </div>
 
                     <div v-if="activeBubble" class="space-y-8 animate-in fade-in duration-300">
@@ -297,7 +299,7 @@ createApp({
         });
 
         const pushMix = () => { if(!liff.isLoggedIn()) { liff.login(); return; } liff.shareTargetPicker([{ type: "flex", altText: carousel.value.altText || "精選推薦", contents: fullFlexJson.value }]).then(res => { if(res) alert("成功！"); }); };
-        onMounted(() => { liff.init({ liffId: "2008541971-Wgvz6gD8" }).then(() => { if(liff.isLoggedIn()) liff.getProfile().then(p => { userProfile.value = p; isLoggedIn.value = true; }); }); });
+        onMounted(() => { liff.init({ liffId: "2008924519-1qRqocsa" }).then(() => { if(liff.isLoggedIn()) liff.getProfile().then(p => { userProfile.value = p; isLoggedIn.value = true; }); }); });
 
         return { isSidebarCollapsed, carousel, activeIndex, activeBubble, showAddModal, addNewBubble, removeBubble: (idx) => { carousel.value.bubbles.splice(idx, 1); if(activeIndex.value >= carousel.value.bubbles.length) activeIndex.value = carousel.value.bubbles.length - 1; }, pushMix, showSaveModal: ref(false), projectName, isSaving, isLoggedIn, userProfile, moveLeft: (idx) => { const b = carousel.value.bubbles.splice(idx, 1)[0]; carousel.value.bubbles.splice(idx-1, 0, b); activeIndex.value = idx-1; }, moveRight: (idx) => { const b = carousel.value.bubbles.splice(idx, 1)[0]; carousel.value.bubbles.splice(idx+1, 0, b); activeIndex.value = idx+1; }, getTypeName: (t) => ({'standard':'標準版型','card':'商務型名片','ecommerce':'電商商城型'}[t]), getTypeIcon: (t) => ({'standard':'fa-file-alt','card':'fa-id-card','ecommerce':'fa-shopping-cart'}[t]), socialTypes, hasSocialLinks: computed(() => activeBubble.value && Object.values(activeBubble.value.social.links).some(l => l.trim() !== '')) };
     }
