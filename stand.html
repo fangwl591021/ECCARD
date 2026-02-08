@@ -314,7 +314,7 @@ createApp({
         const handlePush = () => { if(!liff.isLoggedIn()) { liff.login(); return; } liff.shareTargetPicker([{ type: "flex", altText: data.value.title || "標準版", contents: flexJson.value }]).then(res => { if(res) showToast("推播成功！"); }); };
         const copyJson = () => { navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)).then(() => showToast("JSON 已複製")); };
 
-        onMounted(async () => { try { await liff.init({ liffId: "2008541971-Wgvz6gD8" }); if(liff.isLoggedIn()) { userProfile.value = await liff.getProfile(); isLoggedIn.value = true; } } catch (e) {} });
+        onMounted(async () => { try { await liff.init({ liffId: "2008924519-1qRqocsa" }); if(liff.isLoggedIn()) { userProfile.value = await liff.getProfile(); isLoggedIn.value = true; } } catch (e) {} });
 
         return { isSidebarCollapsed, data, flexJson, showSaveModal, projectName, isSaving, confirmSave, handlePush, isLoggedIn, userProfile, addButton, toast, copyJson, socialTypes, hasSocialLinks };
     }
