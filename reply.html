@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>關鍵字回覆管理 - LINEOA CMS</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; overflow: hidden; }
+        .sidebar-container { background-color: #1e2124; height: 100vh; width: 280px; display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; }
+        .sidebar-item-active { background-color: #374151; color: white; border-left: 4px solid #00B900; }
+        .line-green { color: #00B900; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
+        .btn-primary { @apply bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all; }
+    </style>
+</head>
+<body>
+
+<div id="app" class="flex h-screen overflow-hidden text-gray-800">
+    <!-- 側邊欄 -->
+    <aside class="sidebar-container text-gray-400 shadow-2xl">
+        <div class="h-16 flex items-center border-b border-gray-700 shrink-0 px-6">
+            <i class="fab fa-line text-3xl line-green"></i>
+            <span class="ml-4 text-white font-bold uppercase font-mono tracking-tighter">Auto Reply</span>
+        </div>
+        
+        <nav class="mt-6 flex-grow overflow-y-auto no-scrollbar">
+            <a href="index.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400 px-6">
+                <i class="fas fa-th-large w-8 text-center text-lg"></i>
+                <span class="ml-2 font-medium">控制中心</span>
+            </a>
+            
+            <a href="card.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400 px-6">
+                <i class="fas fa-id-card w-8 text-center text-lg"></i>
+                <span class="ml-2 font-medium">名片專區</span>
+            </a>
+
+            <!-- 關鍵字回覆 (Active) -->
+            <div class="sidebar-item-active flex items-center py-4 transition-all px-6">
+                <i class="fas fa-comments w-8 text-center text-lg"></i>
+                <span class="ml-2 font-medium">關鍵字回覆</span>
+            </div>
+
+            <a href="project.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400 mt-4 border-t border-gray-800 px-6">
+                <i class="fas fa-box w-8 text-center text-lg"></i>
+                <span class="ml-2 font-medium">專案管理系統</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 主要內容 -->
+    <main class="flex-grow flex flex-col h-full bg-white overflow-hidden">
+        <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
+            <h2 class="text-xl font-bold text-gray-800">關鍵字自動回覆設定</h2>
+            <div class="flex items-center gap-3">
+                <button @click="openModal" class="px-6 py-2 btn-primary rounded-xl text-sm font-bold flex items-center gap-2">
+                    <i class="fas fa-plus"></i> 新增規則
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-grow p-8 overflow-y-auto bg-[#f8fafc]">
+            <div class="max-w-5xl mx-auto">
+                
+                <!-- 測試提示卡片 -->
+                <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg mb-8 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-bold text-lg mb-1"><i class="fas fa-robot mr-2"></i>測試模式已啟用</h3>
+                        <p class="text-sm opacity-90">目前系統已內建測試指令：請在您的 LINE 官方帳號聊天室輸入 <b>「顯示名片」</b> 即可查看效果。</p>
+                    </div>
+                    <div class="bg-white/20 p-3 rounded-full">
+                        <i class="fas fa-flask text-2xl"></i>
+                    </div>
+                </div>
+
+                <!-- 列表 (目前僅展示用，未來可串接資料庫) -->
+                <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+                        <h3 class="font-bold text-gray-700">生效中的規則</h3>
+                        <span class="text-xs text-gray-400">共 1 筆</span>
+                    </div>
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-50 text-gray-500 font-bold border-b">
+                            <tr>
+                                <th class="px-6 py-3">觸發關鍵字</th>
+                                <th class="px-6 py-3">回覆類型</th>
+                                <th class="px-6 py-3">內容預覽</th>
+                                <th class="px-6 py-3 text-right">狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 硬編碼的測試項目 -->
+                            <tr class="border-b last:border-0 hover:bg-slate-50 transition-colors">
+                                <td class="px-6 py-4 font-bold text-blue-600">顯示名片</td>
+                                <td class="px-6 py-4"><span class="bg-purple-100 text-purple-600 px-2 py-1 rounded text-xs font-bold">Flex Message</span></td>
+                                <td class="px-6 py-4 text-gray-500">商務名片 (Tony)</td>
+                                <td class="px-6 py-4 text-right"><span class="flex items-center justify-end gap-1 text-green-600 font-bold text-xs"><div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>啟用中</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="p-8 text-center text-gray-400 text-xs italic">
+                        更多自定義規則功能開發中...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 模擬新增彈窗 -->
+    <div v-if="showModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">新增關鍵字規則</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">關鍵字 (完全符合)</label>
+                    <input type="text" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例如：價目表">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">回覆類型</label>
+                    <select class="w-full border rounded-lg p-2 text-sm bg-white">
+                        <option>文字訊息 (Text)</option>
+                        <option>Flex 訊息 (JSON)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">回覆內容</label>
+                    <textarea class="w-full border rounded-lg p-2 text-sm h-32 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="請輸入回覆內容..."></textarea>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button @click="showModal = false" class="flex-1 py-2.5 text-gray-500 font-bold bg-gray-100 rounded-lg hover:bg-gray-200">取消</button>
+                <button @click="showModal = false" class="flex-1 py-2.5 text-white font-bold bg-blue-600 rounded-lg hover:bg-blue-700">儲存規則</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp, ref, onMounted } = Vue;
+
+createApp({
+    setup() {
+        const showModal = ref(false);
+        const openModal = () => { showModal.value = true; };
+        
+        onMounted(async () => {
+            try { await liff.init({ liffId: "2008924519-1qRqocsa" }); } catch (e) {}
+        });
+
+        return { showModal, openModal };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
