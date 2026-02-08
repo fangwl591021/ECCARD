@@ -41,7 +41,7 @@
         .header-box { padding: 10px; display: flex; align-items: center; gap: 10px; }
         .hero-box { position: relative; background: #000; width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         
-        /* 預覽網格：調整為 5px 邊距與按鈕切齊 */
+        /* 預覽網格 */
         .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; }
         .grid-item { padding: 8px; border-radius: 8px; text-align: center; }
 
@@ -51,7 +51,7 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
 
-        /* 自動模式遮罩 */
+        /* 自動模式遮罩 (全屏覆蓋) */
         .auto-mode-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-color: #ffffff; z-index: 9999;
@@ -63,13 +63,13 @@
 
 <div id="app" class="flex h-screen overflow-hidden text-gray-800">
     
-    <!-- 自動分享模式遮罩 (當網址有 action=share 時顯示) -->
+    <!-- 自動分享模式遮罩：當 isAutoMode 為真時顯示 -->
     <div v-if="isAutoMode" class="auto-mode-overlay">
         <div class="text-line-green text-5xl mb-4"><i class="fas fa-paper-plane animate-bounce"></i></div>
         <p class="text-gray-500 font-bold text-sm tracking-widest">啟動 LINE 分享中...</p>
     </div>
 
-    <!-- 側邊欄導覽 -->
+    <!-- 側邊欄導覽 (非自動模式才顯示) -->
     <aside v-if="!isAutoMode" :class="isSidebarCollapsed ? 'w-collapsed' : 'w-expanded'" class="sidebar-container text-gray-400 shadow-2xl">
         <div class="h-16 flex items-center border-b border-gray-700 shrink-0 overflow-hidden" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
             <i class="fab fa-line text-3xl line-green"></i>
@@ -301,6 +301,55 @@ createApp({
             ]
         });
 
+        // 生成原始名片的函式 (與 backend.gs 結構一致)
+        const generateOriginalCardJson = (name, img, desc) => {
+            const fixedHeroUrl = "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png";
+            const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&name=${encodeURIComponent(name)}&img=${encodeURIComponent(img)}&desc=${encodeURIComponent(desc)}`;
+
+            return {
+                type: "bubble",
+                size: "mega",
+                header: {
+                    type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", backgroundColor: "#1A1B1E",
+                    contents: [
+                        { type: "image", url: img, size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" },
+                        { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [
+                            { type: "text", text: name, weight: "bold", size: "lg", color: "#D4AF37" },
+                            { type: "text", text: desc, size: "xs", color: "#D4AF37", wrap: true }
+                        ]}
+                    ]
+                },
+                hero: {
+                    type: "image", url: fixedHeroUrl, size: "full", aspectRatio: "20:13", aspectMode: "cover",
+                    action: { type: "uri", label: "hero", uri: "https://lin.ee/qFYBr0z" }
+                },
+                body: {
+                    type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: "#1A1B1E",
+                    contents: [{
+                        type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: "#1A1B1E", cornerRadius: "14px",
+                        contents: [
+                            { type: "box", layout: "horizontal", spacing: "sm", contents: [
+                                { type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: "#2A2C31", cornerRadius: "12px", action: { type: "uri", label: "AI 諮詢", uri: "https://line.me" }, contents: [{ type: "text", text: "🤖", align: "center", size: "xl" }, { type: "text", text: "AI 諮詢", size: "sm", align: "center", color: "#E6E6E6" }] },
+                                { type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: "#2A2C31", cornerRadius: "12px", action: { type: "uri", label: "實績案例", uri: "https://line.me" }, contents: [{ type: "text", text: "🎥", align: "center", size: "xl" }, { "type": "text", text: "實績案例", size: "sm", align: "center", color: "#E6E6E6" }] }
+                            ]},
+                            { type: "box", layout: "horizontal", spacing: "sm", contents: [
+                                { type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: "#2A2C31", cornerRadius: "12px", action: { type: "uri", label: "服務項目", uri: "https://line.me" }, contents: [{ type: "text", text: "🧾", align: "center", size: "xl" }, { "type": "text", text: "服務項目", size: "sm", align: "center", color: "#E6E6E6" }] },
+                                { type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: "#2A2C31", cornerRadius: "12px", action: { type: "uri", label: "預約面談", uri: "https://line.me" }, contents: [{ type: "text", text: "📍", align: "center", size: "xl" }, { "type": "text", text: "預約面談", size: "sm", align: "center", color: "#E6E6E6" }] }
+                            ]}
+                        ]
+                    }]
+                },
+                footer: {
+                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: "#1A1B1E",
+                    contents: [
+                        { type: "button", style: "primary", height: "sm", color: "#C9A24D", action: { type: "uri", label: "🚀 立即啟動 AI 合作", uri: "https://line.me" } },
+                        { type: "button", style: "primary", height: "sm", color: "#2A2C31", action: { type: "uri", label: "📤 推薦給好友", uri: shareUrl } }
+                    ]
+                }
+            };
+        };
+
+        // 這是編輯器使用的 Flex JSON (僅用於預覽和編輯)
         const flexJson = computed(() => {
             const cur = data.value;
             const bubble = {
@@ -386,15 +435,15 @@ createApp({
             finally { isSaving.value = false; }
         };
 
-        const pushCard = () => {
-            // 獨立的推播函式：負責執行分享並關閉視窗
+        const pushCard = (specificFlexMessage = null) => {
+            // 如果傳入 specificFlexMessage，則使用該訊息 (分享原始名片模式)
+            // 否則使用當前編輯器的 flexJson (預覽/推播模式)
+            const contentToSend = specificFlexMessage || flexJson.value;
+
             return new Promise((resolve, reject) => {
-                if (!liff.isLoggedIn()) {
-                     liff.login(); 
-                     return reject('Not logged in');
-                }
+                if (!liff.isLoggedIn()) { liff.login(); return reject('Not logged in'); }
                 
-                liff.shareTargetPicker([{ type: "flex", altText: data.value.altText || "商務型名片", contents: flexJson.value }])
+                liff.shareTargetPicker([{ type: "flex", altText: "名片分享", contents: contentToSend }])
                 .then(res => {
                     if (res) {
                         // 分享成功
@@ -431,15 +480,22 @@ createApp({
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('action') === 'share') {
                     isAutoMode.value = true; // 開啟自動模式遮罩
+                    
+                    const name = decodeURIComponent(params.get('name') || "訪客");
+                    const img = decodeURIComponent(params.get('img') || "https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png");
+                    const desc = decodeURIComponent(params.get('desc') || "歡迎聯繫");
+
+                    // 生成原始 JSON
+                    const originalFlex = generateOriginalCardJson(name, img, desc);
+
                     if (isLoggedIn.value) {
                         // 已登入，直接執行分享
-                        pushCard();
+                        pushCard(originalFlex);
                     } else {
                         // 未登入，先登入 (登入後會跳轉回此頁，再次觸發 mounted)
                         liff.login({ redirectUri: window.location.href });
                     }
                 }
-
             } catch (e) {
                 console.error(e);
             }
