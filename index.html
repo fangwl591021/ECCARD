@@ -11,12 +11,12 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
         
-        /* 關鍵修正：預設隱藏整個 Body，防止轉址前閃現畫面 */
+        /* 預設隱藏整個 Body，防止轉址前閃現畫面 */
         body { 
             font-family: 'Noto Sans TC', sans-serif; 
             background-color: #f1f5f9; 
             overflow: hidden; 
-            display: none; /* 預設不顯示 */
+            display: none; 
         }
         
         .line-green { color: #00B900; }
@@ -35,25 +35,21 @@
         
         .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
     </style>
-    <!-- 路由守衛：放在 head 最前面優先執行 -->
+    <!-- 路由守衛：修正無限迴圈問題 -->
     <script>
         (function() {
             const params = new URLSearchParams(window.location.search);
             const page = params.get('page');
+            const search = window.location.search;
+            const hash = window.location.hash; // 關鍵：抓取登入驗證碼
             
-            // 如果有 page 參數，直接轉址，不顯示 Body
-            if (page === 'card') {
-                window.location.replace('card.html' + window.location.search);
-            } else if (page === 'stand') {
-                window.location.replace('stand.html' + window.location.search);
-            } else if (page === 'ec') {
-                window.location.replace('ec.html' + window.location.search);
-            } else if (page === 'mix') {
-                window.location.replace('mix.html' + window.location.search);
-            } else if (page === 'edit') { 
-                window.location.replace('edit.html' + window.location.search);
-            } else {
-                // 只有確定沒有要轉址時，才顯示 Body 內容
+            // 轉址時必須把 hash 帶過去
+            if (page === 'card') window.location.replace('card.html' + search + hash);
+            else if (page === 'stand') window.location.replace('stand.html' + search + hash);
+            else if (page === 'ec') window.location.replace('ec.html' + search + hash);
+            else if (page === 'mix') window.location.replace('mix.html' + search + hash);
+            else if (page === 'edit') window.location.replace('edit.html' + search + hash);
+            else {
                 document.addEventListener('DOMContentLoaded', function() {
                     document.body.style.display = 'block';
                 });
