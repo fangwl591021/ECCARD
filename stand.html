@@ -216,8 +216,8 @@
                                     </div>
                                 </template>
                             </div>
-                            <!-- 主按鈕預覽 -->
-                            <div class="space-y-1">
+                            <!-- 主按鈕預覽 (增加上方間距) -->
+                            <div class="space-y-1 mt-3">
                                 <button v-for="btn in data.buttons" class="w-full py-1.5 text-white text-[10px] font-bold rounded shadow-sm transition-transform active:scale-95" :style="{ backgroundColor: btn.color }">{{ btn.label }}</button>
                             </div>
                         </div>
@@ -263,7 +263,7 @@ createApp({
 
         const data = ref({ 
             imageUrl: 'https://aiwe.cc/wp-content/uploads/2026/01/781206b661aebf645c633e618db3960b.png', 
-            title: '標準版分頁標題', subtitle: '內容描述文字預覽大小為 xs。',
+            title: '標準版分頁標題', subtitle: '⭐請填寫公司/店家介紹\n⭐請填寫公司/店家服務項目\n⭐請填寫公司/店家特色\n⭐請填寫〔優惠資訊〕\n⭐建議4-～5行，每行16字內',
             showBadge: true, badgeText: '分享', badgeColor: '#FF0000', badgeUri: 'https://line.me', badgeAlign: 'right',
             footerBgColor: '#FFFFFF', social: { enabled: false, links: { fb: '', ig: '', tel: '', web: '', line: '' } },
             buttons: [{ label: '了解更多', uri: 'https://line.me', color: '#00B900' }, { label: '立即購買', uri: 'https://line.me', color: '#000000' }]
@@ -295,7 +295,17 @@ createApp({
                 });
                 footerContents.push(socialRow);
             }
-            cur.buttons.forEach(btn => { footerContents.push({ type: "button", style: "primary", color: btn.color, height: "sm", margin: "sm", action: { type: "uri", label: btn.label, uri: forceHttps(btn.uri) } }); });
+            // 修正 Flex JSON 中的間距
+            cur.buttons.forEach((btn, index) => { 
+                const buttonConfig = { type: "button", style: "primary", color: btn.color, height: "sm", action: { type: "uri", label: btn.label, uri: forceHttps(btn.uri) } };
+                // 只有當社群列存在，且這是第一個按鈕時，才設定較大的上方間距 (md)。其他按鈕維持 sm。
+                if (cur.social.enabled && hasSocialLinks.value && index === 0) {
+                    buttonConfig.margin = "md";
+                } else {
+                    buttonConfig.margin = "sm";
+                }
+                footerContents.push(buttonConfig); 
+            });
 
             return { type: "bubble", body: { type: "box", layout: "vertical", paddingAll: "0px", contents: bodyContents }, footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.footerBgColor, contents: footerContents } };
         });
@@ -314,7 +324,7 @@ createApp({
         const handlePush = () => { if(!liff.isLoggedIn()) { liff.login(); return; } liff.shareTargetPicker([{ type: "flex", altText: data.value.title || "標準版", contents: flexJson.value }]).then(res => { if(res) showToast("推播成功！"); }); };
         const copyJson = () => { navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)).then(() => showToast("JSON 已複製")); };
 
-        onMounted(async () => { try { await liff.init({ liffId: "2008924519-1qRqocsa" }); if(liff.isLoggedIn()) { userProfile.value = await liff.getProfile(); isLoggedIn.value = true; } } catch (e) {} });
+        onMounted(async () => { try { await liff.init({ liffId: "2008541971-Wgvz6gD8" }); if(liff.isLoggedIn()) { userProfile.value = await liff.getProfile(); isLoggedIn.value = true; } } catch (e) {} });
 
         return { isSidebarCollapsed, data, flexJson, showSaveModal, projectName, isSaving, confirmSave, handlePush, isLoggedIn, userProfile, addButton, toast, copyJson, socialTypes, hasSocialLinks };
     }
