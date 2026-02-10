@@ -79,7 +79,6 @@
 
             <!-- Body (Grid) -->
             <div class="grid-box">
-                <!-- 這裡示範 4 個按鈕，實際專案可改為 v-for -->
                 <div v-for="(btn, idx) in card.grids" :key="idx" class="grid-item relative edit-highlight" @click="openEdit('grid', idx, `編輯按鈕 ${idx+1}`)">
                     <div class="text-2xl mb-1">{{ btn.emoji }}</div>
                     <div class="text-gray-300 text-xs">{{ btn.label }}</div>
@@ -161,7 +160,7 @@
 
 <script>
 const { createApp, ref, onMounted } = Vue;
-const workerUrl = "https://lineoa.fangwl591021.workers.dev";
+const workerUrl = "https://lineoa.fangwl591021.workers.dev"; // 指向您的 Worker
 
 createApp({
     setup() {
@@ -169,7 +168,6 @@ createApp({
         const saving = ref(false);
         const userId = ref('');
         
-        // 名片資料 State
         const card = ref({
             name: '載入中...',
             desc: '...',
@@ -221,7 +219,7 @@ createApp({
                     if (d.cardJson) {
                         try {
                             const saved = JSON.parse(d.cardJson);
-                            card.value = saved; // 恢復儲存的狀態
+                            card.value = saved; 
                         } catch(e) {
                             useDefaultData(d);
                         }
@@ -268,7 +266,6 @@ createApp({
             editing.value.show = false;
         };
 
-        // 修正：儲存時同步傳送 displayName, statusMessage, pictureUrl
         const saveCard = async () => {
             saving.value = true;
             try {
@@ -276,9 +273,9 @@ createApp({
                     action: 'saveUserCard',
                     userId: userId.value,
                     cardJson: JSON.stringify(card.value),
-                    displayName: card.value.name,       // 同步更新姓名
-                    statusMessage: card.value.desc,     // 同步更新描述
-                    pictureUrl: card.value.headImg      // 同步更新頭像
+                    displayName: card.value.name,       
+                    statusMessage: card.value.desc,     
+                    pictureUrl: card.value.headImg      
                 };
                 const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify(payload) });
                 const result = await res.json();
