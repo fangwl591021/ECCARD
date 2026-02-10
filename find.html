@@ -31,10 +31,8 @@
 <body>
 
 <div id="app" class="flex h-screen overflow-hidden text-gray-800">
-    <!-- 提示訊息 -->
     <div v-if="toast.show" class="toast-msg">{{ toast.text }}</div>
 
-    <!-- 側邊欄 -->
     <aside :class="isSidebarCollapsed ? 'w-collapsed' : 'w-expanded'" class="sidebar-container text-gray-400 shadow-2xl">
         <div class="h-16 flex items-center border-b border-gray-700 shrink-0 overflow-hidden" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
             <a href="index.html" class="flex items-center hover:opacity-80 transition-opacity">
@@ -49,7 +47,6 @@
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">控制中心</span>
             </a>
 
-            <!-- 名片專區：摺疊目錄 -->
             <div v-if="!isSidebarCollapsed">
                 <div @click="isCardMenuOpen = !isCardMenuOpen" class="flex items-center justify-between py-4 px-6 hover:bg-gray-700 transition-all cursor-pointer text-gray-300">
                     <div class="flex items-center">
@@ -71,9 +68,12 @@
                 <i class="fas fa-address-book text-lg"></i>
             </div>
 
-            <!-- 工具欄區塊 -->
             <div class="mt-4 border-t border-gray-800 pt-4">
                 <div v-if="!isSidebarCollapsed" class="px-6 mb-2 text-[10px] font-bold text-gray-600 uppercase tracking-widest">工具欄</div>
+                <a href="reply.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
+                    <i class="fas fa-comments w-8 text-center text-lg"></i>
+                    <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">關鍵字回覆</span>
+                </a>
                 <div class="sidebar-item-active flex items-center py-4 transition-all" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
                     <i class="fab fa-line w-8 text-center text-lg"></i>
                     <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">LINE VOOM 擷取</span>
@@ -92,7 +92,6 @@
         </button>
     </aside>
 
-    <!-- 主要內容區 -->
     <main class="flex-grow flex flex-col overflow-hidden">
         <header class="h-16 bg-white border-b flex items-center px-8 shrink-0 shadow-sm z-10">
             <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -102,7 +101,6 @@
 
         <div class="flex-grow overflow-y-auto p-12 bg-slate-50 no-scrollbar">
             <div class="max-w-4xl mx-auto">
-                <!-- 輸入區域 -->
                 <div class="bg-white p-10 rounded-[32px] shadow-xl border border-slate-200 mb-10">
                     <h3 class="text-lg font-bold mb-4 text-gray-700">貼上貼文網址 (精準 JSON 解析模式)</h3>
                     <div class="flex gap-4">
@@ -121,9 +119,7 @@
                     </div>
                 </div>
 
-                <!-- 擷取結果 -->
                 <div v-if="result" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- 圖片資源卡片 -->
                     <div class="result-card bg-white p-8 rounded-[32px] shadow-lg border border-slate-100 flex flex-col">
                         <div class="flex justify-between items-center mb-6">
                             <div class="flex items-center gap-3">
@@ -137,7 +133,6 @@
 
                         <div class="aspect-video rounded-2xl bg-slate-900 overflow-hidden mb-6 border relative group">
                             <img :src="result.imageUrl" class="w-full h-full object-contain">
-                            <!-- 尺寸標籤：現在直接由 JSON 提供 -->
                             <div class="absolute bottom-3 right-3 flex flex-col gap-1 items-end">
                                 <div class="bg-black/80 backdrop-blur-md text-white text-[11px] px-3 py-1.5 rounded-full font-mono font-bold border border-white/20">
                                     <i class="fas fa-ruler-combined mr-1 text-line-green"></i> 原始尺寸: {{ result.width }} x {{ result.height }}
@@ -159,7 +154,6 @@
                         </div>
                     </div>
 
-                    <!-- 影片資源卡片 -->
                     <div class="result-card bg-white p-8 rounded-[32px] shadow-lg border border-slate-100 flex flex-col" style="animation-delay: 0.1s;">
                         <div class="flex justify-between items-center mb-6">
                             <div class="flex items-center gap-3">
@@ -191,7 +185,6 @@
                     </div>
                 </div>
 
-                <!-- 初始說明 -->
                 <div v-if="!result && !loading" class="flex flex-col items-center justify-center py-32 text-slate-300">
                     <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-inner mb-8 transition-transform hover:scale-105 duration-500">
                         <i class="fas fa-terminal text-4xl opacity-20 text-line-green"></i>
@@ -242,7 +235,6 @@ createApp({
             result.value = null;
 
             try {
-                // 1. 透過 Worker Proxy 獲取 HTML 原始碼
                 const response = await fetch(workerUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -254,19 +246,16 @@ createApp({
 
                 const html = data.html;
 
-                // --- 核心邏輯：深度解析 PRELOADED_STATE (F12 最強模式) ---
                 let videoUrl = null;
                 let imageUrl = null;
                 let width = 0;
                 let height = 0;
                 let source = 'unknown';
 
-                // A. 尋找 window.__PRELOADED_STATE__
                 const stateMatch = html.match(/window\.__PRELOADED_STATE__\s*=\s*(\{.*?\});/);
                 if (stateMatch) {
                     try {
                         const state = JSON.parse(stateMatch[1]);
-                        // 導航到內容節點
                         const content = state.post?.post?.contents?.[0];
                         if (content) {
                             source = 'json';
@@ -286,10 +275,8 @@ createApp({
                     }
                 }
 
-                // B. 回退方案：暴力 Regex (如果 JSON 中沒找到寬高或連結)
                 if (!imageUrl) {
                     source = 'regex';
-                    // 掃描包含尺寸參數的連結
                     const iMatch = html.match(/https?:\/\/(voom-obs\.line-cdn\.net|voom-obs\.line-scdn\.net|obs\.line-apps\.com)\/[^\/\"\'\s]+\/m\d+x\d+/i) ||
                                  html.match(/https?:\/\/(voom-obs\.line-cdn\.net|voom-obs\.line-scdn\.net|obs\.line-apps\.com)\/[^\/\"\'\s]+/i);
                     if (iMatch) imageUrl = iMatch[0].replace(/&amp;/g, '&');
@@ -300,9 +287,7 @@ createApp({
                     if (vMatch) videoUrl = vMatch[0].replace(/&amp;/g, '&');
                 }
 
-                // --- 數據優化處理 ---
                 if (imageUrl) {
-                    // 如果網址帶有參數但 JSON 沒提供寬高，試著從參數提取（這不一定準確，但在沒有 JSON 時是最好猜測）
                     if (width === 0) {
                         const paramMatch = imageUrl.match(/\/m(\d+)x(\d+)$/);
                         if (paramMatch) {
@@ -310,16 +295,12 @@ createApp({
                             height = parseInt(paramMatch[2]);
                         }
                     }
-                    // 剝離縮圖參數獲取原始大圖
                     imageUrl = imageUrl.replace(/\/m\d+x\d+$/, '').replace(/\/w\d+$/, '');
                 }
 
-                // --- 真實尺寸二次驗證 (如果 JSON 中抓到的寬高還是不準) ---
-                // 如果 JSON 給的是 800x1200 這種數值，我們可以透過載入圖片來獲取真正物理寬高
                 if (imageUrl) {
                     const img = new Image();
                     img.src = imageUrl;
-                    // 這裡我們不卡住 Loading，讓它背景加載並更新
                     img.onload = () => {
                         if (img.naturalWidth > 0) {
                             result.value.width = img.naturalWidth;
