@@ -11,7 +11,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
         
-        /* 關鍵修正：預設隱藏整個 Body，防止轉址前閃現畫面 */
+        /* 預設隱藏整個 Body，防止轉址前閃現畫面 */
         body { 
             font-family: 'Noto Sans TC', sans-serif; 
             background-color: #f1f5f9; 
@@ -35,40 +35,63 @@
         
         .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
     </style>
-    <!-- 路由守衛：修正 LIFF State 解析問題 -->
+    <!-- 路由守衛：強化版 -->
     <script>
         (function() {
+            // 1. 取得網址參數
             const urlParams = new URLSearchParams(window.location.search);
             let page = urlParams.get('page');
+            let finalSearch = window.location.search;
+            const hash = window.location.hash;
 
-            // 修正：如果直接參數沒有 page，嘗試從 liff.state 解析 (解決 LIFF 轉址問題)
+            // 2. 如果第一層沒找到 page，檢查是否被包在 liff.state 裡
             if (!page && urlParams.has('liff.state')) {
-                // liff.state 通常是 URL 編碼後的字串，例如 %3Fpage%3Dedit
-                const statePath = decodeURIComponent(urlParams.get('liff.state'));
-                // 尋找 ? 的位置並解析後面的參數
-                const queryStart = statePath.indexOf('?');
-                if (queryStart !== -1) {
-                     const stateParams = new URLSearchParams(statePath.substring(queryStart));
-                     page = stateParams.get('page');
-                } else if (statePath.includes('page=')) {
-                     // 針對某些邊緣情況直接解析
-                     const stateParams = new URLSearchParams('?' + statePath);
-                     page = stateParams.get('page');
+                let statePath = urlParams.get('liff.state');
+                
+                // 嘗試解碼 (LIFF 傳來的 state 經常是 URL 編碼過的)
+                try {
+                    statePath = decodeURIComponent(statePath);
+                } catch(e) {
+                    console.error("Decode liff.state failed", e);
+                }
+
+                // 嘗試從 statePath 解析出參數
+                // statePath 可能是 "/edit.html?page=edit" 或 "?page=edit" 或 "page=edit"
+                const qIndex = statePath.indexOf('?');
+                let stateQuery = "";
+                
+                if (qIndex >= 0) {
+                    stateQuery = statePath.substring(qIndex);
+                } else {
+                    // 如果沒有問號，嘗試直接當作參數解析
+                    stateQuery = '?' + statePath;
+                }
+                
+                const stateParams = new URLSearchParams(stateQuery);
+                if (stateParams.has('page')) {
+                    page = stateParams.get('page');
+                    finalSearch = stateQuery; // 使用解析出來的乾淨參數
                 }
             }
-
-            const search = window.location.search;
-            const hash = window.location.hash;
             
-            // 執行轉址
-            if (page === 'card') window.location.replace('card.html' + search + hash);
-            else if (page === 'stand') window.location.replace('stand.html' + search + hash);
-            else if (page === 'ec') window.location.replace('ec.html' + search + hash);
-            else if (page === 'mix') window.location.replace('mix.html' + search + hash);
-            else if (page === 'edit') window.location.replace('edit.html' + search + hash);
-            else if (page === 'reply') window.location.replace('reply.html' + search + hash);
-            else {
-                // 只有確定沒有要轉址時，才顯示 Body 內容
+            // 3. 定義頁面映射表
+            const pageMap = {
+                'card': 'card.html',
+                'stand': 'stand.html',
+                'ec': 'ec.html',
+                'mix': 'mix.html',
+                'edit': 'edit.html',
+                'reply': 'reply.html',
+                'find': 'find.html'
+            };
+
+            // 4. 執行轉址
+            if (page && pageMap[page]) {
+                // 使用 replace 避免產生上一頁歷史紀錄
+                // 組合: 目標頁面 + 參數 (包含從 liff.state 提取出的) + hash
+                window.location.replace(pageMap[page] + finalSearch + hash);
+            } else {
+                // 5. 沒有 page 參數，或是未知頁面 -> 顯示控制中心
                 document.addEventListener('DOMContentLoaded', function() {
                     document.body.style.display = 'block';
                 });
@@ -93,7 +116,7 @@
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">控制中心</span>
             </div>
 
-            <!-- 名片專區：摺疊目錄 -->
+            <!-- 名片專區 -->
             <div v-if="!isSidebarCollapsed">
                 <div @click="isCardMenuOpen = !isCardMenuOpen" class="flex items-center justify-between py-4 px-6 hover:bg-gray-700 transition-all cursor-pointer text-gray-300">
                     <div class="flex items-center">
@@ -120,7 +143,6 @@
                     </div>
                 </transition>
             </div>
-            <!-- 收合時僅顯示圖示 -->
             <div v-else class="flex justify-center py-4 hover:bg-gray-700 cursor-pointer" @click="isSidebarCollapsed = false">
                 <i class="fas fa-address-book text-lg"></i>
             </div>
@@ -168,7 +190,6 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
-                    <!-- 模組卡片：標準版 -->
                     <a href="stand.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
                         <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-500 transition-colors">
                             <i class="fas fa-file-alt text-2xl text-blue-500 group-hover:text-white"></i>
@@ -178,7 +199,6 @@
                         <span class="text-blue-500 font-bold text-xs uppercase tracking-widest">進入開發 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
-                    <!-- 模組卡片：商務名片 -->
                     <a href="card.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
                         <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-purple-500 transition-colors">
                             <i class="fas fa-id-card text-2xl text-purple-500 group-hover:text-white"></i>
@@ -188,7 +208,6 @@
                         <span class="text-purple-500 font-bold text-xs uppercase tracking-widest">進入開發 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
-                    <!-- 模組卡片：電商 -->
                     <a href="ec.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
                         <div class="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-500 transition-colors">
                             <i class="fas fa-shopping-cart text-2xl text-orange-500 group-hover:text-white"></i>
@@ -198,7 +217,6 @@
                         <span class="text-orange-500 font-bold text-xs uppercase tracking-widest">進入開發 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
-                    <!-- 模組卡片：混合多頁 -->
                     <a href="mix.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
                         <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-green-500 transition-colors">
                             <i class="fas fa-clone text-2xl text-green-500 group-hover:text-white"></i>
@@ -208,7 +226,6 @@
                         <span class="text-green-500 font-bold text-xs uppercase tracking-widest">進入開發 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
-                    <!-- 模組卡片：關鍵字回覆 (New) -->
                     <a href="reply.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
                         <div class="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-pink-500 transition-colors">
                             <i class="fas fa-comments text-2xl text-pink-500 group-hover:text-white"></i>
@@ -218,7 +235,6 @@
                         <span class="text-pink-500 font-bold text-xs uppercase tracking-widest">進入設定 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
-                    <!-- 模組卡片：VOOM -->
                     <a href="find.html" class="dashboard-card bg-slate-800 p-8 rounded-[32px] border border-slate-700 flex flex-col group">
                         <div class="w-14 h-14 bg-slate-700 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-line-green transition-colors">
                             <i class="fab fa-line text-2xl text-white"></i>
@@ -228,7 +244,6 @@
                         <span class="text-white font-bold text-xs uppercase tracking-widest">開啟工具 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
-                    <!-- 模組卡片：專案管理 -->
                     <a href="project.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
                         <div class="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gray-800 transition-colors">
                             <i class="fas fa-database text-2xl text-gray-500 group-hover:text-white"></i>
@@ -248,7 +263,7 @@ const { createApp, ref, onMounted } = Vue;
 createApp({
     setup() {
         const isSidebarCollapsed = ref(false);
-        const isCardMenuOpen = ref(true); // 預設展開名片專區
+        const isCardMenuOpen = ref(true);
         const isLoggedIn = ref(false);
         const userProfile = ref({ displayName: '管理員', pictureUrl: 'https://via.placeholder.com/150' });
 
