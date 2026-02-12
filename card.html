@@ -349,7 +349,6 @@ createApp({
             });
         };
 
-        // 【關鍵修正】：完整還原 Flex 訊息建構邏輯
         const generateSharedFlex = (data, uid) => {
             const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&uid=${uid}`;
             const gridRows = [];
@@ -357,9 +356,9 @@ createApp({
             
             for (let i = 0; i < gridButtons.length; i += 2) {
                 const rowItems = gridButtons.slice(i, i + 2).map(g => ({
-                    type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: "#2A2C31", cornerRadius: "12px",
-                    action: { type: "uri", label: g.label || "btn", uri: g.uri || "https://line.me" },
-                    contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "按鈕", size: "sm", align: "center", color: "#E6E6E6" }]
+                    type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: data.gridBgColor || "#2A2C31", cornerRadius: "12px",
+                    action: { type: "uri", label: g.label || "btn", uri: forceHttps(g.uri) },
+                    contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "按鈕", size: "sm", align: "center", color: data.headerTextColor || "#E6E6E6" }]
                 }));
                 gridRows.push({ type: "box", layout: "horizontal", spacing: "sm", contents: rowItems });
             }
@@ -367,15 +366,15 @@ createApp({
             const footerBtns = (data.footerBtns || []).map((btn, index) => {
                 let uri = btn.uri || "https://line.me";
                 if (index === 1 || (btn.label && (btn.label.includes("推薦") || btn.label.includes("分享")))) uri = shareUrl;
-                return { type: "button", style: "primary", height: "sm", color: btn.color || "#00B900", action: { type: "uri", label: btn.label || "按鈕", uri: uri } };
+                return { type: "button", style: "primary", height: "sm", color: btn.color || "#00B900", action: { type: "uri", label: btn.label || "按鈕", uri: forceHttps(uri) } };
             });
 
             return {
                 type: "bubble", size: "mega",
-                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", backgroundColor: "#1A1B1E", contents: [{ type: "image", url: data.headImg, size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [{ type: "text", text: data.name, weight: "bold", size: "lg", color: "#D4AF37" }, { type: "text", text: data.desc, size: "xs", color: "#D4AF37", wrap: true }] }] },
-                hero: { type: "image", url: data.heroImg || "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png", size: "full", aspectRatio: "20:13", aspectMode: "cover", action: { type: "uri", label: "hero", uri: "https://lin.ee/qFYBr0z" } },
-                body: { type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: "#1A1B1E", contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: "#1A1B1E", cornerRadius: "14px", contents: gridRows }] },
-                footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: "#1A1B1E", contents: footerBtns }
+                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", backgroundColor: data.headerBgColor || "#1A1B1E", contents: [{ type: "image", url: forceHttps(data.headImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [{ type: "text", text: data.name, weight: "bold", size: "lg", color: data.headerTextColor || "#D4AF37" }, { type: "text", text: data.desc, size: "xs", color: data.headerTextColor || "#D4AF37", wrap: true }] }] },
+                hero: { type: "image", url: forceHttps(data.heroImg || "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png"), size: "full", aspectRatio: "20:13", aspectMode: "cover", action: { type: "uri", label: "hero", uri: forceHttps("https://lin.ee/qFYBr0z") } },
+                body: { type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: data.headerBgColor || "#1A1B1E", contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: data.headerBgColor || "#1A1B1E", cornerRadius: "14px", contents: gridRows }] },
+                footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: data.footerBgColor || "#1A1B1E", contents: footerBtns }
             };
         };
 
@@ -395,7 +394,7 @@ createApp({
                         else liff.login();
                     };
 
-                    // 【重點】透過 uid 取得擁有人儲存的最新版本資料
+                    // 關鍵修正：透過 uid 讀取擁有者完整的自訂內容
                     if (uid && uid !== 'GUEST') {
                         try {
                             const res = await fetch(workerUrl, {
@@ -406,12 +405,12 @@ createApp({
                             if (result.status === 'success' && result.data && result.data.cardJson) {
                                 const savedData = JSON.parse(result.data.cardJson);
                                 executeShare(generateSharedFlex(savedData, uid));
-                                return; // 成功分享即結束
+                                return; // 取得資料後直接發送並結束
                             }
                         } catch(e) { console.error("Fetch shared data error:", e); }
                     }
 
-                    // 舊版網址相容處理
+                    // 如果沒給 uid 或讀取失敗的備用方案
                     const fallbackData = {
                         name: decodeURIComponent(params.get('name') || "訪客"),
                         headImg: decodeURIComponent(params.get('img') || "https://placehold.co/150"),
