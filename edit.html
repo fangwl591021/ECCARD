@@ -3,138 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>關鍵字回覆管理 - LINEOA CMS</title>
+    <title>編輯我的專屬名片</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; overflow: hidden; }
-        .sidebar-container { background-color: #1e2124; height: 100vh; width: 280px; display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; }
-        .sidebar-item-active { background-color: #374151; color: white; border-left: 4px solid #00B900; }
-        .line-green { color: #00B900; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
-        .btn-primary { @apply bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #1A1B1E; color: white; overflow-x: hidden; }
+        
+        /* 防閃爍與載入動畫 */
+        #app { opacity: 0; transition: opacity 0.3s ease-in-out; }
+        #app.loaded { opacity: 1; }
+
+        .card-container { max-width: 450px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
+        
+        /* 點哪編輯哪的虛線框效果 */
+        .edit-highlight { border: 2px dashed rgba(0, 185, 0, 0.5); cursor: pointer; transition: all 0.2s; position: relative; border-radius: 8px; }
+        .edit-highlight:hover { background-color: rgba(0, 185, 0, 0.15); border-color: #00B900; }
+        
+        /* 編輯小圖示 */
+        .edit-icon { position: absolute; top: -10px; right: -10px; background: #00B900; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.5); pointer-events: none; }
+        
+        /* 圓形頭像特別處理 */
+        .edit-highlight-circle { border-radius: 50%; }
+
+        /* 彈窗樣式 */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
+        .modal-content { background: white; color: #333; padding: 24px; border-radius: 24px; width: 90%; max-width: 340px; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* 模擬 LINE Flex Message 的外觀 */
+        .flex-bubble { background: #1A1B1E; border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6); border: 1px solid #333; }
+        .header-box { padding: 20px; display: flex; align-items: center; gap: 15px; }
+        .hero-img { width: 100%; aspect-ratio: 20/13; object-fit: cover; }
+        .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+        .grid-item { background-color: #2A2C31; padding: 15px; text-align: center; }
+        .footer-box { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .action-btn { width: 100%; padding: 12px; font-weight: bold; text-align: center; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div id="app" class="flex h-screen overflow-hidden text-gray-800">
-    <!-- 側邊欄 -->
-    <aside class="sidebar-container text-gray-400 shadow-2xl">
-        <div class="h-16 flex items-center border-b border-gray-700 shrink-0 px-6">
-            <i class="fab fa-line text-3xl line-green"></i>
-            <span class="ml-4 text-white font-bold uppercase font-mono tracking-tighter">Auto Reply</span>
+<div id="app" :class="{ 'loaded': isLoaded }">
+    <!-- 載入中遮罩 -->
+    <div v-if="loading" class="fixed inset-0 bg-[#1A1B1E] z-[200] flex flex-col items-center justify-center text-green-500">
+        <i class="fas fa-circle-notch fa-spin text-5xl mb-6"></i>
+        <p class="text-sm font-bold tracking-widest uppercase">正在讀取您的專屬名片...</p>
+    </div>
+
+    <!-- 頂部導覽列 -->
+    <div class="sticky top-0 bg-[#1A1B1E]/95 backdrop-blur-md border-b border-gray-800 p-4 flex justify-between items-center z-50 shadow-md">
+        <h1 class="font-bold text-lg text-white flex items-center"><i class="fas fa-magic text-green-500 mr-2"></i>名片編輯器</h1>
+        <button @click="saveCard" :disabled="saving" class="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded-full text-sm font-bold transition-all disabled:opacity-50 shadow-lg shadow-green-900/50 flex items-center gap-2">
+            <i v-if="saving" class="fas fa-spinner fa-spin"></i>
+            <span v-else><i class="fas fa-save mr-1"></i> 儲存更新</span>
+        </button>
+    </div>
+
+    <!-- 編輯區域 (所見即所得) -->
+    <div class="card-container">
+        <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6 text-center shadow-inner">
+            <p class="text-yellow-400 text-xs font-bold tracking-wider">👆 點擊下方<span class="border-b border-dashed border-yellow-400 mx-1">虛線框區域</span>即可直接修改內容</p>
         </div>
-        
-        <nav class="mt-6 flex-grow overflow-y-auto no-scrollbar">
-            <a href="index.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400 px-6">
-                <i class="fas fa-th-large w-8 text-center text-lg"></i>
-                <span class="ml-2 font-medium">控制中心</span>
-            </a>
+
+        <div class="flex-bubble">
+            <!-- Header (頭像與姓名) -->
+            <div class="header-box">
+                <div class="relative group cursor-pointer edit-highlight edit-highlight-circle p-1" @click="openEdit('image', 'headImg', '更換個人頭像')">
+                    <img :src="card.headImg" class="w-14 h-14 rounded-full object-cover border border-gray-600" onerror="this.src='https://placehold.co/150'">
+                    <div class="edit-icon"><i class="fas fa-camera"></i></div>
+                </div>
+                <div class="flex-1 flex flex-col gap-2 overflow-hidden">
+                    <div class="relative w-fit max-w-full edit-highlight p-1" @click="openEdit('text', 'name', '修改姓名/暱稱')">
+                        <span class="text-[#D4AF37] font-bold text-xl block truncate">{{ card.name }}</span>
+                        <div class="edit-icon"><i class="fas fa-pen"></i></div>
+                    </div>
+                    <div class="relative w-full edit-highlight p-1" @click="openEdit('text', 'desc', '修改個人簡介')">
+                        <span class="text-[#D4AF37] text-xs block leading-relaxed whitespace-pre-wrap opacity-90">{{ card.desc }}</span>
+                        <div class="edit-icon"><i class="fas fa-pen"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero (主視覺圖) -->
+            <div class="relative group edit-highlight m-3 mt-0" @click="openEdit('image', 'heroImg', '更換名片主視覺圖片')">
+                <img :src="card.heroImg" class="hero-img rounded-lg" onerror="this.src='https://placehold.co/800x520'">
+                <div class="edit-icon" style="top: 10px; right: 10px; width: 32px; height: 32px; font-size: 14px;"><i class="fas fa-image"></i></div>
+            </div>
+
+            <!-- Body (功能網格) -->
+            <div class="grid-box">
+                <div v-for="(btn, idx) in card.grids" :key="idx" class="grid-item relative edit-highlight flex flex-col items-center justify-center" @click="openEdit('grid', idx, `設定網格按鈕 ${idx+1}`)">
+                    <div class="text-3xl mb-2">{{ btn.emoji }}</div>
+                    <div class="text-gray-300 text-xs font-bold w-full truncate">{{ btn.label }}</div>
+                    <div class="edit-icon"><i class="fas fa-cog"></i></div>
+                </div>
+            </div>
+
+            <!-- Footer (底部按鈕) -->
+            <div class="footer-box">
+                <div v-for="(btn, idx) in card.footerBtns" :key="idx" class="relative edit-highlight p-1" @click="openEdit('button', idx, `設定主按鈕 ${idx+1}`)">
+                    <div class="action-btn text-white rounded-lg shadow-sm" :style="{ backgroundColor: btn.color }">
+                        {{ btn.label }}
+                    </div>
+                    <div class="edit-icon"><i class="fas fa-link"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯設定彈窗 -->
+    <div v-if="editing.show" class="modal-overlay" @click.self="editing.show = false">
+        <div class="modal-content shadow-2xl">
+            <div class="flex justify-between items-center mb-6 border-b pb-3">
+                <h3 class="font-bold text-lg text-gray-800"><i class="fas fa-edit text-line-green mr-2"></i>{{ editing.title }}</h3>
+                <button @click="editing.show = false" class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"><i class="fas fa-times"></i></button>
+            </div>
             
-            <a href="card.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400 px-6">
-                <i class="fas fa-id-card w-8 text-center text-lg"></i>
-                <span class="ml-2 font-medium">名片專區</span>
-            </a>
-
-            <!-- 關鍵字回覆 (Active) -->
-            <div class="sidebar-item-active flex items-center py-4 transition-all px-6">
-                <i class="fas fa-comments w-8 text-center text-lg"></i>
-                <span class="ml-2 font-medium">關鍵字回覆</span>
+            <!-- 文字編輯 -->
+            <div v-if="editing.type === 'text'" class="space-y-2">
+                <template v-if="editing.key === 'desc'">
+                    <label class="block text-xs font-bold text-gray-500 ml-1">簡介內容 (建議 50 字內)</label>
+                    <textarea v-model="tempValue" rows="4" class="w-full border-2 border-gray-200 p-3 rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 text-sm transition-all" placeholder="請輸入描述..."></textarea>
+                </template>
+                <template v-else>
+                    <label class="block text-xs font-bold text-gray-500 ml-1">顯示名稱</label>
+                    <input v-model="tempValue" class="w-full border-2 border-gray-200 p-3 rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 font-bold transition-all" placeholder="請輸入姓名...">
+                </template>
             </div>
 
-            <a href="project.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400 mt-4 border-t border-gray-800 px-6">
-                <i class="fas fa-box w-8 text-center text-lg"></i>
-                <span class="ml-2 font-medium">專案管理系統</span>
-            </a>
-        </nav>
-    </aside>
+            <!-- 圖片編輯 -->
+            <div v-if="editing.type === 'image'" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">圖片網址 (需為 https 開頭)</label>
+                    <input v-model="tempValue" class="w-full border-2 border-gray-200 p-3 rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 text-xs font-mono transition-all" placeholder="https://...">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">圖片預覽</label>
+                    <div class="relative w-full h-32 bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200 shadow-inner">
+                        <img :src="tempValue" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/300x200?text=Image+Error'">
+                    </div>
+                </div>
+            </div>
 
-    <!-- 主要內容 -->
-    <main class="flex-grow flex flex-col h-full bg-white overflow-hidden">
-        <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
-            <h2 class="text-xl font-bold text-gray-800">關鍵字自動回覆設定</h2>
-            <div class="flex items-center gap-3">
-                <button @click="openModal" class="px-6 py-2 btn-primary rounded-xl text-sm font-bold flex items-center gap-2">
-                    <i class="fas fa-plus"></i> 新增規則
+            <!-- 網格按鈕編輯 -->
+            <div v-if="editing.type === 'grid'" class="space-y-4">
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="col-span-1">
+                        <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">Emoji</label>
+                        <input v-model="tempGrid.emoji" class="w-full border-2 border-gray-200 p-3 rounded-xl text-center text-xl outline-none focus:border-green-500 transition-all">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">按鈕名稱</label>
+                        <input v-model="tempGrid.label" class="w-full border-2 border-gray-200 p-3 rounded-xl outline-none focus:border-green-500 font-bold transition-all" placeholder="名稱">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">跳轉連結 (URL)</label>
+                    <input v-model="tempGrid.uri" class="w-full border-2 border-gray-200 p-3 rounded-xl outline-none focus:border-green-500 text-xs font-mono transition-all" placeholder="https://...">
+                </div>
+            </div>
+
+            <!-- 底部按鈕編輯 -->
+            <div v-if="editing.type === 'button'" class="space-y-4">
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">按鈕文字</label>
+                        <input v-model="tempBtn.label" class="w-full border-2 border-gray-200 p-3 rounded-xl outline-none focus:border-green-500 font-bold transition-all">
+                    </div>
+                    <div class="w-20">
+                        <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">顏色</label>
+                        <div class="border-2 border-gray-200 rounded-xl overflow-hidden h-[52px] flex items-center justify-center p-1 focus-within:border-green-500 transition-all">
+                            <input type="color" v-model="tempBtn.color" class="w-full h-full cursor-pointer bg-transparent border-0 outline-none p-0 m-0">
+                        </div>
+                    </div>
+                </div>
+                <div v-if="editing.key !== 1"> 
+                    <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">跳轉連結 (URL)</label>
+                    <input v-model="tempBtn.uri" class="w-full border-2 border-gray-200 p-3 rounded-xl outline-none focus:border-green-500 text-xs font-mono transition-all" placeholder="https://...">
+                </div>
+                <div v-else class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                    <p class="text-[10px] text-blue-600 font-bold"><i class="fas fa-info-circle mr-1"></i> 此為【推薦分享】按鈕，系統將自動帶入您的專屬分享連結。</p>
+                </div>
+            </div>
+
+            <!-- 儲存操作區 -->
+            <div class="flex gap-3 mt-6 pt-2">
+                <button @click="editing.show = false" class="flex-1 py-3.5 text-gray-500 font-bold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">取消</button>
+                <button @click="confirmEdit" class="flex-[2] py-3.5 text-white font-bold bg-green-600 rounded-xl hover:bg-green-500 transition-colors shadow-lg shadow-green-200 flex justify-center items-center gap-2">
+                    <i class="fas fa-check"></i> 確定修改
                 </button>
-            </div>
-        </header>
-
-        <div class="flex-grow p-8 overflow-y-auto bg-[#f8fafc]">
-            <div class="max-w-5xl mx-auto">
-                
-                <!-- 測試提示卡片 -->
-                <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg mb-8 flex items-center justify-between">
-                    <div>
-                        <h3 class="font-bold text-lg mb-1"><i class="fas fa-robot mr-2"></i>測試模式已啟用</h3>
-                        <p class="text-sm opacity-90">目前系統已內建測試指令：請在您的 LINE 官方帳號聊天室輸入 <b>「顯示名片」</b> 即可查看效果。</p>
-                    </div>
-                    <div class="bg-white/20 p-3 rounded-full">
-                        <i class="fas fa-flask text-2xl"></i>
-                    </div>
-                </div>
-
-                <!-- 列表 (目前僅展示用，未來可串接資料庫) -->
-                <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
-                        <h3 class="font-bold text-gray-700">生效中的規則</h3>
-                        <span class="text-xs text-gray-400">共 1 筆</span>
-                    </div>
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-gray-50 text-gray-500 font-bold border-b">
-                            <tr>
-                                <th class="px-6 py-3">觸發關鍵字</th>
-                                <th class="px-6 py-3">回覆類型</th>
-                                <th class="px-6 py-3">內容預覽</th>
-                                <th class="px-6 py-3 text-right">狀態</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- 硬編碼的測試項目 -->
-                            <tr class="border-b last:border-0 hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4 font-bold text-blue-600">顯示名片</td>
-                                <td class="px-6 py-4"><span class="bg-purple-100 text-purple-600 px-2 py-1 rounded text-xs font-bold">Flex Message</span></td>
-                                <td class="px-6 py-4 text-gray-500">商務名片 (Tony)</td>
-                                <td class="px-6 py-4 text-right"><span class="flex items-center justify-end gap-1 text-green-600 font-bold text-xs"><div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>啟用中</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div class="p-8 text-center text-gray-400 text-xs italic">
-                        更多自定義規則功能開發中...
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- 模擬新增彈窗 -->
-    <div v-if="showModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
-            <h3 class="text-xl font-bold mb-4 text-gray-800">新增關鍵字規則</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">關鍵字 (完全符合)</label>
-                    <input type="text" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例如：價目表">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">回覆類型</label>
-                    <select class="w-full border rounded-lg p-2 text-sm bg-white">
-                        <option>文字訊息 (Text)</option>
-                        <option>Flex 訊息 (JSON)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">回覆內容</label>
-                    <textarea class="w-full border rounded-lg p-2 text-sm h-32 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="請輸入回覆內容..."></textarea>
-                </div>
-            </div>
-            <div class="flex gap-3 mt-8">
-                <button @click="showModal = false" class="flex-1 py-2.5 text-gray-500 font-bold bg-gray-100 rounded-lg hover:bg-gray-200">取消</button>
-                <button @click="showModal = false" class="flex-1 py-2.5 text-white font-bold bg-blue-600 rounded-lg hover:bg-blue-700">儲存規則</button>
             </div>
         </div>
     </div>
@@ -142,17 +201,172 @@
 
 <script>
 const { createApp, ref, onMounted } = Vue;
+const workerUrl = "https://lineoa.fangwl591021.workers.dev"; 
 
 createApp({
     setup() {
-        const showModal = ref(false);
-        const openModal = () => { showModal.value = true; };
+        const loading = ref(true);
+        const saving = ref(false);
+        const userId = ref('');
+        const isLoaded = ref(false);
         
-        onMounted(async () => {
-            try { await liff.init({ liffId: "2008924519-1qRqocsa" }); } catch (e) {}
+        const card = ref({
+            name: '載入中...',
+            desc: '...',
+            headImg: 'https://placehold.co/150',
+            heroImg: 'https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png',
+            grids: [
+                { emoji: '🤖', label: 'AI 諮詢', uri: 'https://line.me' },
+                { emoji: '🎥', label: '實績案例', uri: 'https://line.me' },
+                { emoji: '🧾', label: '服務項目', uri: 'https://line.me' },
+                { emoji: '📍', label: '預約面談', uri: 'https://line.me' }
+            ],
+            footerBtns: [
+                { label: '🚀 立即啟動 AI 合作', color: '#C9A24D', uri: 'https://line.me' },
+                { label: '📤 推薦給好友', color: '#2A2C31', uri: 'https://line.me' } 
+            ]
         });
 
-        return { showModal, openModal };
+        const editing = ref({ show: false, type: '', key: '', title: '' });
+        const tempValue = ref('');
+        const tempGrid = ref({});
+        const tempBtn = ref({});
+
+        const initLiff = async () => {
+            try {
+                await liff.init({ liffId: "2008924519-1qRqocsa" });
+                if (!liff.isLoggedIn()) {
+                    liff.login({ redirectUri: window.location.href });
+                    return;
+                }
+                const profile = await liff.getProfile();
+                userId.value = profile.userId;
+                fetchUserData(profile.userId);
+            } catch (e) {
+                console.error("LIFF Init Error:", e);
+                alert("LIFF 載入失敗，請確認是否在 LINE App 內開啟。");
+                loading.value = false;
+                isLoaded.value = true;
+            }
+        };
+
+        const fetchUserData = async (uid) => {
+            try {
+                const res = await fetch(workerUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getUserData', userId: uid })
+                });
+                const result = await res.json();
+                
+                if (result.status === 'success' && result.data) {
+                    const d = result.data;
+                    if (d.cardJson && d.cardJson.length > 10) {
+                        try {
+                            const saved = JSON.parse(d.cardJson);
+                            if (saved.name && saved.grids) {
+                                card.value = saved;
+                            } else {
+                                useDefaultData(d);
+                            }
+                        } catch(e) {
+                            useDefaultData(d);
+                        }
+                    } else {
+                        useDefaultData(d); 
+                    }
+                } else {
+                    liff.getProfile().then(p => {
+                        useDefaultData({ displayName: p.displayName, statusMessage: p.statusMessage, pictureUrl: p.pictureUrl });
+                    }).catch(() => {
+                        useDefaultData({ displayName: '訪客', statusMessage: '歡迎聯繫', pictureUrl: 'https://placehold.co/150' });
+                    });
+                }
+            } catch (e) {
+                console.error("Fetch Error:", e);
+                alert("讀取資料失敗，請檢查網路連線。");
+            } finally {
+                loading.value = false;
+                isLoaded.value = true;
+            }
+        };
+
+        const useDefaultData = (d) => {
+            card.value.name = d.displayName || '使用者';
+            card.value.desc = d.statusMessage || '歡迎聯繫';
+            card.value.headImg = d.pictureUrl || 'https://placehold.co/150';
+        };
+
+        const openEdit = (type, key, title) => {
+            editing.value = { show: true, type, key, title };
+            if (type === 'text' || type === 'image') {
+                tempValue.value = card.value[key] || '';
+            } else if (type === 'grid') {
+                tempGrid.value = { ...card.value.grids[key] };
+            } else if (type === 'button') {
+                tempBtn.value = { ...card.value.footerBtns[key] };
+            }
+        };
+
+        const confirmEdit = () => {
+            const { type, key } = editing.value;
+            if (type === 'text' || type === 'image') {
+                let val = tempValue.value.trim();
+                if (type === 'image' && val && !val.startsWith('http')) val = 'https://' + val;
+                card.value[key] = val;
+            } else if (type === 'grid') {
+                let uri = tempGrid.value.uri.trim();
+                if (uri && !uri.startsWith('http')) uri = 'https://' + uri;
+                card.value.grids[key] = { ...tempGrid.value, uri };
+            } else if (type === 'button') {
+                let uri = tempBtn.value.uri.trim();
+                if (uri && !uri.startsWith('http')) uri = 'https://' + uri;
+                card.value.footerBtns[key] = { ...tempBtn.value, uri };
+            }
+            editing.value.show = false;
+        };
+
+        const saveCard = async () => {
+            saving.value = true;
+            try {
+                const payload = {
+                    action: 'saveUserCard',
+                    userId: userId.value,
+                    cardJson: JSON.stringify(card.value),
+                    displayName: card.value.name,       
+                    statusMessage: card.value.desc,     
+                    pictureUrl: card.value.headImg      
+                };
+                
+                const res = await fetch(workerUrl, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload) 
+                });
+                
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert("✅ 名片設定已成功更新！\n請回到聊天室重新輸入「顯示名片」查看結果。");
+                    liff.closeWindow(); 
+                } else {
+                    alert("儲存失敗，請稍後再試。");
+                }
+            } catch (e) {
+                console.error("Save Error:", e);
+                alert("儲存連線發生錯誤，請檢查網路。");
+            } finally {
+                saving.value = false;
+            }
+        };
+
+        onMounted(() => {
+            initLiff();
+        });
+
+        return { 
+            loading, saving, card, editing, 
+            tempValue, tempGrid, tempBtn, 
+            openEdit, confirmEdit, saveCard, isLoaded 
+        };
     }
 }).mount('#app');
 </script>
