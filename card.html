@@ -327,12 +327,56 @@ createApp({
 
         const pushCard = (specificFlexMessage = null) => {
             const contentToSend = specificFlexMessage || flexJson.value;
+
             return new Promise((resolve, reject) => {
                 if (!liff.isLoggedIn()) { liff.login(); return reject('Not logged in'); }
+                
                 liff.shareTargetPicker([{ type: "flex", altText: "名片分享", contents: contentToSend }])
-                .then(res => { if (res) { if (isAutoMode.value) liff.closeWindow(); else alert("商務型名片推播成功！"); resolve(res); } else { if (isAutoMode.value) liff.closeWindow(); resolve(null); } })
-                .catch(err => { if (isAutoMode.value) liff.closeWindow(); reject(err); });
+                .then(res => {
+                    if (res) {
+                        if (isAutoMode.value) liff.closeWindow();
+                        else alert("商務型名片推播成功！");
+                        resolve(res);
+                    } else {
+                        if (isAutoMode.value) liff.closeWindow();
+                        resolve(null);
+                    }
+                })
+                .catch(err => {
+                    if (isAutoMode.value) liff.closeWindow();
+                    reject(err);
+                });
             });
+        };
+
+        // 【關鍵修正】：完整還原 Flex 訊息建構邏輯
+        const generateSharedFlex = (data, uid) => {
+            const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&uid=${uid}`;
+            const gridRows = [];
+            const gridButtons = data.grids || [];
+            
+            for (let i = 0; i < gridButtons.length; i += 2) {
+                const rowItems = gridButtons.slice(i, i + 2).map(g => ({
+                    type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: "#2A2C31", cornerRadius: "12px",
+                    action: { type: "uri", label: g.label || "btn", uri: g.uri || "https://line.me" },
+                    contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "按鈕", size: "sm", align: "center", color: "#E6E6E6" }]
+                }));
+                gridRows.push({ type: "box", layout: "horizontal", spacing: "sm", contents: rowItems });
+            }
+
+            const footerBtns = (data.footerBtns || []).map((btn, index) => {
+                let uri = btn.uri || "https://line.me";
+                if (index === 1 || (btn.label && (btn.label.includes("推薦") || btn.label.includes("分享")))) uri = shareUrl;
+                return { type: "button", style: "primary", height: "sm", color: btn.color || "#00B900", action: { type: "uri", label: btn.label || "按鈕", uri: uri } };
+            });
+
+            return {
+                type: "bubble", size: "mega",
+                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", backgroundColor: "#1A1B1E", contents: [{ type: "image", url: data.headImg, size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [{ type: "text", text: data.name, weight: "bold", size: "lg", color: "#D4AF37" }, { type: "text", text: data.desc, size: "xs", color: "#D4AF37", wrap: true }] }] },
+                hero: { type: "image", url: data.heroImg || "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png", size: "full", aspectRatio: "20:13", aspectMode: "cover", action: { type: "uri", label: "hero", uri: "https://lin.ee/qFYBr0z" } },
+                body: { type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: "#1A1B1E", contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: "#1A1B1E", cornerRadius: "14px", contents: gridRows }] },
+                footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: "#1A1B1E", contents: footerBtns }
+            };
         };
 
         onMounted(async () => {
@@ -344,20 +388,56 @@ createApp({
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('action') === 'share') {
                     isAutoMode.value = true;
-                    const name = decodeURIComponent(params.get('name') || "訪客");
-                    const img = decodeURIComponent(params.get('img') || "https://placehold.co/150");
-                    const desc = decodeURIComponent(params.get('desc') || "歡迎聯繫");
-                    const gridsStr = decodeURIComponent(params.get('grids') || '[]');
-                    const btnsStr = decodeURIComponent(params.get('btns') || '[]');
+                    const uid = params.get('uid');
+                    
+                    const executeShare = (flexContent) => {
+                        if (isLoggedIn.value) pushCard(flexContent);
+                        else liff.login();
+                    };
 
-                    const originalFlex = generateOriginalCardJson(name, img, desc, gridsStr, btnsStr);
-                    if (isLoggedIn.value) pushCard(originalFlex); else liff.login();
+                    // 【重點】透過 uid 取得擁有人儲存的最新版本資料
+                    if (uid && uid !== 'GUEST') {
+                        try {
+                            const res = await fetch(workerUrl, {
+                                method: 'POST',
+                                body: JSON.stringify({ action: 'getUserData', userId: uid })
+                            });
+                            const result = await res.json();
+                            if (result.status === 'success' && result.data && result.data.cardJson) {
+                                const savedData = JSON.parse(result.data.cardJson);
+                                executeShare(generateSharedFlex(savedData, uid));
+                                return; // 成功分享即結束
+                            }
+                        } catch(e) { console.error("Fetch shared data error:", e); }
+                    }
+
+                    // 舊版網址相容處理
+                    const fallbackData = {
+                        name: decodeURIComponent(params.get('name') || "訪客"),
+                        headImg: decodeURIComponent(params.get('img') || "https://placehold.co/150"),
+                        desc: decodeURIComponent(params.get('desc') || "歡迎聯繫"),
+                        heroImg: "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png",
+                    };
+                    let grids = [], btns = [];
+                    try { grids = JSON.parse(decodeURIComponent(params.get('grids') || '[]')); } catch(e){}
+                    try { btns = JSON.parse(decodeURIComponent(params.get('btns') || '[]')); } catch(e){}
+                    fallbackData.grids = grids.length > 0 ? grids : [{emoji:'🤖',label:'AI 諮詢',uri:'https://line.me'},{emoji:'🎥',label:'實績案例',uri:'https://line.me'},{emoji:'🧾',label:'服務項目',uri:'https://line.me'},{emoji:'📍',label:'預約面談',uri:'https://line.me'}];
+                    fallbackData.footerBtns = btns.length > 0 ? btns : [{label:'🚀 立即啟動 AI 合作',color:'#C9A24D',uri:'https://line.me'},{label:'📤 推薦給好友',color:'#2A2C31',uri:`https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&uid=${uid||'GUEST'}`}];
+
+                    executeShare(generateSharedFlex(fallbackData, uid || 'GUEST'));
                 }
             } catch (e) {}
             finally { isLoaded.value = true; }
         });
 
-        return { isSidebarCollapsed, data, flexJson, isLoggedIn, userProfile, pushCard, copyJson: () => { navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); alert("JSON 代碼已複製"); }, initSave, confirmSave, showSaveModal, projectName, isSaving, isAutoMode, isLoaded };
+        return { 
+            isSidebarCollapsed, data, flexJson, isLoggedIn, userProfile, pushCard, 
+            copyJson: () => { 
+                navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); 
+                alert("JSON 代碼已複製"); 
+            }, 
+            initSave, confirmSave, showSaveModal, projectName, isSaving, isAutoMode, isLoaded 
+        };
     }
 }).mount('#app');
 </script>
