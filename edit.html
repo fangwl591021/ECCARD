@@ -12,28 +12,19 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #1A1B1E; color: white; overflow-x: hidden; }
         
-        /* 防閃爍與載入動畫 */
         #app { opacity: 0; transition: opacity 0.3s ease-in-out; }
         #app.loaded { opacity: 1; }
 
         .card-container { max-width: 450px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
-        
-        /* 點哪編輯哪的虛線框效果 */
         .edit-highlight { border: 2px dashed rgba(0, 185, 0, 0.5); cursor: pointer; transition: all 0.2s; position: relative; border-radius: 8px; }
         .edit-highlight:hover { background-color: rgba(0, 185, 0, 0.15); border-color: #00B900; }
-        
-        /* 編輯小圖示 */
         .edit-icon { position: absolute; top: -10px; right: -10px; background: #00B900; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.5); pointer-events: none; }
-        
-        /* 圓形頭像特別處理 */
         .edit-highlight-circle { border-radius: 50%; }
 
-        /* 彈窗樣式 */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
         .modal-content { background: white; color: #333; padding: 24px; border-radius: 24px; width: 90%; max-width: 340px; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* 模擬 LINE Flex Message 的外觀 */
         .flex-bubble { background: #1A1B1E; border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6); border: 1px solid #333; }
         .header-box { padding: 20px; display: flex; align-items: center; gap: 15px; }
         .hero-img { width: 100%; aspect-ratio: 20/13; object-fit: cover; }
@@ -46,13 +37,11 @@
 <body>
 
 <div id="app" :class="{ 'loaded': isLoaded }">
-    <!-- 載入中遮罩 -->
     <div v-if="loading" class="fixed inset-0 bg-[#1A1B1E] z-[200] flex flex-col items-center justify-center text-green-500">
         <i class="fas fa-circle-notch fa-spin text-5xl mb-6"></i>
         <p class="text-sm font-bold tracking-widest uppercase">正在讀取您的專屬名片...</p>
     </div>
 
-    <!-- 頂部導覽列 -->
     <div class="sticky top-0 bg-[#1A1B1E]/95 backdrop-blur-md border-b border-gray-800 p-4 flex justify-between items-center z-50 shadow-md">
         <h1 class="font-bold text-lg text-white flex items-center"><i class="fas fa-magic text-green-500 mr-2"></i>名片編輯器</h1>
         <button @click="saveCard" :disabled="saving" class="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded-full text-sm font-bold transition-all disabled:opacity-50 shadow-lg shadow-green-900/50 flex items-center gap-2">
@@ -61,14 +50,12 @@
         </button>
     </div>
 
-    <!-- 編輯區域 (所見即所得) -->
     <div class="card-container">
         <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6 text-center shadow-inner">
             <p class="text-yellow-400 text-xs font-bold tracking-wider">👆 點擊下方<span class="border-b border-dashed border-yellow-400 mx-1">虛線框區域</span>即可直接修改內容</p>
         </div>
 
         <div class="flex-bubble">
-            <!-- Header (頭像與姓名) -->
             <div class="header-box">
                 <div class="relative group cursor-pointer edit-highlight edit-highlight-circle p-1" @click="openEdit('image', 'headImg', '更換個人頭像')">
                     <img :src="card.headImg" class="w-14 h-14 rounded-full object-cover border border-gray-600" onerror="this.src='https://placehold.co/150'">
@@ -86,13 +73,11 @@
                 </div>
             </div>
 
-            <!-- Hero (主視覺圖) -->
             <div class="relative group edit-highlight m-3 mt-0" @click="openEdit('image', 'heroImg', '更換名片主視覺圖片')">
                 <img :src="card.heroImg" class="hero-img rounded-lg" onerror="this.src='https://placehold.co/800x520'">
                 <div class="edit-icon" style="top: 10px; right: 10px; width: 32px; height: 32px; font-size: 14px;"><i class="fas fa-image"></i></div>
             </div>
 
-            <!-- Body (功能網格) -->
             <div class="grid-box">
                 <div v-for="(btn, idx) in card.grids" :key="idx" class="grid-item relative edit-highlight flex flex-col items-center justify-center" @click="openEdit('grid', idx, `設定網格按鈕 ${idx+1}`)">
                     <div class="text-3xl mb-2">{{ btn.emoji }}</div>
@@ -101,7 +86,6 @@
                 </div>
             </div>
 
-            <!-- Footer (底部按鈕) -->
             <div class="footer-box">
                 <div v-for="(btn, idx) in card.footerBtns" :key="idx" class="relative edit-highlight p-1" @click="openEdit('button', idx, `設定主按鈕 ${idx+1}`)">
                     <div class="action-btn text-white rounded-lg shadow-sm" :style="{ backgroundColor: btn.color }">
@@ -113,7 +97,7 @@
         </div>
     </div>
 
-    <!-- 編輯設定彈窗 -->
+    <!-- 彈窗 -->
     <div v-if="editing.show" class="modal-overlay" @click.self="editing.show = false">
         <div class="modal-content shadow-2xl">
             <div class="flex justify-between items-center mb-6 border-b pb-3">
@@ -121,7 +105,6 @@
                 <button @click="editing.show = false" class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"><i class="fas fa-times"></i></button>
             </div>
             
-            <!-- 文字編輯 -->
             <div v-if="editing.type === 'text'" class="space-y-2">
                 <template v-if="editing.key === 'desc'">
                     <label class="block text-xs font-bold text-gray-500 ml-1">簡介內容 (建議 50 字內)</label>
@@ -133,7 +116,6 @@
                 </template>
             </div>
 
-            <!-- 圖片編輯 -->
             <div v-if="editing.type === 'image'" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">圖片網址 (需為 https 開頭)</label>
@@ -147,7 +129,6 @@
                 </div>
             </div>
 
-            <!-- 網格按鈕編輯 -->
             <div v-if="editing.type === 'grid'" class="space-y-4">
                 <div class="grid grid-cols-3 gap-3">
                     <div class="col-span-1">
@@ -165,7 +146,6 @@
                 </div>
             </div>
 
-            <!-- 底部按鈕編輯 -->
             <div v-if="editing.type === 'button'" class="space-y-4">
                 <div class="flex gap-3">
                     <div class="flex-1">
@@ -184,11 +164,10 @@
                     <input v-model="tempBtn.uri" class="w-full border-2 border-gray-200 p-3 rounded-xl outline-none focus:border-green-500 text-xs font-mono transition-all" placeholder="https://...">
                 </div>
                 <div v-else class="bg-blue-50 p-3 rounded-xl border border-blue-100">
-                    <p class="text-[10px] text-blue-600 font-bold"><i class="fas fa-info-circle mr-1"></i> 此為【推薦分享】按鈕，系統將自動帶入您的專屬分享連結。</p>
+                    <p class="text-[10px] text-blue-600 font-bold"><i class="fas fa-info-circle mr-1"></i> 此為【推薦分享】按鈕，系統將自動套用您的專屬分享連結，無需設定網址。</p>
                 </div>
             </div>
 
-            <!-- 儲存操作區 -->
             <div class="flex gap-3 mt-6 pt-2">
                 <button @click="editing.show = false" class="flex-1 py-3.5 text-gray-500 font-bold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">取消</button>
                 <button @click="confirmEdit" class="flex-[2] py-3.5 text-white font-bold bg-green-600 rounded-xl hover:bg-green-500 transition-colors shadow-lg shadow-green-200 flex justify-center items-center gap-2">
@@ -236,7 +215,7 @@ createApp({
             try {
                 await liff.init({ liffId: "2008924519-1qRqocsa" });
                 if (!liff.isLoggedIn()) {
-                    liff.login({ redirectUri: window.location.href });
+                    liff.login();
                     return;
                 }
                 const profile = await liff.getProfile();
