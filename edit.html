@@ -12,13 +12,15 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #1A1B1E; color: white; overflow-x: hidden; }
         
-        /* 修正：安全的防閃爍寫法，解決黑畫面問題 */
         [v-cloak] { display: none !important; }
 
         .card-container { max-width: 450px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
+        
         .edit-highlight { border: 2px dashed rgba(0, 185, 0, 0.5); cursor: pointer; transition: all 0.2s; position: relative; border-radius: 8px; }
         .edit-highlight:hover { background-color: rgba(0, 185, 0, 0.15); border-color: #00B900; }
+        
         .edit-icon { position: absolute; top: -10px; right: -10px; background: #00B900; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.5); pointer-events: none; }
+        
         .edit-highlight-circle { border-radius: 50%; }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
@@ -37,13 +39,11 @@
 <body>
 
 <div id="app" v-cloak>
-    <!-- 讀取畫面 -->
     <div v-if="loading" class="fixed inset-0 bg-[#1A1B1E] z-[200] flex flex-col items-center justify-center text-green-500">
         <i class="fas fa-circle-notch fa-spin text-5xl mb-6"></i>
         <p class="text-sm font-bold tracking-widest uppercase">正在讀取您的專屬名片...</p>
     </div>
 
-    <!-- 頂部導覽列 -->
     <div class="sticky top-0 bg-[#1A1B1E]/95 backdrop-blur-md border-b border-gray-800 p-4 flex justify-between items-center z-50 shadow-md">
         <h1 class="font-bold text-lg text-white flex items-center"><i class="fas fa-magic text-green-500 mr-2"></i>名片編輯器</h1>
         <button @click="saveCard" :disabled="saving" class="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded-full text-sm font-bold transition-all disabled:opacity-50 shadow-lg shadow-green-900/50 flex items-center gap-2">
@@ -52,7 +52,6 @@
         </button>
     </div>
 
-    <!-- 編輯區域 (所見即所得) -->
     <div class="card-container">
         <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6 text-center shadow-inner">
             <p class="text-yellow-400 text-xs font-bold tracking-wider">👆 點擊下方<span class="border-b border-dashed border-yellow-400 mx-1">虛線框區域</span>即可直接修改內容</p>
@@ -100,7 +99,7 @@
         </div>
     </div>
 
-    <!-- 編輯設定彈窗 -->
+    <!-- 彈窗 -->
     <div v-if="editing.show" class="modal-overlay" @click.self="editing.show = false">
         <div class="modal-content shadow-2xl">
             <div class="flex justify-between items-center mb-6 border-b pb-3">
@@ -121,8 +120,18 @@
 
             <div v-if="editing.type === 'image'" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">圖片網址 (需為 https 開頭)</label>
-                    <input v-model="tempValue" class="w-full border-2 border-gray-200 p-3 rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 text-xs font-mono transition-all" placeholder="https://...">
+                    <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">圖片連結 (可直接貼網址或上傳)</label>
+                    <div class="flex gap-2">
+                        <input v-model="tempValue" class="flex-1 border-2 border-gray-200 p-3 rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 text-xs font-mono transition-all bg-slate-50" placeholder="https://...">
+                        
+                        <!-- 新增：上傳按鈕 -->
+                        <label class="bg-blue-50 text-blue-600 px-4 py-3 rounded-xl font-bold text-xs cursor-pointer hover:bg-blue-100 transition-colors flex items-center justify-center border border-blue-200 shrink-0">
+                            <i v-if="isUploading" class="fas fa-spinner fa-spin"></i>
+                            <span v-else><i class="fas fa-upload mr-1"></i>上傳圖片</span>
+                            <input type="file" class="hidden" accept="image/*" @change="handleImageUpload" :disabled="isUploading">
+                        </label>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-1 ml-1 italic">* 檔案限制: 5MB 以下 (將自動存至 Google Drive)</p>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">圖片預覽</label>
@@ -189,6 +198,7 @@ createApp({
     setup() {
         const loading = ref(true);
         const saving = ref(false);
+        const isUploading = ref(false);
         const userId = ref('');
         
         const card = ref({
@@ -225,8 +235,7 @@ createApp({
                 fetchUserData(profile.userId);
             } catch (e) {
                 console.error("LIFF Init Error:", e);
-                // 使用者如果是在電腦網頁開，依然可以看到畫面
-                alert("提醒：您目前不在 LINE App 內，部分功能可能受限。");
+                alert("LIFF 載入失敗: " + e.message);
                 loading.value = false;
             }
         };
@@ -247,7 +256,7 @@ createApp({
                             if (saved.name && saved.grids) {
                                 card.value = saved;
                             } else {
-                                useDefaultData(d);
+                                useDefaultData(d); 
                             }
                         } catch(e) {
                             useDefaultData(d);
@@ -284,6 +293,57 @@ createApp({
                 tempGrid.value = { ...card.value.grids[key] };
             } else if (type === 'button') {
                 tempBtn.value = { ...card.value.footerBtns[key] };
+            }
+        };
+
+        // --- 新增：處理圖片上傳 ---
+        const handleImageUpload = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert('圖片檔案過大，請上傳小於 5MB 的圖片。');
+                return;
+            }
+
+            isUploading.value = true;
+            
+            try {
+                // 將圖片轉為 Base64
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]); 
+                    reader.onerror = error => reject(error);
+                    reader.readAsDataURL(file);
+                });
+
+                const payload = {
+                    action: 'uploadImage',
+                    filename: `${Date.now()}_${file.name}`,
+                    mimeType: file.type,
+                    base64Data: base64Data
+                };
+
+                const res = await fetch(workerUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await res.json();
+                
+                if (result.status === 'success') {
+                    // 自動填入回傳的直連網址
+                    tempValue.value = result.url;
+                } else {
+                    alert('上傳失敗: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Upload Error:', error);
+                alert('圖片處理發生錯誤，請重試。');
+            } finally {
+                isUploading.value = false;
+                event.target.value = ''; // 清除 input 選擇
             }
         };
 
@@ -343,9 +403,9 @@ createApp({
         });
 
         return { 
-            loading, saving, card, editing, 
+            loading, saving, isUploading, card, editing, 
             tempValue, tempGrid, tempBtn, 
-            openEdit, confirmEdit, saveCard
+            openEdit, handleImageUpload, confirmEdit, saveCard
         };
     }
 }).mount('#app');
