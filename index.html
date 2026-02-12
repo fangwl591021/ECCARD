@@ -11,7 +11,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
         
-        /* 關鍵修正：預設隱藏整個 Body，防止轉址前閃現畫面 */
         body { 
             font-family: 'Noto Sans TC', sans-serif; 
             background-color: #f1f5f9; 
@@ -35,33 +34,19 @@
         
         .sidebar-link-text { transition: opacity 0.2s; white-space: nowrap; }
     </style>
-    <!-- 路由守衛：強化版 -->
+    <!-- 路由守衛 -->
     <script>
         (function() {
-            // 1. 取得網址參數
             const urlParams = new URLSearchParams(window.location.search);
             let page = urlParams.get('page');
             let finalSearch = window.location.search;
             const hash = window.location.hash;
 
-            // 2. 如果第一層沒找到 page，檢查是否被包在 liff.state 裡
             if (!page && urlParams.has('liff.state')) {
                 let statePath = urlParams.get('liff.state');
-                
-                try {
-                    statePath = decodeURIComponent(statePath);
-                } catch(e) {
-                    console.error("Decode liff.state failed", e);
-                }
-
+                try { statePath = decodeURIComponent(statePath); } catch(e) {}
                 const qIndex = statePath.indexOf('?');
-                let stateQuery = "";
-                
-                if (qIndex >= 0) {
-                    stateQuery = statePath.substring(qIndex);
-                } else {
-                    stateQuery = '?' + statePath;
-                }
+                let stateQuery = qIndex >= 0 ? statePath.substring(qIndex) : '?' + statePath;
                 
                 const stateParams = new URLSearchParams(stateQuery);
                 if (stateParams.has('page')) {
@@ -70,7 +55,6 @@
                 }
             }
             
-            // 3. 定義頁面映射表
             const pageMap = {
                 'card': 'card.html',
                 'stand': 'stand.html',
@@ -81,7 +65,6 @@
                 'find': 'find.html'
             };
 
-            // 4. 執行轉址
             if (page && pageMap[page]) {
                 window.location.replace(pageMap[page] + finalSearch + hash);
             } else {
@@ -103,13 +86,11 @@
         </div>
         
         <nav class="mt-6 flex-grow overflow-y-auto no-scrollbar">
-            <!-- 儀表板首頁 -->
             <div class="sidebar-item-active flex items-center py-4 transition-all" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
                 <i class="fas fa-th-large w-8 text-center text-lg"></i>
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">控制中心</span>
             </div>
 
-            <!-- 名片專區：摺疊目錄 -->
             <div v-if="!isSidebarCollapsed">
                 <div @click="isCardMenuOpen = !isCardMenuOpen" class="flex items-center justify-between py-4 px-6 hover:bg-gray-700 transition-all cursor-pointer text-gray-300">
                     <div class="flex items-center">
@@ -136,12 +117,10 @@
                     </div>
                 </transition>
             </div>
-            <!-- 收合時僅顯示圖示 -->
             <div v-else class="flex justify-center py-4 hover:bg-gray-700 cursor-pointer" @click="isSidebarCollapsed = false">
                 <i class="fas fa-address-book text-lg"></i>
             </div>
 
-            <!-- 工具欄 -->
             <div class="mt-4 border-t border-gray-800 pt-4">
                 <div v-if="!isSidebarCollapsed" class="px-6 mb-2 text-[10px] font-bold text-gray-600 uppercase tracking-widest">工具欄</div>
                 <a href="reply.html" class="flex items-center py-4 hover:bg-gray-700 transition-all text-gray-400" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
@@ -184,65 +163,50 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
-                    <!-- 模組卡片 -->
                     <a href="stand.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
-                        <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-500 transition-colors">
-                            <i class="fas fa-file-alt text-2xl text-blue-500 group-hover:text-white"></i>
-                        </div>
+                        <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-500 transition-colors"><i class="fas fa-file-alt text-2xl text-blue-500 group-hover:text-white"></i></div>
                         <h3 class="text-xl font-bold mb-2">標準版插件</h3>
                         <p class="text-gray-400 text-sm mb-6 flex-grow">開發最常見的圖文 Flex 訊息，支援置中標籤與多按鈕設定。</p>
                         <span class="text-blue-500 font-bold text-xs uppercase tracking-widest">進入開發 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
                     <a href="card.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
-                        <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-purple-500 transition-colors">
-                            <i class="fas fa-id-card text-2xl text-purple-500 group-hover:text-white"></i>
-                        </div>
+                        <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-purple-500 transition-colors"><i class="fas fa-id-card text-2xl text-purple-500 group-hover:text-white"></i></div>
                         <h3 class="text-xl font-bold mb-2">商務型名片</h3>
                         <p class="text-gray-400 text-sm mb-6 flex-grow">建立個人商務數位名片，內建功能網格與 50 字描述空間。</p>
                         <span class="text-purple-500 font-bold text-xs uppercase tracking-widest">進入開發 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
                     <a href="ec.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
-                        <div class="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-500 transition-colors">
-                            <i class="fas fa-shopping-cart text-2xl text-orange-500 group-hover:text-white"></i>
-                        </div>
+                        <div class="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-500 transition-colors"><i class="fas fa-shopping-cart text-2xl text-orange-500 group-hover:text-white"></i></div>
                         <h3 class="text-xl font-bold mb-2">電商插件</h3>
                         <p class="text-gray-400 text-sm mb-6 flex-grow">網格式商品呈現佈局，支援內文說明區塊與自訂 Footer 配色。</p>
                         <span class="text-orange-500 font-bold text-xs uppercase tracking-widest">進入開發 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
                     <a href="mix.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
-                        <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-green-500 transition-colors">
-                            <i class="fas fa-clone text-2xl text-green-500 group-hover:text-white"></i>
-                        </div>
+                        <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-green-500 transition-colors"><i class="fas fa-clone text-2xl text-green-500 group-hover:text-white"></i></div>
                         <h3 class="text-xl font-bold mb-2">混合多頁開發</h3>
                         <p class="text-gray-400 text-sm mb-6 flex-grow">Carousel 輪播型態訊息，可自由組合標準、商務與電商分頁。</p>
                         <span class="text-green-500 font-bold text-xs uppercase tracking-widest">進入開發 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
                     <a href="reply.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
-                        <div class="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-pink-500 transition-colors">
-                            <i class="fas fa-comments text-2xl text-pink-500 group-hover:text-white"></i>
-                        </div>
+                        <div class="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-pink-500 transition-colors"><i class="fas fa-comments text-2xl text-pink-500 group-hover:text-white"></i></div>
                         <h3 class="text-xl font-bold mb-2">關鍵字回覆</h3>
                         <p class="text-gray-400 text-sm mb-6 flex-grow">設定 LINE 聊天室關鍵字，自動觸發圖文訊息或 Flex 內容。</p>
                         <span class="text-pink-500 font-bold text-xs uppercase tracking-widest">進入設定 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
                     <a href="find.html" class="dashboard-card bg-slate-800 p-8 rounded-[32px] border border-slate-700 flex flex-col group">
-                        <div class="w-14 h-14 bg-slate-700 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-line-green transition-colors">
-                            <i class="fab fa-line text-2xl text-white"></i>
-                        </div>
+                        <div class="w-14 h-14 bg-slate-700 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-line-green transition-colors"><i class="fab fa-line text-2xl text-white"></i></div>
                         <h3 class="text-xl font-bold mb-2 text-white">LINE VOOM 擷取</h3>
                         <p class="text-slate-400 text-sm mb-6 flex-grow">快速從 LINE VOOM 貼文中擷取影片與圖片連結資源。</p>
                         <span class="text-white font-bold text-xs uppercase tracking-widest">開啟工具 <i class="fas fa-arrow-right ml-1"></i></span>
                     </a>
 
                     <a href="project.html" class="dashboard-card bg-white p-8 rounded-[32px] border border-slate-200 flex flex-col group">
-                        <div class="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gray-800 transition-colors">
-                            <i class="fas fa-database text-2xl text-gray-500 group-hover:text-white"></i>
-                        </div>
+                        <div class="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gray-800 transition-colors"><i class="fas fa-database text-2xl text-gray-500 group-hover:text-white"></i></div>
                         <h3 class="text-xl font-bold mb-2">專案管理系統</h3>
                         <p class="text-gray-400 text-sm mb-6 flex-grow">讀取雲端存檔、刪除舊專案或重新編輯已發布的插件。</p>
                         <span class="text-gray-800 font-bold text-xs uppercase tracking-widest">管理存檔 <i class="fas fa-arrow-right ml-1"></i></span>
@@ -260,7 +224,6 @@ createApp({
         const isSidebarCollapsed = ref(false);
         const isCardMenuOpen = ref(true);
         const isLoggedIn = ref(false);
-        // 修正：使用 placehold.co 替代不穩定的 via.placeholder.com
         const userProfile = ref({ displayName: '管理員', pictureUrl: 'https://placehold.co/150' });
 
         onMounted(async () => {
