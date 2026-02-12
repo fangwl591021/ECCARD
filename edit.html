@@ -27,7 +27,6 @@
         .modal-content { background: white; color: #333; padding: 24px; border-radius: 24px; width: 90%; max-width: 340px; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* 外觀背景由 inline-style 控制同步 */
         .flex-bubble { border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6); border: 1px solid #333; transition: background-color 0.3s; }
         .header-box { padding: 20px; display: flex; align-items: center; gap: 15px; }
         .hero-img { width: 100%; aspect-ratio: 20/13; object-fit: cover; }
@@ -57,18 +56,17 @@
     </div>
 
     <div class="card-container">
-        <!-- 提示區與全域背景顏色按鈕 -->
+        <!-- 主題配色入口 -->
         <div class="flex gap-2 mb-6">
             <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 flex-1 flex items-center justify-center text-center shadow-inner">
                 <p class="text-yellow-400 text-xs font-bold tracking-wider">👆 點擊虛線框區域修改內容</p>
             </div>
-            <button @click="openEdit('theme', 'cardBgColor', '設定名片外框與背景主色')" class="bg-slate-800 border border-slate-600 rounded-xl p-2 text-white text-xs font-bold shadow-lg hover:bg-slate-700 transition-all flex flex-col items-center justify-center gap-1 shrink-0 w-24">
+            <button @click="openEdit('theme', 'cardBgColor', '設定名片外框與文字配色')" class="bg-slate-800 border border-slate-600 rounded-xl p-2 text-white text-xs font-bold shadow-lg hover:bg-slate-700 transition-all flex flex-col items-center justify-center gap-1 shrink-0 w-24">
                 <i class="fas fa-palette text-line-green text-lg"></i>
-                <span>外框底色</span>
+                <span>全域配色</span>
             </button>
         </div>
 
-        <!-- 名片預覽：綁定同步的底色 -->
         <div class="flex-bubble" :style="{ backgroundColor: card.cardBgColor || '#1A1B1E' }">
             <div class="header-box">
                 <div class="relative group cursor-pointer edit-highlight edit-highlight-circle p-1" @click="openEdit('image', 'headImg', '更換個人頭像')">
@@ -77,11 +75,13 @@
                 </div>
                 <div class="flex-1 flex flex-col gap-2 overflow-hidden">
                     <div class="relative w-fit max-w-full edit-highlight p-1" @click="openEdit('text', 'name', '修改姓名/暱稱')">
-                        <span class="text-[#D4AF37] font-bold text-xl block truncate">{{ card.name }}</span>
+                        <!-- 同步文字顏色 -->
+                        <span class="font-bold text-xl block truncate" :style="{ color: card.headerTextColor || '#D4AF37' }">{{ card.name }}</span>
                         <div class="edit-icon"><i class="fas fa-pen"></i></div>
                     </div>
                     <div class="relative w-full edit-highlight p-1" @click="openEdit('text', 'desc', '修改個人簡介')">
-                        <span class="text-[#D4AF37] text-xs block leading-relaxed whitespace-pre-wrap opacity-90">{{ card.desc }}</span>
+                        <!-- 同步文字顏色 -->
+                        <span class="text-xs block leading-relaxed whitespace-pre-wrap opacity-90" :style="{ color: card.headerTextColor || '#D4AF37' }">{{ card.desc }}</span>
                         <div class="edit-icon"><i class="fas fa-pen"></i></div>
                     </div>
                 </div>
@@ -95,7 +95,8 @@
             <div class="grid-box">
                 <div v-for="(btn, idx) in card.grids" :key="idx" class="grid-item relative edit-highlight flex flex-col items-center justify-center" @click="openEdit('grid', idx, `設定網格按鈕 ${idx+1}`)">
                     <div class="text-3xl mb-2">{{ btn.emoji }}</div>
-                    <div class="text-gray-300 text-xs font-bold w-full truncate">{{ btn.label }}</div>
+                    <!-- 同步文字顏色 -->
+                    <div class="text-xs font-bold w-full truncate" :style="{ color: card.headerTextColor || '#E6E6E6' }">{{ btn.label }}</div>
                     <div class="edit-icon"><i class="fas fa-cog"></i></div>
                 </div>
             </div>
@@ -111,7 +112,7 @@
         </div>
     </div>
 
-    <!-- 彈窗區 -->
+    <!-- 編輯設定彈窗 -->
     <div v-if="editing.show" class="modal-overlay" @click.self="editing.show = false">
         <div class="modal-content shadow-2xl">
             <div class="flex justify-between items-center mb-6 border-b pb-3">
@@ -119,13 +120,21 @@
                 <button @click="editing.show = false" class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"><i class="fas fa-times"></i></button>
             </div>
             
-            <!-- 新增：全域主題底色編輯 -->
-            <div v-if="editing.type === 'theme'" class="space-y-4 text-center">
-                <p class="text-xs text-gray-500 font-bold mb-4">此顏色將同步套用於 Header、中間背景及底部區域，打造一體成型的外框感。</p>
-                <div class="flex justify-center">
-                    <input type="color" v-model="tempValue" class="w-32 h-32 cursor-pointer shadow-inner border-4 border-gray-100 rounded-2xl">
+            <!-- 全域主題雙色編輯 -->
+            <div v-if="editing.type === 'theme'" class="space-y-6 text-center">
+                <p class="text-xs text-gray-500 font-bold mb-4">設定您的專屬名片配色，打造一體成型的視覺風格。</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex flex-col items-center">
+                        <label class="text-xs font-bold text-gray-600 mb-2">外框主色</label>
+                        <input type="color" v-model="tempValue" class="w-24 h-24 cursor-pointer shadow-inner border-4 border-gray-100 rounded-2xl">
+                        <p class="text-xs font-mono text-gray-400 mt-2">{{ tempValue.toUpperCase() }}</p>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <label class="text-xs font-bold text-gray-600 mb-2">文字顏色</label>
+                        <input type="color" v-model="tempTextColor" class="w-24 h-24 cursor-pointer shadow-inner border-4 border-gray-100 rounded-2xl">
+                        <p class="text-xs font-mono text-gray-400 mt-2">{{ tempTextColor.toUpperCase() }}</p>
+                    </div>
                 </div>
-                <p class="text-lg font-mono text-gray-700 font-bold mt-2">{{ tempValue.toUpperCase() }}</p>
             </div>
 
             <div v-if="editing.type === 'text'" class="space-y-2">
@@ -225,7 +234,8 @@ createApp({
             desc: '...',
             headImg: 'https://placehold.co/150',
             heroImg: 'https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png',
-            cardBgColor: '#1A1B1E', // 新增：全域外框底色
+            cardBgColor: '#1A1B1E', 
+            headerTextColor: '#D4AF37', // 新增：全域文字顏色
             grids: [
                 { emoji: '🤖', label: 'AI 諮詢', uri: 'https://line.me' },
                 { emoji: '🎥', label: '實績案例', uri: 'https://line.me' },
@@ -240,6 +250,7 @@ createApp({
 
         const editing = ref({ show: false, type: '', key: '', title: '' });
         const tempValue = ref('');
+        const tempTextColor = ref(''); // 用於 Theme Modal
         const tempGrid = ref({});
         const tempBtn = ref({});
 
@@ -275,8 +286,8 @@ createApp({
                             const saved = JSON.parse(d.cardJson);
                             if (saved.name && saved.grids) {
                                 card.value = saved;
-                                // 相容舊版資料，若無底色則補上預設
                                 if (!card.value.cardBgColor) card.value.cardBgColor = '#1A1B1E';
+                                if (!card.value.headerTextColor) card.value.headerTextColor = '#D4AF37';
                             } else {
                                 useDefaultData(d); 
                             }
@@ -302,12 +313,17 @@ createApp({
             card.value.desc = d.statusMessage || '歡迎聯繫';
             card.value.headImg = d.pictureUrl || 'https://placehold.co/150';
             card.value.cardBgColor = '#1A1B1E';
+            card.value.headerTextColor = '#D4AF37';
         };
 
         const openEdit = (type, key, title) => {
             editing.value = { show: true, type, key, title };
             if (type === 'text' || type === 'image' || type === 'theme') {
                 tempValue.value = card.value[key] || '';
+                if (type === 'theme') {
+                    tempValue.value = card.value.cardBgColor || '#1A1B1E';
+                    tempTextColor.value = card.value.headerTextColor || '#D4AF37';
+                }
             } else if (type === 'grid') {
                 tempGrid.value = { ...card.value.grids[key] };
             } else if (type === 'button') {
@@ -338,7 +354,10 @@ createApp({
 
         const confirmEdit = () => {
             const { type, key } = editing.value;
-            if (type === 'text' || type === 'image' || type === 'theme') {
+            if (type === 'theme') {
+                card.value.cardBgColor = tempValue.value;
+                card.value.headerTextColor = tempTextColor.value;
+            } else if (type === 'text' || type === 'image') {
                 let val = tempValue.value.trim();
                 if (type === 'image' && val && !val.startsWith('http')) val = 'https://' + val;
                 card.value[key] = val;
@@ -377,7 +396,7 @@ createApp({
 
         onMounted(() => { initLiff(); });
 
-        return { loading, saving, isUploading, card, editing, tempValue, tempGrid, tempBtn, openEdit, handleImageUpload, confirmEdit, saveCard };
+        return { loading, saving, isUploading, card, editing, tempValue, tempTextColor, tempGrid, tempBtn, openEdit, handleImageUpload, confirmEdit, saveCard };
     }
 }).mount('#app');
 </script>
