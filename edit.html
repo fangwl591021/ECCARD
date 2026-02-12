@@ -12,8 +12,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #1A1B1E; color: white; overflow-x: hidden; }
         
-        #app { opacity: 0; transition: opacity 0.3s ease-in-out; }
-        #app.loaded { opacity: 1; }
+        /* 修正：安全的防閃爍寫法，解決黑畫面問題 */
+        [v-cloak] { display: none !important; }
 
         .card-container { max-width: 450px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
         .edit-highlight { border: 2px dashed rgba(0, 185, 0, 0.5); cursor: pointer; transition: all 0.2s; position: relative; border-radius: 8px; }
@@ -36,12 +36,14 @@
 </head>
 <body>
 
-<div id="app" :class="{ 'loaded': isLoaded }">
+<div id="app" v-cloak>
+    <!-- 讀取畫面 -->
     <div v-if="loading" class="fixed inset-0 bg-[#1A1B1E] z-[200] flex flex-col items-center justify-center text-green-500">
         <i class="fas fa-circle-notch fa-spin text-5xl mb-6"></i>
         <p class="text-sm font-bold tracking-widest uppercase">正在讀取您的專屬名片...</p>
     </div>
 
+    <!-- 頂部導覽列 -->
     <div class="sticky top-0 bg-[#1A1B1E]/95 backdrop-blur-md border-b border-gray-800 p-4 flex justify-between items-center z-50 shadow-md">
         <h1 class="font-bold text-lg text-white flex items-center"><i class="fas fa-magic text-green-500 mr-2"></i>名片編輯器</h1>
         <button @click="saveCard" :disabled="saving" class="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded-full text-sm font-bold transition-all disabled:opacity-50 shadow-lg shadow-green-900/50 flex items-center gap-2">
@@ -50,6 +52,7 @@
         </button>
     </div>
 
+    <!-- 編輯區域 (所見即所得) -->
     <div class="card-container">
         <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-6 text-center shadow-inner">
             <p class="text-yellow-400 text-xs font-bold tracking-wider">👆 點擊下方<span class="border-b border-dashed border-yellow-400 mx-1">虛線框區域</span>即可直接修改內容</p>
@@ -97,7 +100,7 @@
         </div>
     </div>
 
-    <!-- 彈窗 -->
+    <!-- 編輯設定彈窗 -->
     <div v-if="editing.show" class="modal-overlay" @click.self="editing.show = false">
         <div class="modal-content shadow-2xl">
             <div class="flex justify-between items-center mb-6 border-b pb-3">
@@ -187,7 +190,6 @@ createApp({
         const loading = ref(true);
         const saving = ref(false);
         const userId = ref('');
-        const isLoaded = ref(false);
         
         const card = ref({
             name: '載入中...',
@@ -223,9 +225,9 @@ createApp({
                 fetchUserData(profile.userId);
             } catch (e) {
                 console.error("LIFF Init Error:", e);
-                alert("LIFF 載入失敗，請確認是否在 LINE App 內開啟。");
+                // 使用者如果是在電腦網頁開，依然可以看到畫面
+                alert("提醒：您目前不在 LINE App 內，部分功能可能受限。");
                 loading.value = false;
-                isLoaded.value = true;
             }
         };
 
@@ -265,7 +267,6 @@ createApp({
                 alert("讀取資料失敗，請檢查網路連線。");
             } finally {
                 loading.value = false;
-                isLoaded.value = true;
             }
         };
 
@@ -325,7 +326,7 @@ createApp({
                 const result = await res.json();
                 if (result.status === 'success') {
                     alert("✅ 名片設定已成功更新！\n請回到聊天室重新輸入「顯示名片」查看結果。");
-                    liff.closeWindow(); 
+                    if(liff.isInClient()) liff.closeWindow(); 
                 } else {
                     alert("儲存失敗，請稍後再試。");
                 }
@@ -344,7 +345,7 @@ createApp({
         return { 
             loading, saving, card, editing, 
             tempValue, tempGrid, tempBtn, 
-            openEdit, confirmEdit, saveCard, isLoaded 
+            openEdit, confirmEdit, saveCard
         };
     }
 }).mount('#app');
