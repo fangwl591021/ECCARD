@@ -7,7 +7,8 @@
     <!-- 引入 LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- 更換為 cdnjs 來源，比較穩定 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
@@ -15,9 +16,8 @@
         .line-green { color: #00B900; }
         .bg-line-green { background-color: #00B900; }
         
-        /* 避免 FOUC */
-        #app { visibility: hidden; opacity: 0; transition: opacity 0.3s; }
-        #app.loaded { visibility: visible; opacity: 1; }
+        /* 移除 opacity 動畫，避免卡死在白畫面 */
+        [v-cloak] { display: none !important; }
 
         .sidebar-container { background-color: #1e2124; height: 100vh; transition: width 0.3s; display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; overflow: hidden; }
         .w-expanded { width: 256px; }
@@ -46,10 +46,16 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
     </style>
+    <!-- 錯誤捕捉 -->
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            alert('系統錯誤: ' + message);
+        };
+    </script>
 </head>
 <body>
 
-<div id="app" :class="{ 'loaded': isLoaded }">
+<div id="app" v-cloak>
     
     <!-- 自動分享模式遮罩 -->
     <div v-if="isAutoMode" class="auto-mode-overlay">
@@ -268,8 +274,8 @@ createApp({
             visualMode: 'video', 
             imageActionUrl: 'https://line.me',
             headerName: 'TONY',
-            headerDescription: '系統開發與 AI 顧問服務，提供專業的自動化解決方案。',
-            headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png',
+            headerDescription: '系統開發與 AI 顧問服務',
+            headerImg: 'https://placehold.co/150',
             headerBgColor: '#1A1B1E',
             headerTextColor: '#D4AF37',
             footerBgColor: '#1A1B1E',
@@ -281,14 +287,53 @@ createApp({
                 { emoji: '🧾', label: '服務項目', uri: 'https://line.me' }, 
                 { emoji: '📍', label: '預約面談', uri: 'https://line.me' } 
             ], 
-            // 統一更名 footerBtns
             footerBtns: [ 
                 { label: '🚀 立即啟動 AI 合作', uri: 'https://line.me', color: '#C9A24D' }, 
                 { label: '📤 推薦給好友', uri: 'https://liff.line.me/2008924519-1qRqocsa?page=card&action=share', color: '#2A2C31' } 
             ]
         });
 
-        // 產生分享名片 JSON 函數 (含邊框邏輯)
+        const generateOriginalCardJson = (name, img, desc, gridsStr, btnsStr) => {
+            const fixedHeroUrl = "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png";
+            const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&name=${encodeURIComponent(name)}&img=${encodeURIComponent(img)}&desc=${encodeURIComponent(desc)}&grids=${encodeURIComponent(gridsStr || '[]')}&btns=${encodeURIComponent(btnsStr || '[]')}`;
+
+            let grids = [], btns = [];
+            try { grids = JSON.parse(gridsStr || '[]'); } catch(e) {}
+            try { btns = JSON.parse(btnsStr || '[]'); } catch(e) {}
+            
+            if (grids.length === 0) grids = [{emoji:'🤖',label:'AI 諮詢',uri:'https://line.me'},{emoji:'🎥',label:'實績案例',uri:'https://line.me'},{emoji:'🧾',label:'服務項目',uri:'https://line.me'},{emoji:'📍',label:'預約面談',uri:'https://line.me'}];
+            if (btns.length === 0) btns = [{label:'🚀 立即啟動 AI 合作',color:'#C9A24D',uri:'https://line.me'},{label:'📤 推薦給好友',color:'#2A2C31',uri:shareUrl}];
+
+            const gridRows = [];
+            for (let i = 0; i < grids.length; i += 2) {
+                const rowItems = grids.slice(i, i + 2).map(g => ({
+                    type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: "#2A2C31", cornerRadius: "12px",
+                    action: { type: "uri", label: g.label, uri: g.uri || "https://line.me" },
+                    contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "按鈕", size: "sm", align: "center", color: "#E6E6E6" }]
+                }));
+                gridRows.push({ type: "box", layout: "horizontal", spacing: "sm", contents: rowItems });
+            }
+
+            const footerBtns = btns.map((btn, index) => {
+                let uri = btn.uri;
+                if (btn.label.includes("推薦") || btn.label.includes("分享")) uri = shareUrl;
+                return { type: "button", style: "primary", height: "sm", color: btn.color || "#00B900", action: { type: "uri", label: btn.label, uri: uri } };
+            });
+
+            return {
+                type: "bubble", size: "mega",
+                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", backgroundColor: "#1A1B1E", contents: [{ type: "image", url: img, size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [{ type: "text", text: name, weight: "bold", size: "lg", color: "#D4AF37" }, { type: "text", text: desc, size: "xs", color: "#D4AF37", wrap: true }] }] },
+                body: { 
+                    type: "box", layout: "vertical", paddingAll: "0px", backgroundColor: "#1A1B1E",
+                    contents: [
+                        { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: "#1A1B1E", contents: [{ type: "image", url: fixedHeroUrl, size: "full", aspectRatio: "20:13", aspectMode: "cover", cornerRadius: "md", action: { type: "uri", label: "hero", uri: "https://lin.ee/qFYBr0z" } }] },
+                        { type: "box", layout: "vertical", paddingAll: "8px", contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: "#1A1B1E", cornerRadius: "14px", contents: gridRows }] }
+                    ]
+                },
+                footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: "#1A1B1E", contents: footerBtns }
+            };
+        };
+
         const generateSharedFlex = (sharedData, uid) => {
             const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&uid=${uid}`;
             const themeColor = sharedData.cardBgColor || sharedData.headerBgColor || "#1A1B1E";
@@ -325,7 +370,6 @@ createApp({
             };
         };
 
-        // 這是編輯器使用的 Flex JSON
         const flexJson = computed(() => {
             const cur = data.value;
             const bubble = {
@@ -423,10 +467,10 @@ createApp({
 
                     // Fallback
                     const fallbackData = {
-                        headerName: "訪客",
-                        headerImg: "https://placehold.co/150",
-                        headerDescription: "歡迎聯繫",
-                        previewUrl: "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png",
+                        name: "訪客",
+                        headImg: "https://placehold.co/150",
+                        desc: "歡迎聯繫",
+                        heroImg: "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png",
                         headerBgColor: "#1A1B1E",
                         headerTextColor: "#D4AF37",
                         grids: [],
