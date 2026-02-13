@@ -15,8 +15,9 @@
         .line-green { color: #00B900; }
         .bg-line-green { background-color: #00B900; }
         
-        /* 使用 v-cloak 替代 opacity，解決白畫面卡住問題 */
-        [v-cloak] { display: none !important; }
+        /* 避免 FOUC */
+        #app { visibility: hidden; opacity: 0; transition: opacity 0.3s; }
+        #app.loaded { visibility: visible; opacity: 1; }
 
         .sidebar-container { background-color: #1e2124; height: 100vh; transition: width 0.3s; display: flex; flex-direction: column; flex-shrink: 0; z-index: 50; overflow: hidden; }
         .w-expanded { width: 256px; }
@@ -48,7 +49,7 @@
 </head>
 <body>
 
-<div id="app" v-cloak>
+<div id="app" :class="{ 'loaded': isLoaded }">
     
     <!-- 自動分享模式遮罩 -->
     <div v-if="isAutoMode" class="auto-mode-overlay">
@@ -56,7 +57,7 @@
         <p class="text-gray-500 font-bold text-sm tracking-widest">啟動 LINE 分享中...</p>
     </div>
 
-    <!-- 側邊欄導覽 (一般模式顯示) -->
+    <!-- 側邊欄導覽 -->
     <aside v-if="!isAutoMode" :class="isSidebarCollapsed ? 'w-collapsed' : 'w-expanded'" class="sidebar-container text-gray-400 shadow-2xl">
         <div class="h-16 flex items-center border-b border-gray-700 shrink-0 overflow-hidden" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
             <i class="fab fa-line text-3xl line-green"></i>
@@ -84,13 +85,15 @@
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">專案管理系統</span>
             </a>
         </nav>
-        <button @click="isSidebarCollapsed = !isSidebarCollapsed" class="p-4 w-full flex items-center border-t border-gray-700 hover:text-white transition-colors bg-gray-900/30" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
+
+        <button @click="isSidebarCollapsed = !isSidebarCollapsed" 
+            class="p-4 w-full flex items-center border-t border-gray-700 hover:text-white transition-colors bg-gray-900/30"
+            :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
             <i class="fas" :class="isSidebarCollapsed ? 'fa-indent text-xl' : 'fa-outdent text-lg'"></i>
             <span v-if="!isSidebarCollapsed" class="ml-3 text-xs font-bold uppercase tracking-widest">收合選單</span>
         </button>
     </aside>
 
-    <!-- 主畫面 (一般模式顯示) -->
     <main v-if="!isAutoMode" class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#f8fafc]">
         <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
             <h2 class="text-xl font-bold text-gray-800">商務型名片插件開發</h2>
@@ -112,6 +115,7 @@
         </header>
 
         <div class="flex-grow flex overflow-hidden">
+            <!-- 編輯器區塊 -->
             <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
                 <div class="max-w-4xl mx-auto space-y-8 pb-20">
                     
@@ -120,6 +124,7 @@
                         <input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-200 shadow-sm">
                     </div>
 
+                    <!-- 視覺內容模式 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                         <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-film mr-2 text-line-green"></i> 視覺內容設定</h4>
                         <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-300 shadow-inner">
@@ -137,6 +142,7 @@
                         </div>
                     </div>
 
+                    <!-- Header 品牌與配色 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-6">
                         <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> 品牌身份與 Header 配色</h4>
                         <div class="grid grid-cols-2 gap-4">
@@ -148,19 +154,21 @@
                         </div>
                     </div>
 
+                    <!-- 功能網格：寬度與按鈕切齊 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="text-sm font-bold text-gray-700">商務功能網格設定</h4>
                             <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">按鈕底色</span><input type="color" v-model="data.gridBgColor"></div>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
-                            <div v-for="(grid, idx) in data.grids" :key="idx" class="p-4 bg-white border rounded-xl shadow-sm space-y-2 group transition-all hover:border-line-green">
+                            <div v-for="(grid, idx) in data.gridButtons" :key="idx" class="p-4 bg-white border rounded-xl shadow-sm space-y-2 group transition-all hover:border-line-green">
                                 <div class="flex gap-2"><input type="text" v-model="grid.emoji" class="w-10 border rounded text-sm text-center shadow-inner"><input type="text" v-model="grid.label" class="flex-1 border rounded px-2 py-1 text-xs shadow-inner" placeholder="按鈕名稱"></div>
                                 <input type="text" v-model="grid.uri" class="w-full border rounded px-2 py-1 text-[10px] shadow-inner" placeholder="https://...">
                             </div>
                         </div>
                     </div>
 
+                    <!-- 底部按鈕 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                         <div class="flex justify-between items-center">
                             <h4 class="text-sm font-bold text-gray-700">底部行為按鈕設定</h4>
@@ -175,11 +183,12 @@
                 </div>
             </div>
 
-            <!-- 右側預覽 -->
+            <!-- 右側：即時預覽 (修正對齊) -->
             <div class="w-[450px] shrink-0 open-preview-area shadow-inner bg-slate-200/50 overflow-y-auto no-scrollbar">
                 <div class="chat-room-bg no-scrollbar">
-                    <div class="flex-bubble-container">
-                        <div class="flex-bubble" :style="{ backgroundColor: data.headerBgColor }">
+                    <div class="flex-bubble-container animate-in zoom-in duration-300">
+                        <div class="flex-bubble">
+                            <!-- Header 預覽 -->
                             <div class="header-box" :style="{ backgroundColor: data.headerBgColor }">
                                 <img :src="data.headerImg" class="w-10 h-10 rounded-full object-cover border border-white/20 shadow-sm">
                                 <div class="flex flex-col overflow-hidden">
@@ -187,16 +196,18 @@
                                     <span class="text-[8px] leading-tight truncate" :style="{ color: data.headerTextColor, opacity: 0.8 }">{{ data.headerDescription || '敘述' }}</span>
                                 </div>
                             </div>
-                            <!-- Hero (Box + Padding) -->
+                            <!-- Hero 預覽 -->
                             <div class="hero-box" :style="{ backgroundColor: data.headerBgColor, padding: '15px' }">
                                 <img :src="data.previewUrl" class="hero-img" onerror="this.src='https://placehold.co/800x520'">
                             </div>
+                            <!-- Grid 預覽 -->
                             <div class="grid-box" :style="{ backgroundColor: data.headerBgColor, padding: '5px !important' }">
-                                <div v-for="grid in data.grids" class="grid-item shadow-md" :style="{ backgroundColor: data.gridBgColor }">
+                                <div v-for="grid in data.gridButtons" class="grid-item shadow-md transition-transform active:scale-95" :style="{ backgroundColor: data.gridBgColor }">
                                     <div class="text-lg mb-1">{{ grid.emoji }}</div>
                                     <div class="text-[8px] font-bold uppercase truncate px-1" :style="{ color: data.headerTextColor }">{{ grid.label || '選單' }}</div>
                                 </div>
                             </div>
+                            <!-- Footer 預覽 -->
                             <div class="space-y-1.5" :style="{ backgroundColor: data.footerBgColor, padding: '5px !important' }">
                                 <button v-for="vBtn in data.footerBtns" class="w-full py-2 text-[10px] font-bold rounded shadow-md text-white mb-1.5 last:mb-0" :style="{ backgroundColor: vBtn.color }">{{ vBtn.label }}</button>
                             </div>
@@ -257,19 +268,20 @@ createApp({
             visualMode: 'video', 
             imageActionUrl: 'https://line.me',
             headerName: 'TONY',
-            headerDescription: '系統開發與 AI 顧問服務',
-            headerImg: 'https://placehold.co/150',
+            headerDescription: '系統開發與 AI 顧問服務，提供專業的自動化解決方案。',
+            headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png',
             headerBgColor: '#1A1B1E',
             headerTextColor: '#D4AF37',
             footerBgColor: '#1A1B1E',
             gridBgColor: '#2A2C31',
             videoUrl: '', previewUrl: 'https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png',
-            grids: [ 
+            gridButtons: [ 
                 { emoji: '🤖', label: 'AI 諮詢', uri: 'https://line.me' }, 
                 { emoji: '🎥', label: '實績案例', uri: 'https://line.me' }, 
                 { emoji: '🧾', label: '服務項目', uri: 'https://line.me' }, 
                 { emoji: '📍', label: '預約面談', uri: 'https://line.me' } 
             ], 
+            // 統一更名 footerBtns
             footerBtns: [ 
                 { label: '🚀 立即啟動 AI 合作', uri: 'https://line.me', color: '#C9A24D' }, 
                 { label: '📤 推薦給好友', uri: 'https://liff.line.me/2008924519-1qRqocsa?page=card&action=share', color: '#2A2C31' } 
@@ -313,6 +325,7 @@ createApp({
             };
         };
 
+        // 這是編輯器使用的 Flex JSON
         const flexJson = computed(() => {
             const cur = data.value;
             const bubble = {
@@ -322,7 +335,7 @@ createApp({
                     type: "box", layout: "vertical", paddingAll: "0px", backgroundColor: cur.headerBgColor, 
                     contents: [
                         { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: cur.headerBgColor, contents: [{ type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectRatio: "20:13", aspectMode: "cover", cornerRadius: "md", action: { type: "uri", label: "hero", uri: forceHttps(cur.imageActionUrl) } }] },
-                        { type: "box", layout: "vertical", paddingAll: "8px", contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: cur.headerBgColor, cornerRadius: "14px", contents: [{ type: "box", layout: "horizontal", spacing: "sm", contents: cur.grids.slice(0, 2).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: cur.headerTextColor }] })) }, { type: "box", layout: "horizontal", spacing: "sm", contents: cur.grids.slice(2, 4).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: cur.headerTextColor }] })) }] }] }
+                        { type: "box", layout: "vertical", paddingAll: "8px", contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: cur.headerBgColor, cornerRadius: "14px", contents: [{ type: "box", layout: "horizontal", spacing: "sm", contents: cur.gridButtons.slice(0, 2).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: cur.headerTextColor }] })) }, { type: "box", layout: "horizontal", spacing: "sm", contents: cur.gridButtons.slice(2, 4).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: cur.headerTextColor }] })) }] }] }
                     ]
                 },
                 footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.footerBgColor, contents: cur.footerBtns.map(b => ({ type: "button", style: "primary", height: "sm", color: b.color, action: { type: "uri", label: b.label || "了解更多", uri: forceHttps(b.uri) } })) }
@@ -410,10 +423,10 @@ createApp({
 
                     // Fallback
                     const fallbackData = {
-                        name: "訪客",
-                        headImg: "https://placehold.co/150",
-                        desc: "歡迎聯繫",
-                        heroImg: "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png",
+                        headerName: "訪客",
+                        headerImg: "https://placehold.co/150",
+                        headerDescription: "歡迎聯繫",
+                        previewUrl: "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png",
                         headerBgColor: "#1A1B1E",
                         headerTextColor: "#D4AF37",
                         grids: [],
