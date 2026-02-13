@@ -7,6 +7,7 @@
     <!-- 引入 LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 關鍵修正：確保 Vue 函式庫被正確引入 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -119,6 +120,7 @@
         </header>
 
         <div class="flex-grow flex overflow-hidden">
+            <!-- 編輯器區塊 -->
             <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
                 <div class="max-w-4xl mx-auto space-y-8 pb-20">
                     
@@ -177,7 +179,7 @@
                             <h4 class="text-sm font-bold text-gray-700">底部行為按鈕設定</h4>
                             <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Footer 背景</span><input type="color" v-model="data.footerBgColor"></div>
                         </div>
-                        <div v-for="(vBtn, idx) in data.videoFooterButtons" :key="idx" class="flex gap-3 items-center p-4 bg-white border rounded-xl shadow-sm group hover:border-line-green transition-all">
+                        <div v-for="(vBtn, idx) in data.footerBtns" :key="idx" class="flex gap-3 items-center p-4 bg-white border rounded-xl shadow-sm group hover:border-line-green transition-all">
                             <input type="color" v-model="vBtn.color">
                             <div class="flex-1"><input type="text" v-model="vBtn.label" class="w-full border rounded-lg p-2 text-sm font-bold shadow-sm" placeholder="文字"></div>
                             <div class="flex-[2]"><input type="text" v-model="vBtn.uri" class="w-full border rounded-lg p-2 text-sm shadow-sm" placeholder="https://..."></div>
@@ -213,7 +215,7 @@
                             </div>
                             <!-- Footer 預覽：統一使用 5px 內距與網格切齊 -->
                             <div class="space-y-1.5" :style="{ backgroundColor: data.footerBgColor, padding: '5px !important' }">
-                                <button v-for="vBtn in data.videoFooterButtons" class="w-full py-2 text-[10px] font-bold rounded shadow-md text-white transition-transform active:scale-95 mb-1.5 last:mb-0" :style="{ backgroundColor: vBtn.color }">{{ vBtn.label }}</button>
+                                <button v-for="vBtn in data.footerBtns" class="w-full py-2 text-[10px] font-bold rounded shadow-md text-white transition-transform active:scale-95 mb-1.5 last:mb-0" :style="{ backgroundColor: vBtn.color }">{{ vBtn.label }}</button>
                             </div>
                         </div>
                     </div>
@@ -267,7 +269,6 @@ createApp({
         const isAutoMode = ref(false);
         const isLoaded = ref(false);
 
-        // 這裡補回遺漏的資料結構
         const data = ref({
             altText: '商務名片訊息',
             visualMode: 'video', 
@@ -287,57 +288,69 @@ createApp({
                 { emoji: '🧾', label: '服務項目', uri: 'https://line.me' }, 
                 { emoji: '📍', label: '預約面談', uri: 'https://line.me' } 
             ], 
-            videoFooterButtons: [ 
+            // 統一更名 footerBtns
+            footerBtns: [ 
                 { label: '🚀 立即啟動 AI 合作', uri: 'https://line.me', color: '#C9A24D' }, 
                 { label: '📤 推薦給好友', uri: 'https://liff.line.me/2008924519-1qRqocsa?page=card&action=share', color: '#2A2C31' } 
             ]
         });
 
-        // 產生分享名片 JSON 函數 (含邊框邏輯)
-        const generateSharedFlex = (data, uid) => {
-            const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&uid=${uid}`;
-            const themeColor = data.cardBgColor || data.headerBgColor || "#1A1B1E";
+        // 關鍵函式：生成分享出去的名片 JSON
+        const generateOriginalCardJson = (name, img, desc, gridsStr, btnsStr) => {
+            const fixedHeroUrl = "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png";
+            const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&name=${encodeURIComponent(name)}&img=${encodeURIComponent(img)}&desc=${encodeURIComponent(desc)}&grids=${encodeURIComponent(gridsStr || '[]')}&btns=${encodeURIComponent(btnsStr || '[]')}`;
+
+            let grids = [], btns = [];
+            try { grids = JSON.parse(gridsStr || '[]'); } catch(e) {}
+            try { btns = JSON.parse(btnsStr || '[]'); } catch(e) {}
+            
+            if (grids.length === 0) grids = [{emoji:'🤖',label:'AI 諮詢',uri:'https://line.me'},{emoji:'🎥',label:'實績案例',uri:'https://line.me'},{emoji:'🧾',label:'服務項目',uri:'https://line.me'},{emoji:'📍',label:'預約面談',uri:'https://line.me'}];
+            if (btns.length === 0) btns = [{label:'🚀 立即啟動 AI 合作',color:'#C9A24D',uri:'https://line.me'},{label:'📤 推薦給好友',color:'#2A2C31',uri:shareUrl}];
 
             const gridRows = [];
-            const gridButtons = data.grids || [];
-            
-            for (let i = 0; i < gridButtons.length; i += 2) {
-                const rowItems = gridButtons.slice(i, i + 2).map(g => ({
-                    type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: data.gridBgColor || "#2A2C31", cornerRadius: "12px",
-                    action: { type: "uri", label: g.label || "btn", uri: forceHttps(g.uri) },
-                    contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "按鈕", size: "sm", align: "center", color: data.headerTextColor || "#E6E6E6" }]
+            for (let i = 0; i < grids.length; i += 2) {
+                const rowItems = grids.slice(i, i + 2).map(g => ({
+                    type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: "#2A2C31", cornerRadius: "12px",
+                    action: { type: "uri", label: g.label, uri: g.uri || "https://line.me" },
+                    contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "按鈕", size: "sm", align: "center", color: "#E6E6E6" }]
                 }));
                 gridRows.push({ type: "box", layout: "horizontal", spacing: "sm", contents: rowItems });
             }
 
-            const footerBtns = (data.footerBtns || []).map((btn, index) => {
-                let uri = btn.uri || "https://line.me";
-                if (index === 1 || (btn.label && (btn.label.includes("推薦") || btn.label.includes("分享")))) uri = shareUrl;
-                return { type: "button", style: "primary", height: "sm", color: btn.color || "#00B900", action: { type: "uri", label: btn.label || "按鈕", uri: forceHttps(uri) } };
+            const footerBtns = btns.map((btn, index) => {
+                let uri = btn.uri;
+                if (btn.label.includes("推薦") || btn.label.includes("分享")) uri = shareUrl;
+                return { type: "button", style: "primary", height: "sm", color: btn.color || "#00B900", action: { type: "uri", label: btn.label, uri: uri } };
             });
 
             return {
-                type: "bubble", size: "mega",
-                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", backgroundColor: themeColor, contents: [{ type: "image", url: forceHttps(data.headImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [{ type: "text", text: data.name, weight: "bold", size: "lg", color: data.headerTextColor || "#D4AF37" }, { type: "text", text: data.desc, size: "xs", color: data.headerTextColor || "#D4AF37", wrap: true }] }] },
-                // Hero 區塊修正：使用 Box + Image 達成內縮邊框效果
-                body: { 
-                    type: "box", layout: "vertical", paddingAll: "0px", backgroundColor: themeColor,
+                type: "bubble",
+                size: "mega",
+                header: {
+                    type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", backgroundColor: "#1A1B1E",
                     contents: [
-                        {
-                            type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: themeColor,
-                            contents: [{
-                                type: "image", url: forceHttps(data.heroImg || "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png"),
-                                size: "full", aspectRatio: "20:13", aspectMode: "cover", cornerRadius: "md",
-                                action: { type: "uri", label: "hero", uri: forceHttps("https://lin.ee/qFYBr0z") }
-                            }]
-                        },
-                        {
-                            type: "box", layout: "vertical", paddingAll: "8px",
-                            contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: themeColor, cornerRadius: "14px", contents: gridRows }]
-                        }
+                        { type: "image", url: img, size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" },
+                        { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [
+                            { type: "text", text: name, weight: "bold", size: "lg", color: "#D4AF37" },
+                            { type: "text", text: desc, size: "xs", color: "#D4AF37", wrap: true }
+                        ]}
                     ]
                 },
-                footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: themeColor, contents: footerBtns }
+                hero: {
+                    type: "image", url: fixedHeroUrl, size: "full", aspectRatio: "20:13", aspectMode: "cover",
+                    action: { type: "uri", label: "hero", uri: "https://lin.ee/qFYBr0z" }
+                },
+                body: {
+                    type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: "#1A1B1E",
+                    contents: [{
+                        type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: "#1A1B1E", cornerRadius: "14px",
+                        contents: gridRows
+                    }]
+                },
+                footer: {
+                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: "#1A1B1E",
+                    contents: footerBtns
+                }
             };
         };
 
@@ -345,12 +358,47 @@ createApp({
             const cur = data.value;
             const bubble = {
                 type: "bubble", size: "mega",
-                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "image", url: forceHttps(cur.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [{ type: "text", text: cur.headerName || "姓名", weight: "bold", size: "lg", color: cur.headerTextColor }, { type: "text", text: cur.headerDescription || "描述", size: "xs", color: cur.headerTextColor, wrap: true }] }] },
-                body: { type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: cur.headerBgColor, cornerRadius: "14px", contents: [{ type: "box", layout: "horizontal", spacing: "sm", contents: cur.gridButtons.slice(0, 2).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: "#E6E6E6" }] })) }, { type: "box", layout: "horizontal", spacing: "sm", contents: cur.gridButtons.slice(2, 4).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: "#E6E6E6" }] })) }] }] },
-                footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.footerBgColor, contents: cur.videoFooterButtons.map(b => ({ type: "button", style: "primary", height: "sm", color: b.color, action: { type: "uri", label: b.label || "了解更多", uri: forceHttps(b.uri) } })) }
+                header: {
+                    type: "box", layout: "horizontal", spacing: "md", paddingAll: "8px", backgroundColor: cur.headerBgColor,
+                    contents: [
+                        { type: "image", url: forceHttps(cur.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" },
+                        { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [
+                            { type: "text", text: cur.headerName || "姓名", weight: "bold", size: "lg", color: cur.headerTextColor },
+                            { type: "text", text: cur.headerDescription || "描述", size: "xs", color: cur.headerTextColor, wrap: true }
+                        ]}
+                    ]
+                },
+                body: {
+                    type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: cur.headerBgColor,
+                    contents: [{
+                        type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: cur.headerBgColor, cornerRadius: "14px",
+                        contents: [
+                            { type: "box", layout: "horizontal", spacing: "sm", contents: cur.gridButtons.slice(0, 2).map(g => ({
+                                type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px",
+                                action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) },
+                                contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: "#E6E6E6" }]
+                            }))},
+                            { type: "box", layout: "horizontal", spacing: "sm", contents: cur.gridButtons.slice(2, 4).map(g => ({
+                                type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px",
+                                action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) },
+                                contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: "#E6E6E6" }]
+                            }))}
+                        ]
+                    }]
+                },
+                footer: {
+                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.footerBgColor,
+                    contents: cur.footerBtns.map(b => ({
+                        type: "button", style: "primary", height: "sm", color: b.color,
+                        action: { type: "uri", label: b.label || "了解更多", uri: forceHttps(b.uri) }
+                    }))
+                }
             };
-            if (cur.visualMode === 'video') { bubble.hero = { type: "video", url: forceHttps(cur.videoUrl), previewUrl: forceHttps(cur.previewUrl), aspectRatio: "16:9", altContent: { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectMode: "cover" } }; } 
-            else { bubble.hero = { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectRatio: "16:9", aspectMode: "cover", action: { type: "uri", label: "hero", uri: forceHttps(cur.imageActionUrl) } }; }
+            if (cur.visualMode === 'video') {
+                bubble.hero = { type: "video", url: forceHttps(cur.videoUrl), previewUrl: forceHttps(cur.previewUrl), aspectRatio: "16:9", altContent: { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectMode: "cover" } };
+            } else {
+                bubble.hero = { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectRatio: "16:9", aspectMode: "cover", action: { type: "uri", label: "hero", uri: forceHttps(cur.imageActionUrl) } };
+            }
             return bubble;
         });
 
@@ -424,41 +472,20 @@ createApp({
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('action') === 'share') {
                     isAutoMode.value = true;
-                    const uid = params.get('uid');
                     
-                    const executeShare = (flexContent) => {
-                        if (isLoggedIn.value) pushCard(flexContent);
-                        else liff.login();
-                    };
+                    const name = decodeURIComponent(params.get('name') || "訪客");
+                    const img = decodeURIComponent(params.get('img') || "https://placehold.co/150");
+                    const desc = decodeURIComponent(params.get('desc') || "歡迎聯繫");
+                    const gridsStr = decodeURIComponent(params.get('grids') || '[]');
+                    const btnsStr = decodeURIComponent(params.get('btns') || '[]');
 
-                    // 關鍵修正：透過 uid 讀取擁有者完整的自訂內容 (包含邊框設定)
-                    if (uid && uid !== 'GUEST') {
-                        try {
-                            const res = await fetch(workerUrl, {
-                                method: 'POST',
-                                body: JSON.stringify({ action: 'getUserData', userId: uid })
-                            });
-                            const result = await res.json();
-                            if (result.status === 'success' && result.data && result.data.cardJson) {
-                                const savedData = JSON.parse(result.data.cardJson);
-                                executeShare(generateSharedFlex(savedData, uid));
-                                return;
-                            }
-                        } catch(e) { console.error("Fetch shared data error:", e); }
+                    const originalFlex = generateOriginalCardJson(name, img, desc, gridsStr, btnsStr);
+
+                    if (isLoggedIn.value) {
+                        pushCard(originalFlex);
+                    } else {
+                        liff.login({ redirectUri: window.location.href });
                     }
-
-                    // 備用方案
-                    const fallbackData = {
-                        name: "訪客",
-                        headImg: "https://placehold.co/150",
-                        desc: "歡迎聯繫",
-                        heroImg: "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png",
-                        headerBgColor: "#1A1B1E",
-                        headerTextColor: "#D4AF37",
-                        grids: [],
-                        footerBtns: []
-                    };
-                    executeShare(generateSharedFlex(fallbackData, uid || 'GUEST'));
                 }
             } catch (e) {}
             finally { isLoaded.value = true; }
