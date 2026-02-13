@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>商務型名片開發 - LINEOA CMS</title>
-    <!-- 引入 LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f7f6; overflow: hidden; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f7f6; overflow: hidden; margin: 0; }
         .line-green { color: #00B900; }
         .bg-line-green { background-color: #00B900; }
         
@@ -28,8 +28,7 @@
         .flex-bubble { background: #FFFFFF; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
         .header-box { padding: 10px; display: flex; align-items: center; gap: 10px; }
         
-        /* Hero 樣式：滿版圖片 */
-        .hero-box { padding: 0; } 
+        .hero-box { padding: 0; position: relative; } 
         .hero-img { width: 100%; aspect-ratio: 20/13; object-fit: cover; }
         
         .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; }
@@ -44,17 +43,25 @@
             background-color: #ffffff; z-index: 9999;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
+        
+        #app {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
     </style>
 </head>
 <body>
 
-<div id="app" :class="{ 'loaded': isLoaded }" v-cloak>
+<div id="app" v-cloak>
     
+    <!-- 自動模式：分享中畫面 -->
     <div v-if="isAutoMode" class="auto-mode-overlay">
         <div class="text-line-green text-5xl mb-4"><i class="fas fa-paper-plane animate-bounce"></i></div>
         <p class="text-gray-500 font-bold text-sm tracking-widest">啟動 LINE 分享中...</p>
     </div>
 
+    <!-- 側邊欄：只在非自動模式顯示 -->
     <aside v-if="!isAutoMode" :class="isSidebarCollapsed ? 'w-collapsed' : 'w-expanded'" class="sidebar-container text-gray-400 shadow-2xl">
         <div class="h-16 flex items-center border-b border-gray-700 shrink-0 overflow-hidden" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
             <i class="fab fa-line text-3xl line-green"></i>
@@ -91,6 +98,7 @@
         </button>
     </aside>
 
+    <!-- 主要內容區：只在非自動模式顯示 -->
     <main v-if="!isAutoMode" class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#f8fafc]">
         <header class="h-16 bg-white border-b flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
             <h2 class="text-xl font-bold text-gray-800">商務型名片插件開發</h2>
@@ -112,10 +120,9 @@
         </header>
 
         <div class="flex-grow flex overflow-hidden">
-            <!-- 編輯器區塊 -->
+            <!-- 左側編輯區 -->
             <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
                 <div class="max-w-4xl mx-auto space-y-8 pb-20">
-                    
                     <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-sm">
                         <label class="input-label text-blue-800">聊天室通知文字 (altText)</label>
                         <input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-200 shadow-sm">
@@ -128,7 +135,6 @@
                             <button @click="data.visualMode = 'video'" :class="data.visualMode === 'video' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">影片模式</button>
                             <button @click="data.visualMode = 'image'" :class="data.visualMode === 'image' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">靜態圖片模式</button>
                         </div>
-                        
                         <div v-if="data.visualMode === 'video'" class="space-y-4 animate-in fade-in duration-300">
                             <div><label class="input-label">商務影片連結 (.mp4)</label><input type="text" v-model="data.videoUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
                             <div><label class="input-label">影片封面縮圖網址</label><input type="text" v-model="data.previewUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
@@ -151,13 +157,12 @@
                         </div>
                     </div>
 
-                    <!-- 功能網格：寬度與按鈕切齊 -->
+                    <!-- 功能網格 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="text-sm font-bold text-gray-700">商務功能網格設定</h4>
                             <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">按鈕底色</span><input type="color" v-model="data.gridBgColor"></div>
                         </div>
-                        <!-- 修正變數：使用 data.grids -->
                         <div class="grid grid-cols-2 gap-3">
                             <div v-for="(grid, idx) in data.grids" :key="idx" class="p-4 bg-white border rounded-xl shadow-sm space-y-2 group transition-all hover:border-line-green">
                                 <div class="flex gap-2"><input type="text" v-model="grid.emoji" class="w-10 border rounded text-sm text-center shadow-inner"><input type="text" v-model="grid.label" class="flex-1 border rounded px-2 py-1 text-xs shadow-inner" placeholder="按鈕名稱"></div>
@@ -172,7 +177,6 @@
                             <h4 class="text-sm font-bold text-gray-700">底部行為按鈕設定</h4>
                             <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Footer 背景</span><input type="color" v-model="data.footerBgColor"></div>
                         </div>
-                        <!-- 修正變數：使用 data.footerBtns -->
                         <div v-for="(vBtn, idx) in data.footerBtns" :key="idx" class="flex gap-3 items-center p-4 bg-white border rounded-xl shadow-sm group hover:border-line-green transition-all">
                             <input type="color" v-model="vBtn.color">
                             <div class="flex-1"><input type="text" v-model="vBtn.label" class="w-full border rounded-lg p-2 text-sm font-bold shadow-sm" placeholder="文字"></div>
@@ -182,34 +186,34 @@
                 </div>
             </div>
 
-            <!-- 右側：即時預覽 (修正對齊) -->
+            <!-- 右側：即時預覽 -->
             <div class="w-[450px] shrink-0 open-preview-area shadow-inner bg-slate-200/50 overflow-y-auto no-scrollbar">
                 <div class="chat-room-bg no-scrollbar">
                     <div class="flex-bubble-container animate-in zoom-in duration-300">
-                        <div class="flex-bubble" :style="{ backgroundColor: data.headerBgColor }">
-                            <!-- Header 預覽 -->
+                        <div class="flex-bubble">
+                            <!-- Header -->
                             <div class="header-box" :style="{ backgroundColor: data.headerBgColor }">
-                                <img :src="data.headerImg" class="w-10 h-10 rounded-full object-cover border border-white/20 shadow-sm">
+                                <img :src="data.headerImg || 'https://placehold.co/150'" class="w-10 h-10 rounded-full object-cover border border-white/20 shadow-sm" @error="e => e.target.src='https://placehold.co/150'">
                                 <div class="flex flex-col overflow-hidden">
                                     <span class="text-[11px] font-bold uppercase truncate" :style="{ color: data.headerTextColor }">{{ data.headerName || '姓名' }}</span>
                                     <span class="text-[8px] leading-tight truncate" :style="{ color: data.headerTextColor, opacity: 0.8 }">{{ data.headerDescription || '敘述' }}</span>
                                 </div>
                             </div>
-                            <!-- Hero 預覽 (標準 Image) -->
+                            <!-- Hero -->
                             <div class="hero-box">
-                                <img :src="data.previewUrl" class="w-full h-full object-cover opacity-60">
-                                <i v-if="data.visualMode === 'video'" class="fas fa-play-circle text-white text-4xl absolute opacity-90 drop-shadow-2xl"></i>
+                                <img :src="data.previewUrl || 'https://placehold.co/800x520'" class="hero-img" @error="e => e.target.src='https://placehold.co/800x520'">
+                                <i v-if="data.visualMode === 'video'" class="fas fa-play-circle text-white text-4xl absolute opacity-90 drop-shadow-2xl" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></i>
                             </div>
-                            <!-- Grid 預覽 -->
-                            <div class="grid-box" :style="{ backgroundColor: data.headerBgColor, padding: '5px !important' }">
-                                <div v-for="grid in data.grids" class="grid-item shadow-md transition-transform active:scale-95" :style="{ backgroundColor: data.gridBgColor }">
-                                    <div class="text-lg mb-1">{{ grid.emoji }}</div>
+                            <!-- Grid -->
+                            <div class="grid-box" :style="{ backgroundColor: data.headerBgColor }">
+                                <div v-for="grid in data.grids" :key="grid.label" class="grid-item shadow-md transition-transform active:scale-95" :style="{ backgroundColor: data.gridBgColor }">
+                                    <div class="text-lg mb-1">{{ grid.emoji || '🔘' }}</div>
                                     <div class="text-[8px] font-bold uppercase truncate px-1" :style="{ color: data.headerTextColor }">{{ grid.label || '選單' }}</div>
                                 </div>
                             </div>
-                            <!-- Footer 預覽 -->
-                            <div class="space-y-1.5" :style="{ backgroundColor: data.footerBgColor, padding: '5px !important' }">
-                                <button v-for="vBtn in data.footerBtns" class="w-full py-2 text-[10px] font-bold rounded shadow-md text-white mb-1.5 last:mb-0" :style="{ backgroundColor: vBtn.color }">{{ vBtn.label }}</button>
+                            <!-- Footer -->
+                            <div class="space-y-1.5 p-1" :style="{ backgroundColor: data.footerBgColor }">
+                                <button v-for="vBtn in data.footerBtns" :key="vBtn.label" class="w-full py-2 text-[10px] font-bold rounded shadow-md text-white" :style="{ backgroundColor: vBtn.color }">{{ vBtn.label || '按鈕' }}</button>
                             </div>
                         </div>
                     </div>
@@ -241,6 +245,7 @@
 </div>
 
 <script>
+// 使用全局 Vue
 const { createApp, ref, computed, onMounted } = Vue;
 
 const forceHttps = (u) => {
@@ -252,7 +257,8 @@ const forceHttps = (u) => {
 
 const workerUrl = "https://lineoa.fangwl591021.workers.dev"; 
 
-createApp({
+// 創建 Vue 應用
+const app = createApp({
     setup() {
         const isSidebarCollapsed = ref(false);
         const isLoggedIn = ref(false);
@@ -262,6 +268,7 @@ createApp({
         const projectName = ref('');
         const isAutoMode = ref(false);
         const isLoaded = ref(false);
+        const liffInitialized = ref(false);
 
         const data = ref({
             altText: '商務名片訊息',
@@ -274,35 +281,40 @@ createApp({
             headerTextColor: '#D4AF37',
             footerBgColor: '#1A1B1E',
             gridBgColor: '#2A2C31',
-            videoUrl: '', previewUrl: 'https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png',
-            // 變數名稱統一：grids
+            videoUrl: '', 
+            previewUrl: 'https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png',
             grids: [ 
                 { emoji: '🤖', label: 'AI 諮詢', uri: 'https://line.me' }, 
                 { emoji: '🎥', label: '實績案例', uri: 'https://line.me' }, 
                 { emoji: '🧾', label: '服務項目', uri: 'https://line.me' }, 
                 { emoji: '📍', label: '預約面談', uri: 'https://line.me' } 
             ], 
-            // 變數名稱統一：footerBtns
             footerBtns: [ 
                 { label: '🚀 立即啟動 AI 合作', uri: 'https://line.me', color: '#C9A24D' }, 
                 { label: '📤 推薦給好友', uri: 'https://liff.line.me/2008924519-1qRqocsa?page=card&action=share', color: '#2A2C31' } 
             ]
         });
 
-        // 產生分享名片 JSON (支援 UID + 滿版 Hero)
+        // 產生分享名片 JSON 函數
         const generateSharedFlex = (sharedData, uid) => {
             const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&uid=${uid}`;
             const themeColor = sharedData.cardBgColor || sharedData.headerBgColor || "#1A1B1E";
 
             const gridRows = [];
-            // 相容性處理：支援 grids 或 gridButtons
             const gridButtons = sharedData.grids || sharedData.gridButtons || [];
             
             for (let i = 0; i < gridButtons.length; i += 2) {
                 const rowItems = gridButtons.slice(i, i + 2).map(g => ({
-                    type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: sharedData.gridBgColor || "#2A2C31", cornerRadius: "12px",
+                    type: "box", 
+                    layout: "vertical", 
+                    paddingAll: "10px", 
+                    backgroundColor: sharedData.gridBgColor || "#2A2C31", 
+                    cornerRadius: "12px",
                     action: { type: "uri", label: g.label || "btn", uri: forceHttps(g.uri) },
-                    contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "按鈕", size: "sm", align: "center", color: sharedData.headerTextColor || "#E6E6E6" }]
+                    contents: [
+                        { type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, 
+                        { type: "text", text: g.label || "按鈕", size: "sm", align: "center", color: sharedData.headerTextColor || "#E6E6E6" }
+                    ]
                 }));
                 gridRows.push({ type: "box", layout: "horizontal", spacing: "sm", contents: rowItems });
             }
@@ -310,80 +322,232 @@ createApp({
             const footerBtns = (sharedData.footerBtns || sharedData.videoFooterButtons || []).map((btn, index) => {
                 let uri = btn.uri || "https://line.me";
                 if (index === 1 || (btn.label && (btn.label.includes("推薦") || btn.label.includes("分享")))) uri = shareUrl;
-                return { type: "button", style: "primary", height: "sm", color: btn.color || "#00B900", action: { type: "uri", label: btn.label || "按鈕", uri: forceHttps(uri) } };
+                return { 
+                    type: "button", 
+                    style: "primary", 
+                    height: "sm", 
+                    color: btn.color || "#00B900", 
+                    action: { type: "uri", label: btn.label || "按鈕", uri: forceHttps(uri) } 
+                };
             });
 
             return {
-                type: "bubble", size: "mega",
-                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", backgroundColor: themeColor, contents: [{ type: "image", url: forceHttps(sharedData.headImg || sharedData.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [{ type: "text", text: sharedData.name || sharedData.headerName, weight: "bold", size: "lg", color: sharedData.headerTextColor || "#D4AF37" }, { type: "text", text: sharedData.desc || sharedData.headerDescription, size: "xs", color: sharedData.headerTextColor || "#D4AF37", wrap: true }] }] },
-                // Hero: 滿版圖片
-                hero: { type: "image", url: forceHttps(sharedData.heroImg || sharedData.previewUrl), size: "full", aspectRatio: "20:13", aspectMode: "cover", action: { type: "uri", label: "hero", uri: forceHttps("https://lin.ee/qFYBr0z") } },
+                type: "bubble", 
+                size: "mega",
+                header: { 
+                    type: "box", 
+                    layout: "horizontal", 
+                    spacing: "md", 
+                    paddingAll: "12px", 
+                    backgroundColor: themeColor, 
+                    contents: [
+                        { type: "image", url: forceHttps(sharedData.headImg || sharedData.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, 
+                        { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [
+                            { type: "text", text: sharedData.name || sharedData.headerName, weight: "bold", size: "lg", color: sharedData.headerTextColor || "#D4AF37" }, 
+                            { type: "text", text: sharedData.desc || sharedData.headerDescription, size: "xs", color: sharedData.headerTextColor || "#D4AF37", wrap: true }
+                        ]}
+                    ] 
+                },
+                hero: { 
+                    type: "image", 
+                    url: forceHttps(sharedData.heroImg || sharedData.previewUrl), 
+                    size: "full", 
+                    aspectRatio: "20:13", 
+                    aspectMode: "cover", 
+                    action: { type: "uri", label: "hero", uri: forceHttps("https://lin.ee/qFYBr0z") } 
+                },
                 body: { 
-                    type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: themeColor,
+                    type: "box", 
+                    layout: "vertical", 
+                    paddingAll: "8px", 
+                    backgroundColor: themeColor,
                     contents: [{
-                        type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: themeColor, cornerRadius: "14px",
+                        type: "box", 
+                        layout: "vertical", 
+                        spacing: "sm", 
+                        paddingAll: "12px", 
+                        backgroundColor: themeColor, 
+                        cornerRadius: "14px",
                         contents: gridRows
                     }]
                 },
-                footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: themeColor, contents: footerBtns }
+                footer: { 
+                    type: "box", 
+                    layout: "vertical", 
+                    spacing: "sm", 
+                    paddingAll: "5px", 
+                    backgroundColor: themeColor, 
+                    contents: footerBtns 
+                }
             };
         };
 
         const flexJson = computed(() => {
             const cur = data.value;
             const bubble = {
-                type: "bubble", size: "mega",
-                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "image", url: forceHttps(cur.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [{ type: "text", text: cur.headerName || "姓名", weight: "bold", size: "lg", color: cur.headerTextColor }, { type: "text", text: cur.headerDescription || "描述", size: "xs", color: cur.headerTextColor, wrap: true }] }] },
-                hero: { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectRatio: "20:13", aspectMode: "cover", action: { type: "uri", label: "hero", uri: forceHttps(cur.imageActionUrl) } },
-                body: { 
-                    type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: cur.headerBgColor, 
-                    contents: [{
-                        type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: cur.headerBgColor, cornerRadius: "14px",
-                        contents: [
-                            { type: "box", layout: "horizontal", spacing: "sm", contents: cur.grids.slice(0, 2).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: cur.headerTextColor }] }))},
-                            { type: "box", layout: "horizontal", spacing: "sm", contents: cur.grids.slice(2, 4).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: cur.headerTextColor }] }))}
-                        ]
-                    }] 
+                type: "bubble", 
+                size: "mega",
+                header: { 
+                    type: "box", 
+                    layout: "horizontal", 
+                    spacing: "md", 
+                    paddingAll: "8px", 
+                    backgroundColor: cur.headerBgColor, 
+                    contents: [
+                        { type: "image", url: forceHttps(cur.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, 
+                        { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [
+                            { type: "text", text: cur.headerName || "姓名", weight: "bold", size: "lg", color: cur.headerTextColor }, 
+                            { type: "text", text: cur.headerDescription || "描述", size: "xs", color: cur.headerTextColor, wrap: true }
+                        ]}
+                    ] 
                 },
-                footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.footerBgColor, contents: cur.footerBtns.map(b => ({ type: "button", style: "primary", height: "sm", color: b.color, action: { type: "uri", label: b.label || "了解更多", uri: forceHttps(b.uri) } })) }
+                hero: { 
+                    type: "image", 
+                    url: forceHttps(cur.previewUrl), 
+                    size: "full", 
+                    aspectRatio: "20:13", 
+                    aspectMode: "cover", 
+                    action: { type: "uri", label: "hero", uri: forceHttps(cur.imageActionUrl) } 
+                },
+                body: { 
+                    type: "box", 
+                    layout: "vertical", 
+                    paddingAll: "8px", 
+                    backgroundColor: cur.headerBgColor, 
+                    contents: []
+                },
+                footer: { 
+                    type: "box", 
+                    layout: "vertical", 
+                    spacing: "sm", 
+                    paddingAll: "5px", 
+                    backgroundColor: cur.footerBgColor, 
+                    contents: cur.footerBtns.map(b => ({ 
+                        type: "button", 
+                        style: "primary", 
+                        height: "sm", 
+                        color: b.color, 
+                        action: { type: "uri", label: b.label || "了解更多", uri: forceHttps(b.uri) } 
+                    })) 
+                }
             };
-            if (cur.visualMode === 'video') { bubble.hero = { type: "video", url: forceHttps(cur.videoUrl), previewUrl: forceHttps(cur.previewUrl), aspectRatio: "16:9", altContent: { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectMode: "cover" } }; } 
+            
+            // 處理 Grid 內容
+            const gridRows = [];
+            for (let i = 0; i < cur.grids.length; i += 2) {
+                const rowItems = cur.grids.slice(i, i + 2).map(g => ({
+                    type: "box", 
+                    layout: "vertical", 
+                    paddingAll: "10px", 
+                    backgroundColor: cur.gridBgColor, 
+                    cornerRadius: "12px",
+                    action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) },
+                    contents: [
+                        { type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, 
+                        { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: cur.headerTextColor }
+                    ]
+                }));
+                gridRows.push({ type: "box", layout: "horizontal", spacing: "sm", contents: rowItems });
+            }
+            
+            bubble.body.contents.push({
+                type: "box", 
+                layout: "vertical", 
+                spacing: "sm", 
+                paddingAll: "12px", 
+                backgroundColor: cur.headerBgColor, 
+                cornerRadius: "14px", 
+                contents: gridRows
+            });
+
+            if (cur.visualMode === 'video' && cur.videoUrl) { 
+                bubble.hero = { 
+                    type: "video", 
+                    url: forceHttps(cur.videoUrl), 
+                    previewUrl: forceHttps(cur.previewUrl), 
+                    aspectRatio: "16:9", 
+                    altContent: { 
+                        type: "image", 
+                        url: forceHttps(cur.previewUrl), 
+                        size: "full", 
+                        aspectMode: "cover" 
+                    } 
+                }; 
+            } 
             return bubble;
         });
 
-        const initSave = () => { showSaveModal.value = true; };
+        const initSave = () => { 
+            showSaveModal.value = true; 
+        };
 
         const confirmSave = async () => {
-            if (!projectName.value) { alert("請輸入專案名稱"); return; }
+            if (!projectName.value) { 
+                alert("請輸入專案名稱"); 
+                return; 
+            }
             isSaving.value = true;
             const cur = data.value;
             const now = new Date().toISOString();
             const payload = {
-                userId: userProfile.value.userId || 'GUEST', displayName: userProfile.value.displayName || '訪客', cardId: 'ID_' + Date.now(), cardType: 'card', cardTitle: projectName.value, isActive: true, 'header.name': cur.headerName, 'header.subtitle': cur.headerDescription, 'header.avatarUrl': cur.headerImg, 'header.bgColor': cur.headerBgColor, 'hero.mode': cur.visualMode, 'hero.video.url': cur.videoUrl, 'hero.image.url': cur.previewUrl, createdAt: now, updatedAt: now, cardJson: JSON.stringify(flexJson.value), flexPayload: flexJson.value 
+                userId: userProfile.value.userId || 'GUEST', 
+                displayName: userProfile.value.displayName || '訪客', 
+                cardId: 'ID_' + Date.now(), 
+                cardType: 'card', 
+                cardTitle: projectName.value, 
+                isActive: true, 
+                'header.name': cur.headerName, 
+                'header.subtitle': cur.headerDescription, 
+                'header.avatarUrl': cur.headerImg, 
+                'header.bgColor': cur.headerBgColor, 
+                'hero.mode': cur.visualMode, 
+                'hero.video.url': cur.videoUrl, 
+                'hero.image.url': cur.previewUrl, 
+                createdAt: now, 
+                updatedAt: now, 
+                cardJson: JSON.stringify(flexJson.value), 
+                flexPayload: flexJson.value 
             };
             try {
-                const res = await fetch(workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const res = await fetch(workerUrl, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
+                });
                 const result = await res.json();
                 if (result.status === 'success') {
                     alert("商務型名片專案已成功儲存！");
                     showSaveModal.value = false;
                     projectName.value = '';
                 }
-            } catch (e) { alert("儲存連線失敗"); }
-            finally { isSaving.value = false; }
+            } catch (e) { 
+                alert("儲存連線失敗"); 
+            } finally { 
+                isSaving.value = false; 
+            }
         };
 
         const pushCard = (specificFlexMessage = null) => {
-            const contentToSend = specificFlexMessage || flexJson.value;
-
             return new Promise((resolve, reject) => {
-                if (!liff.isLoggedIn()) { liff.login(); return reject('Not logged in'); }
+                if (!liff.isLoggedIn()) { 
+                    liff.login(); 
+                    return reject('Not logged in');
+                }
                 
-                liff.shareTargetPicker([{ type: "flex", altText: "名片分享", contents: contentToSend }])
+                const contentToSend = specificFlexMessage || flexJson.value;
+                
+                liff.shareTargetPicker([{ 
+                    type: "flex", 
+                    altText: data.value.altText || "名片分享", 
+                    contents: contentToSend 
+                }])
                 .then(res => {
                     if (res) {
-                        if (isAutoMode.value) liff.closeWindow();
-                        else alert("商務型名片推播成功！");
+                        if (isAutoMode.value) {
+                            setTimeout(() => liff.closeWindow(), 1000);
+                        } else {
+                            alert("商務型名片推播成功！");
+                        }
                         resolve(res);
                     } else {
                         if (isAutoMode.value) liff.closeWindow();
@@ -391,32 +555,48 @@ createApp({
                     }
                 })
                 .catch(err => {
+                    console.error("ShareTargetPicker error:", err);
                     if (isAutoMode.value) liff.closeWindow();
                     reject(err);
                 });
             });
         };
 
-        onMounted(async () => {
+        const copyJson = () => { 
+            navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); 
+            alert("JSON 代碼已複製"); 
+        };
+
+        // 初始化 LIFF
+        const initLiff = async () => {
             try { 
                 await liff.init({ liffId: "2008924519-1qRqocsa" }); 
+                liffInitialized.value = true;
                 isLoggedIn.value = liff.isLoggedIn();
-                if (isLoggedIn.value) userProfile.value = await liff.getProfile();
+                
+                if (isLoggedIn.value) {
+                    userProfile.value = await liff.getProfile();
+                }
 
+                // 檢查 URL 參數
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('action') === 'share') {
                     isAutoMode.value = true;
                     const uid = params.get('uid');
                     
                     const executeShare = (flexContent) => {
-                        if (isLoggedIn.value) pushCard(flexContent);
-                        else liff.login();
+                        if (isLoggedIn.value) {
+                            pushCard(flexContent).catch(err => console.error("Share error:", err));
+                        } else {
+                            liff.login();
+                        }
                     };
 
                     if (uid && uid !== 'GUEST') {
                         try {
                             const res = await fetch(workerUrl, {
                                 method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ action: 'getUserData', userId: uid })
                             });
                             const result = await res.json();
@@ -425,7 +605,9 @@ createApp({
                                 executeShare(generateSharedFlex(savedData, uid));
                                 return;
                             }
-                        } catch(e) { console.error("Fetch shared data error:", e); }
+                        } catch(e) { 
+                            console.error("Fetch shared data error:", e); 
+                        }
                     }
 
                     // Fallback
@@ -436,25 +618,43 @@ createApp({
                         heroImg: "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png",
                         headerBgColor: "#1A1B1E",
                         headerTextColor: "#D4AF37",
-                        grids: [],
-                        footerBtns: []
+                        grids: data.value.grids,
+                        footerBtns: data.value.footerBtns
                     };
                     executeShare(generateSharedFlex(fallbackData, uid || 'GUEST'));
                 }
-            } catch (e) {}
-            finally { isLoaded.value = true; }
+            } catch (e) {
+                console.error("LIFF init error:", e);
+            } finally { 
+                isLoaded.value = true; 
+            }
+        };
+
+        onMounted(() => {
+            initLiff();
         });
 
         return { 
-            isSidebarCollapsed, data, flexJson, isLoggedIn, userProfile, pushCard, 
-            copyJson: () => { 
-                navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); 
-                alert("JSON 代碼已複製"); 
-            }, 
-            initSave, confirmSave, showSaveModal, projectName, isSaving, isAutoMode, isLoaded 
+            isSidebarCollapsed, 
+            data, 
+            flexJson, 
+            isLoggedIn, 
+            userProfile, 
+            pushCard, 
+            copyJson,
+            initSave, 
+            confirmSave, 
+            showSaveModal, 
+            projectName, 
+            isSaving, 
+            isAutoMode, 
+            isLoaded 
         };
     }
-}).mount('#app');
+});
+
+// 掛載 Vue 應用
+app.mount('#app');
 </script>
 </body>
 </html>
