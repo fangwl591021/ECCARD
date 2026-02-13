@@ -15,12 +15,9 @@
         [v-cloak] { display: none !important; }
 
         .card-container { max-width: 450px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
-        
         .edit-highlight { border: 2px dashed rgba(0, 185, 0, 0.5); cursor: pointer; transition: all 0.2s; position: relative; border-radius: 8px; }
         .edit-highlight:hover { background-color: rgba(0, 185, 0, 0.15); border-color: #00B900; }
-        
         .edit-icon { position: absolute; top: -10px; right: -10px; background: #00B900; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.5); pointer-events: none; }
-        
         .edit-highlight-circle { border-radius: 50%; }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
@@ -29,7 +26,9 @@
 
         .flex-bubble { border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6); border: 1px solid #333; transition: background-color 0.3s; }
         .header-box { padding: 20px; display: flex; align-items: center; gap: 15px; }
-        .hero-img { width: 100%; aspect-ratio: 20/13; object-fit: cover; }
+        .hero-box { padding: 15px; }
+        .hero-img { width: 100%; aspect-ratio: 20/13; object-fit: cover; border-radius: 8px; }
+        
         .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
         .grid-item { background-color: #2A2C31; padding: 15px; text-align: center; }
         .footer-box { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
@@ -56,7 +55,6 @@
     </div>
 
     <div class="card-container">
-        <!-- 主題配色入口 -->
         <div class="flex gap-2 mb-6">
             <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 flex-1 flex items-center justify-center text-center shadow-inner">
                 <p class="text-yellow-400 text-xs font-bold tracking-wider">👆 點擊虛線框區域修改內容</p>
@@ -75,27 +73,26 @@
                 </div>
                 <div class="flex-1 flex flex-col gap-2 overflow-hidden">
                     <div class="relative w-fit max-w-full edit-highlight p-1" @click="openEdit('text', 'name', '修改姓名/暱稱')">
-                        <!-- 同步文字顏色 -->
                         <span class="font-bold text-xl block truncate" :style="{ color: card.headerTextColor || '#D4AF37' }">{{ card.name }}</span>
                         <div class="edit-icon"><i class="fas fa-pen"></i></div>
                     </div>
                     <div class="relative w-full edit-highlight p-1" @click="openEdit('text', 'desc', '修改個人簡介')">
-                        <!-- 同步文字顏色 -->
                         <span class="text-xs block leading-relaxed whitespace-pre-wrap opacity-90" :style="{ color: card.headerTextColor || '#D4AF37' }">{{ card.desc }}</span>
                         <div class="edit-icon"><i class="fas fa-pen"></i></div>
                     </div>
                 </div>
             </div>
 
-            <div class="relative group edit-highlight m-3 mt-0" @click="openEdit('image', 'heroImg', '更換名片主視覺圖片')">
-                <img :src="card.heroImg" class="hero-img rounded-lg" onerror="this.src='https://placehold.co/800x520'">
-                <div class="edit-icon" style="top: 10px; right: 10px; width: 32px; height: 32px; font-size: 14px;"><i class="fas fa-image"></i></div>
+            <div class="hero-box" :style="{ backgroundColor: card.cardBgColor || '#1A1B1E' }">
+                <div class="relative group edit-highlight" @click="openEdit('image', 'heroImg', '更換名片主視覺圖片')">
+                    <img :src="card.heroImg" class="hero-img" onerror="this.src='https://placehold.co/800x520'">
+                    <div class="edit-icon" style="top: 10px; right: 10px; width: 32px; height: 32px; font-size: 14px;"><i class="fas fa-image"></i></div>
+                </div>
             </div>
 
             <div class="grid-box">
                 <div v-for="(btn, idx) in card.grids" :key="idx" class="grid-item relative edit-highlight flex flex-col items-center justify-center" @click="openEdit('grid', idx, `設定網格按鈕 ${idx+1}`)">
                     <div class="text-3xl mb-2">{{ btn.emoji }}</div>
-                    <!-- 同步文字顏色 -->
                     <div class="text-xs font-bold w-full truncate" :style="{ color: card.headerTextColor || '#E6E6E6' }">{{ btn.label }}</div>
                     <div class="edit-icon"><i class="fas fa-cog"></i></div>
                 </div>
@@ -120,7 +117,6 @@
                 <button @click="editing.show = false" class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"><i class="fas fa-times"></i></button>
             </div>
             
-            <!-- 全域主題雙色編輯 -->
             <div v-if="editing.type === 'theme'" class="space-y-6 text-center">
                 <p class="text-xs text-gray-500 font-bold mb-4">設定您的專屬名片配色，打造一體成型的視覺風格。</p>
                 <div class="grid grid-cols-2 gap-4">
@@ -208,11 +204,9 @@
                 </div>
             </div>
 
-            <div class="flex gap-3 mt-6 pt-2">
-                <button @click="editing.show = false" class="flex-1 py-3.5 text-gray-500 font-bold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">取消</button>
-                <button @click="confirmEdit" class="flex-[2] py-3.5 text-white font-bold bg-green-600 rounded-xl hover:bg-green-500 transition-colors shadow-lg shadow-green-200 flex justify-center items-center gap-2">
-                    <i class="fas fa-check"></i> 確定修改
-                </button>
+            <div class="flex gap-2 pt-2">
+                <button @click="editing.show = false" class="flex-1 py-3 text-gray-500 font-bold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">取消</button>
+                <button @click="confirmEdit" class="flex-1 py-3 text-white font-bold bg-green-600 rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-200">確定修改</button>
             </div>
         </div>
     </div>
@@ -228,6 +222,7 @@ createApp({
         const saving = ref(false);
         const isUploading = ref(false);
         const userId = ref('');
+        const isLoaded = ref(false);
         
         const card = ref({
             name: '載入中...',
@@ -235,7 +230,7 @@ createApp({
             headImg: 'https://placehold.co/150',
             heroImg: 'https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png',
             cardBgColor: '#1A1B1E', 
-            headerTextColor: '#D4AF37', // 新增：全域文字顏色
+            headerTextColor: '#D4AF37',
             grids: [
                 { emoji: '🤖', label: 'AI 諮詢', uri: 'https://line.me' },
                 { emoji: '🎥', label: '實績案例', uri: 'https://line.me' },
@@ -250,7 +245,7 @@ createApp({
 
         const editing = ref({ show: false, type: '', key: '', title: '' });
         const tempValue = ref('');
-        const tempTextColor = ref(''); // 用於 Theme Modal
+        const tempTextColor = ref(''); 
         const tempGrid = ref({});
         const tempBtn = ref({});
 
@@ -258,7 +253,7 @@ createApp({
             try {
                 await liff.init({ liffId: "2008924519-1qRqocsa" });
                 if (!liff.isLoggedIn()) {
-                    liff.login();
+                    liff.login({ redirectUri: window.location.href });
                     return;
                 }
                 const profile = await liff.getProfile();
@@ -268,6 +263,7 @@ createApp({
                 console.error("LIFF Init Error:", e);
                 alert("LIFF 載入失敗: " + e.message);
                 loading.value = false;
+                isLoaded.value = true;
             }
         };
 
@@ -305,6 +301,7 @@ createApp({
                 alert("讀取資料失敗，請檢查網路連線。");
             } finally {
                 loading.value = false;
+                isLoaded.value = true;
             }
         };
 
@@ -320,15 +317,9 @@ createApp({
             editing.value = { show: true, type, key, title };
             if (type === 'text' || type === 'image' || type === 'theme') {
                 tempValue.value = card.value[key] || '';
-                if (type === 'theme') {
-                    tempValue.value = card.value.cardBgColor || '#1A1B1E';
-                    tempTextColor.value = card.value.headerTextColor || '#D4AF37';
-                }
-            } else if (type === 'grid') {
-                tempGrid.value = { ...card.value.grids[key] };
-            } else if (type === 'button') {
-                tempBtn.value = { ...card.value.footerBtns[key] };
-            }
+                if (type === 'theme') { tempValue.value = card.value.cardBgColor || '#1A1B1E'; tempTextColor.value = card.value.headerTextColor || '#D4AF37'; }
+            } else if (type === 'grid') { tempGrid.value = { ...card.value.grids[key] }; } 
+            else if (type === 'button') { tempBtn.value = { ...card.value.footerBtns[key] }; }
         };
 
         const handleImageUpload = async (event) => {
@@ -337,27 +328,18 @@ createApp({
             if (file.size > 5 * 1024 * 1024) { alert('圖片檔案過大，請上傳小於 5MB 的圖片。'); return; }
             isUploading.value = true;
             try {
-                const base64Data = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result.split(',')[1]); 
-                    reader.onerror = error => reject(error);
-                    reader.readAsDataURL(file);
-                });
+                const base64Data = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = error => reject(error); reader.readAsDataURL(file); });
                 const payload = { action: 'uploadImage', filename: `${Date.now()}_${file.name}`, mimeType: file.type, base64Data: base64Data };
                 const res = await fetch(workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const result = await res.json();
-                if (result.status === 'success') { tempValue.value = result.url; } 
-                else { alert('上傳失敗: ' + result.message); }
-            } catch (error) { alert('圖片處理發生錯誤，請重試。'); } 
-            finally { isUploading.value = false; event.target.value = ''; }
+                if (result.status === 'success') { tempValue.value = result.url; } else { alert('上傳失敗: ' + result.message); }
+            } catch (error) { alert('圖片處理錯誤'); } finally { isUploading.value = false; event.target.value = ''; }
         };
 
         const confirmEdit = () => {
             const { type, key } = editing.value;
-            if (type === 'theme') {
-                card.value.cardBgColor = tempValue.value;
-                card.value.headerTextColor = tempTextColor.value;
-            } else if (type === 'text' || type === 'image') {
+            if (type === 'theme') { card.value.cardBgColor = tempValue.value; card.value.headerTextColor = tempTextColor.value; }
+            else if (type === 'text' || type === 'image') {
                 let val = tempValue.value.trim();
                 if (type === 'image' && val && !val.startsWith('http')) val = 'https://' + val;
                 card.value[key] = val;
@@ -376,27 +358,17 @@ createApp({
         const saveCard = async () => {
             saving.value = true;
             try {
-                const payload = {
-                    action: 'saveUserCard',
-                    userId: userId.value,
-                    cardJson: JSON.stringify(card.value),
-                    displayName: card.value.name,       
-                    statusMessage: card.value.desc,     
-                    pictureUrl: card.value.headImg      
-                };
+                const payload = { action: 'saveUserCard', userId: userId.value, cardJson: JSON.stringify(card.value), displayName: card.value.name, statusMessage: card.value.desc, pictureUrl: card.value.headImg };
                 const res = await fetch(workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const result = await res.json();
-                if (result.status === 'success') {
-                    alert("✅ 名片設定已成功更新！\n請回到聊天室重新輸入「顯示名片」查看結果。");
-                    if(liff.isInClient()) liff.closeWindow(); 
-                } else { alert("儲存失敗，請稍後再試。"); }
-            } catch (e) { alert("儲存連線發生錯誤，請檢查網路。"); } 
-            finally { saving.value = false; }
+                if (result.status === 'success') { alert("✅ 名片設定已成功更新！\n請回到聊天室重新輸入「顯示名片」查看結果。"); if(liff.isInClient()) liff.closeWindow(); } 
+                else { alert("儲存失敗"); }
+            } catch (e) { alert("連線錯誤"); } finally { saving.value = false; }
         };
 
         onMounted(() => { initLiff(); });
 
-        return { loading, saving, isUploading, card, editing, tempValue, tempTextColor, tempGrid, tempBtn, openEdit, handleImageUpload, confirmEdit, saveCard };
+        return { loading, saving, isUploading, card, editing, tempValue, tempTextColor, tempGrid, tempBtn, openEdit, handleImageUpload, confirmEdit, saveCard, isLoaded };
     }
 }).mount('#app');
 </script>
