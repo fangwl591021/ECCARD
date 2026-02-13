@@ -28,11 +28,8 @@
         .flex-bubble-container { width: 100%; max-width: 300px; position: relative; }
         .flex-bubble { background: #FFFFFF; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
         .header-box { padding: 10px; display: flex; align-items: center; gap: 10px; }
-        
-        /* Hero 樣式：模擬內縮邊框 */
-        .hero-box { padding: 15px; } 
-        .hero-img { width: 100%; aspect-ratio: 20/13; object-fit: cover; border-radius: 8px; }
-        
+        .hero-box { position: relative; background: #000; width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .hero-img { width: 100%; height: 100%; object-fit: cover; }
         .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; }
         .grid-item { padding: 8px; border-radius: 8px; text-align: center; }
         .input-label { @apply block text-[11px] font-bold text-gray-500 uppercase mb-1 ml-1 tracking-wider; }
@@ -83,10 +80,7 @@
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">專案管理系統</span>
             </a>
         </nav>
-
-        <button @click="isSidebarCollapsed = !isSidebarCollapsed" 
-            class="p-4 w-full flex items-center border-t border-gray-700 hover:text-white transition-colors bg-gray-900/30"
-            :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
+        <button @click="isSidebarCollapsed = !isSidebarCollapsed" class="p-4 w-full flex items-center border-t border-gray-700 hover:text-white transition-colors bg-gray-900/30" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
             <i class="fas" :class="isSidebarCollapsed ? 'fa-indent text-xl' : 'fa-outdent text-lg'"></i>
             <span v-if="!isSidebarCollapsed" class="ml-3 text-xs font-bold uppercase tracking-widest">收合選單</span>
         </button>
@@ -100,36 +94,22 @@
                     <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                     <span class="text-[10px] text-green-700 font-bold uppercase tracking-widest">{{ userProfile.displayName }}</span>
                 </div>
-                <button @click="initSave" class="px-5 py-2 border border-line-green text-line-green rounded-xl text-sm font-bold hover:bg-green-50 flex items-center gap-2 transition-all">
-                    <i class="fas fa-cloud-upload-alt"></i> 儲存專案
-                </button>
-                <button @click="copyJson" class="px-5 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2 transition-all">
-                    <i class="fas fa-copy"></i> 複製 JSON
-                </button>
-                <button @click="pushCard" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all">
-                    <i class="fas fa-paper-plane"></i> 🚀 直接推播
-                </button>
+                <button @click="initSave" class="px-5 py-2 border border-line-green text-line-green rounded-xl text-sm font-bold hover:bg-green-50 flex items-center gap-2 transition-all"><i class="fas fa-cloud-upload-alt"></i> 儲存專案</button>
+                <button @click="copyJson" class="px-5 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2 transition-all"><i class="fas fa-copy"></i> 複製 JSON</button>
+                <button @click="pushCard" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all"><i class="fas fa-paper-plane"></i> 🚀 直接推播</button>
             </div>
         </header>
 
         <div class="flex-grow flex overflow-hidden">
-            <!-- 編輯器區塊 -->
             <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
                 <div class="max-w-4xl mx-auto space-y-8 pb-20">
-                    
-                    <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-sm">
-                        <label class="input-label text-blue-800">聊天室通知文字 (altText)</label>
-                        <input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-200 shadow-sm">
-                    </div>
-
-                    <!-- 視覺內容模式 -->
+                    <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-sm"><label class="input-label text-blue-800">聊天室通知文字 (altText)</label><input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-200 shadow-sm"></div>
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                         <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-film mr-2 text-line-green"></i> 視覺內容設定</h4>
                         <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-300 shadow-inner">
                             <button @click="data.visualMode = 'video'" :class="data.visualMode === 'video' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">影片模式</button>
                             <button @click="data.visualMode = 'image'" :class="data.visualMode === 'image' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">靜態圖片模式</button>
                         </div>
-                        
                         <div v-if="data.visualMode === 'video'" class="space-y-4 animate-in fade-in duration-300">
                             <div><label class="input-label">商務影片連結 (.mp4)</label><input type="text" v-model="data.videoUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
                             <div><label class="input-label">影片封面縮圖網址</label><input type="text" v-model="data.previewUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
@@ -139,8 +119,6 @@
                             <div><label class="input-label">圖片點擊跳轉連結</label><input type="text" v-model="data.imageActionUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
                         </div>
                     </div>
-
-                    <!-- Header 品牌與配色 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-6">
                         <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> 品牌身份與 Header 配色</h4>
                         <div class="grid grid-cols-2 gap-4">
@@ -151,105 +129,39 @@
                             <div><label class="input-label">Header 文字顏色</label><input type="color" v-model="data.headerTextColor" class="w-full h-10 border rounded"></div>
                         </div>
                     </div>
-
-                    <!-- 功能網格：寬度與按鈕切齊 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="text-sm font-bold text-gray-700">商務功能網格設定</h4>
-                            <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">按鈕底色</span><input type="color" v-model="data.gridBgColor"></div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div v-for="(grid, idx) in data.gridButtons" :key="idx" class="p-4 bg-white border rounded-xl shadow-sm space-y-2 group transition-all hover:border-line-green">
-                                <div class="flex gap-2"><input type="text" v-model="grid.emoji" class="w-10 border rounded text-sm text-center shadow-inner"><input type="text" v-model="grid.label" class="flex-1 border rounded px-2 py-1 text-xs shadow-inner" placeholder="按鈕名稱"></div>
-                                <input type="text" v-model="grid.uri" class="w-full border rounded px-2 py-1 text-[10px] shadow-inner" placeholder="https://...">
-                            </div>
-                        </div>
+                        <div class="flex justify-between items-center mb-4"><h4 class="text-sm font-bold text-gray-700">商務功能網格設定</h4><div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">按鈕底色</span><input type="color" v-model="data.gridBgColor"></div></div>
+                        <div class="grid grid-cols-2 gap-3"><div v-for="(grid, idx) in data.grids" :key="idx" class="p-4 bg-white border rounded-xl shadow-sm space-y-2 group transition-all hover:border-line-green"><div class="flex gap-2"><input type="text" v-model="grid.emoji" class="w-10 border rounded text-sm text-center shadow-inner"><input type="text" v-model="grid.label" class="flex-1 border rounded px-2 py-1 text-xs shadow-inner" placeholder="按鈕名稱"></div><input type="text" v-model="grid.uri" class="w-full border rounded px-2 py-1 text-[10px] shadow-inner" placeholder="https://..."></div></div>
                     </div>
-
-                    <!-- 底部按鈕 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
-                        <div class="flex justify-between items-center">
-                            <h4 class="text-sm font-bold text-gray-700">底部行為按鈕設定</h4>
-                            <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Footer 背景</span><input type="color" v-model="data.footerBgColor"></div>
-                        </div>
-                        <!-- 修正：使用 footerBtns -->
-                        <div v-for="(vBtn, idx) in data.footerBtns" :key="idx" class="flex gap-3 items-center p-4 bg-white border rounded-xl shadow-sm group hover:border-line-green transition-all">
-                            <input type="color" v-model="vBtn.color">
-                            <div class="flex-1"><input type="text" v-model="vBtn.label" class="w-full border rounded-lg p-2 text-sm font-bold shadow-sm" placeholder="文字"></div>
-                            <div class="flex-[2]"><input type="text" v-model="vBtn.uri" class="w-full border rounded-lg p-2 text-sm shadow-sm" placeholder="https://..."></div>
-                        </div>
+                        <div class="flex justify-between items-center"><h4 class="text-sm font-bold text-gray-700">底部行為按鈕設定</h4><div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Footer 背景</span><input type="color" v-model="data.footerBgColor"></div></div>
+                        <div v-for="(vBtn, idx) in data.footerBtns" :key="idx" class="flex gap-3 items-center p-4 bg-white border rounded-xl shadow-sm group hover:border-line-green transition-all"><input type="color" v-model="vBtn.color"><div class="flex-1"><input type="text" v-model="vBtn.label" class="w-full border rounded-lg p-2 text-sm font-bold shadow-sm" placeholder="文字"></div><div class="flex-[2]"><input type="text" v-model="vBtn.uri" class="w-full border rounded-lg p-2 text-sm shadow-sm" placeholder="https://..."></div></div>
                     </div>
                 </div>
             </div>
-
-            <!-- 右側：即時預覽 (修正對齊) -->
             <div class="w-[450px] shrink-0 open-preview-area shadow-inner bg-slate-200/50 overflow-y-auto no-scrollbar">
                 <div class="chat-room-bg no-scrollbar">
-                    <div class="flex-bubble-container animate-in zoom-in duration-300">
+                    <div class="flex-bubble-container">
                         <div class="flex-bubble" :style="{ backgroundColor: data.headerBgColor }">
-                            <!-- Header 預覽 -->
                             <div class="header-box" :style="{ backgroundColor: data.headerBgColor }">
                                 <img :src="data.headerImg" class="w-10 h-10 rounded-full object-cover border border-white/20 shadow-sm">
-                                <div class="flex flex-col overflow-hidden">
-                                    <span class="text-[11px] font-bold uppercase truncate" :style="{ color: data.headerTextColor }">{{ data.headerName || '姓名' }}</span>
-                                    <span class="text-[8px] leading-tight truncate" :style="{ color: data.headerTextColor, opacity: 0.8 }">{{ data.headerDescription || '敘述' }}</span>
-                                </div>
+                                <div class="flex flex-col overflow-hidden"><span class="text-[11px] font-bold uppercase truncate" :style="{ color: data.headerTextColor }">{{ data.headerName || '姓名' }}</span><span class="text-[8px] leading-tight truncate" :style="{ color: data.headerTextColor, opacity: 0.8 }">{{ data.headerDescription || '敘述' }}</span></div>
                             </div>
-                            <!-- Hero 預覽 (Box + Padding) -->
-                            <div class="hero-box" :style="{ backgroundColor: data.headerBgColor, padding: '15px' }">
-                                <img :src="data.previewUrl" class="hero-img" onerror="this.src='https://placehold.co/800x520'">
-                                <i v-if="data.visualMode === 'video'" class="fas fa-play-circle text-white text-4xl absolute opacity-90 drop-shadow-2xl"></i>
-                            </div>
-                            <!-- Grid 預覽 -->
-                            <div class="grid-box" :style="{ backgroundColor: data.headerBgColor, padding: '5px !important' }">
-                                <div v-for="grid in data.gridButtons" class="grid-item shadow-md transition-transform active:scale-95" :style="{ backgroundColor: data.gridBgColor }">
-                                    <div class="text-lg mb-1">{{ grid.emoji }}</div>
-                                    <div class="text-[8px] font-bold uppercase truncate px-1" :style="{ color: data.headerTextColor }">{{ grid.label || '選單' }}</div>
-                                </div>
-                            </div>
-                            <!-- Footer 預覽 -->
-                            <div class="space-y-1.5" :style="{ backgroundColor: data.footerBgColor, padding: '5px !important' }">
-                                <button v-for="vBtn in data.footerBtns" class="w-full py-2 text-[10px] font-bold rounded shadow-md text-white mb-1.5 last:mb-0" :style="{ backgroundColor: vBtn.color }">{{ vBtn.label }}</button>
-                            </div>
+                            <div class="hero-box"><img :src="data.previewUrl" class="hero-img" onerror="this.src='https://placehold.co/800x520'"><i v-if="data.visualMode === 'video'" class="fas fa-play-circle text-white text-4xl absolute opacity-90 drop-shadow-2xl"></i></div>
+                            <div class="grid-box" :style="{ backgroundColor: data.headerBgColor, padding: '5px !important' }"><div v-for="grid in data.grids" class="grid-item shadow-md transition-transform active:scale-95" :style="{ backgroundColor: data.gridBgColor }"><div class="text-lg mb-1">{{ grid.emoji }}</div><div class="text-[8px] font-bold uppercase truncate px-1" :style="{ color: data.headerTextColor }">{{ grid.label || '選單' }}</div></div></div>
+                            <div class="space-y-1.5" :style="{ backgroundColor: data.footerBgColor, padding: '5px !important' }"><button v-for="vBtn in data.footerBtns" class="w-full py-2 text-[10px] font-bold rounded shadow-md text-white mb-1.5 last:mb-0" :style="{ backgroundColor: vBtn.color }">{{ vBtn.label }}</button></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
-
-    <!-- 儲存專案彈窗 -->
-    <div v-if="showSaveModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] backdrop-blur-sm">
-        <div class="bg-white rounded-[32px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in duration-300">
-            <h3 class="text-2xl font-bold mb-2 text-gray-800 tracking-tighter">儲存商務型名片專案</h3>
-            <p class="text-xs text-gray-400 mb-8 font-medium">專案資料將同步至雲端 cards 工作表</p>
-            <div class="space-y-6">
-                <div>
-                    <label class="input-label">專案名稱 (cardTitle)</label>
-                    <input type="text" v-model="projectName" class="w-full border rounded-xl px-4 py-3 outline-none text-lg font-bold shadow-sm" placeholder="例如：Tony 商務名片">
-                </div>
-            </div>
-            <div class="flex gap-3 mt-10">
-                <button @click="showSaveModal = false" class="flex-1 py-3 text-gray-400 font-bold hover:text-gray-600 transition-colors">取消</button>
-                <button @click="confirmSave" :disabled="isSaving" class="flex-[2] py-3 bg-line-green text-white rounded-2xl font-bold flex items-center justify-center gap-2">
-                    <i v-if="isSaving" class="fas fa-circle-notch animate-spin"></i>
-                    <span>{{ isSaving ? '儲存中...' : '確認儲存' }}</span>
-                </button>
-            </div>
-        </div>
-    </div>
+    <div v-if="showSaveModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] backdrop-blur-sm"><div class="bg-white rounded-[32px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in duration-300"><h3 class="text-2xl font-bold mb-2 text-gray-800 tracking-tighter">儲存商務型名片專案</h3><p class="text-xs text-gray-400 mb-8 font-medium">專案資料將同步至雲端 cards 工作表</p><div class="space-y-6"><div><label class="input-label">專案名稱 (cardTitle)</label><input type="text" v-model="projectName" class="w-full border rounded-xl px-4 py-3 outline-none text-lg font-bold shadow-sm" placeholder="例如：Tony 商務名片"></div></div><div class="flex gap-3 mt-10"><button @click="showSaveModal = false" class="flex-1 py-3 text-gray-400 font-bold hover:text-gray-600 transition-colors">取消</button><button @click="confirmSave" :disabled="isSaving" class="flex-[2] py-3 bg-line-green text-white rounded-2xl font-bold flex items-center justify-center gap-2"><i v-if="isSaving" class="fas fa-circle-notch animate-spin"></i><span>{{ isSaving ? '儲存中...' : '確認儲存' }}</span></button></div></div></div>
 </div>
 
 <script>
 const { createApp, ref, computed, onMounted } = Vue;
-
-const forceHttps = (u) => {
-    if (!u || String(u).trim() === "" || u === "#") return "https://line.me";
-    let url = String(u).trim();
-    if (url.startsWith("http://")) return url.replace("http://", "https://");
-    return (url.startsWith("https://") || url.startsWith("line://")) ? url : "https://" + url;
-};
-
+const forceHttps = (u) => { if (!u || String(u).trim() === "" || u === "#") return "https://line.me"; let url = String(u).trim(); if (url.startsWith("http://")) return url.replace("http://", "https://"); return (url.startsWith("https://") || url.startsWith("line://")) ? url : "https://" + url; };
 const workerUrl = "https://lineoa.fangwl591021.workers.dev"; 
 
 createApp({
@@ -264,40 +176,22 @@ createApp({
         const isLoaded = ref(false);
 
         const data = ref({
-            altText: '商務名片訊息',
-            visualMode: 'video', 
-            imageActionUrl: 'https://line.me',
-            headerName: 'TONY',
-            headerDescription: '系統開發與 AI 顧問服務',
-            headerImg: 'https://placehold.co/150',
-            headerBgColor: '#1A1B1E',
-            headerTextColor: '#D4AF37',
-            footerBgColor: '#1A1B1E',
-            gridBgColor: '#2A2C31',
+            altText: '商務名片訊息', visualMode: 'video', imageActionUrl: 'https://line.me',
+            headerName: 'TONY', headerDescription: '系統開發與 AI 顧問服務', headerImg: 'https://placehold.co/150', headerBgColor: '#1A1B1E', headerTextColor: '#D4AF37',
+            footerBgColor: '#1A1B1E', gridBgColor: '#2A2C31',
             videoUrl: '', previewUrl: 'https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png',
-            gridButtons: [ 
-                { emoji: '🤖', label: 'AI 諮詢', uri: 'https://line.me' }, 
-                { emoji: '🎥', label: '實績案例', uri: 'https://line.me' }, 
-                { emoji: '🧾', label: '服務項目', uri: 'https://line.me' }, 
-                { emoji: '📍', label: '預約面談', uri: 'https://line.me' } 
-            ], 
-            // 統一使用 footerBtns
-            footerBtns: [ 
-                { label: '🚀 立即啟動 AI 合作', uri: 'https://line.me', color: '#C9A24D' }, 
-                { label: '📤 推薦給好友', uri: 'https://liff.line.me/2008924519-1qRqocsa?page=card&action=share', color: '#2A2C31' } 
-            ]
+            grids: [ { emoji: '🤖', label: 'AI 諮詢', uri: 'https://line.me' }, { emoji: '🎥', label: '實績案例', uri: 'https://line.me' }, { emoji: '🧾', label: '服務項目', uri: 'https://line.me' }, { emoji: '📍', label: '預約面談', uri: 'https://line.me' } ],
+            footerBtns: [ { label: '🚀 立即啟動 AI 合作', uri: 'https://line.me', color: '#C9A24D' }, { label: '📤 推薦給好友', uri: 'https://liff.line.me/2008924519-1qRqocsa?page=card&action=share', color: '#2A2C31' } ]
         });
 
-        // 產生分享名片 JSON (支援 UID + 邊框)
+        // 產生分享名片 JSON (還原為標準無邊框)
         const generateSharedFlex = (sharedData, uid) => {
             const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&uid=${uid}`;
             const themeColor = sharedData.cardBgColor || sharedData.headerBgColor || "#1A1B1E";
 
             const gridRows = [];
-            const gridButtons = sharedData.grids || sharedData.gridButtons || [];
-            
-            for (let i = 0; i < gridButtons.length; i += 2) {
-                const rowItems = gridButtons.slice(i, i + 2).map(g => ({
+            for (let i = 0; i < sharedData.grids.length; i += 2) {
+                const rowItems = sharedData.grids.slice(i, i + 2).map(g => ({
                     type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: sharedData.gridBgColor || "#2A2C31", cornerRadius: "12px",
                     action: { type: "uri", label: g.label || "btn", uri: forceHttps(g.uri) },
                     contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "按鈕", size: "sm", align: "center", color: sharedData.headerTextColor || "#E6E6E6" }]
@@ -305,7 +199,7 @@ createApp({
                 gridRows.push({ type: "box", layout: "horizontal", spacing: "sm", contents: rowItems });
             }
 
-            const footerBtns = (sharedData.footerBtns || sharedData.videoFooterButtons || []).map((btn, index) => {
+            const footerBtns = sharedData.footerBtns.map((btn, index) => {
                 let uri = btn.uri || "https://line.me";
                 if (index === 1 || (btn.label && (btn.label.includes("推薦") || btn.label.includes("分享")))) uri = shareUrl;
                 return { type: "button", style: "primary", height: "sm", color: btn.color || "#00B900", action: { type: "uri", label: btn.label || "按鈕", uri: forceHttps(uri) } };
@@ -314,13 +208,9 @@ createApp({
             return {
                 type: "bubble", size: "mega",
                 header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", backgroundColor: themeColor, contents: [{ type: "image", url: forceHttps(sharedData.headImg || sharedData.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [{ type: "text", text: sharedData.name || sharedData.headerName, weight: "bold", size: "lg", color: sharedData.headerTextColor || "#D4AF37" }, { type: "text", text: sharedData.desc || sharedData.headerDescription, size: "xs", color: sharedData.headerTextColor || "#D4AF37", wrap: true }] }] },
-                body: { 
-                    type: "box", layout: "vertical", paddingAll: "0px", backgroundColor: themeColor,
-                    contents: [
-                        { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: themeColor, contents: [{ type: "image", url: forceHttps(sharedData.heroImg || sharedData.previewUrl), size: "full", aspectRatio: "20:13", aspectMode: "cover", cornerRadius: "md", action: { type: "uri", label: "hero", uri: "https://lin.ee/qFYBr0z" } }] },
-                        { type: "box", layout: "vertical", paddingAll: "8px", contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: themeColor, cornerRadius: "14px", contents: gridRows }] }
-                    ]
-                },
+                // Hero 恢復為 Image 類型 (無邊框)
+                hero: { type: "image", url: forceHttps(sharedData.heroImg || sharedData.previewUrl), size: "full", aspectRatio: "20:13", aspectMode: "cover", action: { type: "uri", label: "hero", uri: forceHttps("https://lin.ee/qFYBr0z") } },
+                body: { type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: themeColor, contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: themeColor, cornerRadius: "14px", contents: gridRows }] },
                 footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: themeColor, contents: footerBtns }
             };
         };
@@ -329,15 +219,10 @@ createApp({
             const cur = data.value;
             const bubble = {
                 type: "bubble", size: "mega",
-                // 關鍵修正：補上 text: 鍵名
-                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "image", url: forceHttps(cur.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [{ type: "text", text: cur.headerName || "姓名", weight: "bold", size: "lg", color: cur.headerTextColor }, { type: "text", text: cur.headerDescription || "描述", size: "xs", color: cur.headerTextColor, wrap: true }] }] },
-                body: { 
-                    type: "box", layout: "vertical", paddingAll: "0px", backgroundColor: cur.headerBgColor, 
-                    contents: [
-                        { type: "box", layout: "vertical", paddingAll: "15px", backgroundColor: cur.headerBgColor, contents: [{ type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectRatio: "20:13", aspectMode: "cover", cornerRadius: "md", action: { type: "uri", label: "hero", uri: forceHttps(cur.imageActionUrl) } }] },
-                        { type: "box", layout: "vertical", paddingAll: "8px", contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: cur.headerBgColor, cornerRadius: "14px", contents: [{ type: "box", layout: "horizontal", spacing: "sm", contents: cur.gridButtons.slice(0, 2).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: cur.headerTextColor }] })) }, { type: "box", layout: "horizontal", spacing: "sm", contents: cur.gridButtons.slice(2, 4).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: cur.headerTextColor }] })) }] }] }
-                    ]
-                },
+                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "image", url: forceHttps(cur.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [{ type: "text", text: cur.headerName, weight: "bold", size: "lg", color: cur.headerTextColor }, { type: "text", text: cur.headerDescription, size: "xs", color: cur.headerTextColor, wrap: true }] }] },
+                // Hero 恢復為 Image 類型
+                hero: { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectRatio: "20:13", aspectMode: "cover", action: { type: "uri", label: "hero", uri: forceHttps(cur.imageActionUrl) } },
+                body: { type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: cur.headerBgColor, cornerRadius: "14px", contents: [{ type: "box", layout: "horizontal", spacing: "sm", contents: cur.grids.slice(0, 2).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: cur.headerTextColor }] })) }, { type: "box", layout: "horizontal", spacing: "sm", contents: cur.grids.slice(2, 4).map(g => ({ type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px", action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) }, contents: [{ type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, { type: "text", text: g.label || "GRID", size: "sm", align: "center", color: cur.headerTextColor }] })) }] }] },
                 footer: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.footerBgColor, contents: cur.footerBtns.map(b => ({ type: "button", style: "primary", height: "sm", color: b.color, action: { type: "uri", label: b.label || "了解更多", uri: forceHttps(b.uri) } })) }
             };
             if (cur.visualMode === 'video') { bubble.hero = { type: "video", url: forceHttps(cur.videoUrl), previewUrl: forceHttps(cur.previewUrl), aspectRatio: "16:9", altContent: { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectMode: "cover" } }; } 
@@ -345,107 +230,20 @@ createApp({
         });
 
         const initSave = () => { showSaveModal.value = true; };
-
-        const confirmSave = async () => {
-            if (!projectName.value) { alert("請輸入專案名稱"); return; }
-            isSaving.value = true;
-            const cur = data.value;
-            const now = new Date().toISOString();
-            const payload = {
-                userId: userProfile.value.userId || 'GUEST', displayName: userProfile.value.displayName || '訪客', cardId: 'ID_' + Date.now(), cardType: 'card', cardTitle: projectName.value, isActive: true, 'header.name': cur.headerName, 'header.subtitle': cur.headerDescription, 'header.avatarUrl': cur.headerImg, 'header.bgColor': cur.headerBgColor, 'hero.mode': cur.visualMode, 'hero.video.url': cur.videoUrl, 'hero.image.url': cur.previewUrl, createdAt: now, updatedAt: now, cardJson: JSON.stringify(flexJson.value), flexPayload: flexJson.value 
-            };
-            try {
-                const res = await fetch(workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    alert("商務型名片專案已成功儲存！");
-                    showSaveModal.value = false;
-                    projectName.value = '';
-                }
-            } catch (e) { alert("儲存連線失敗"); }
-            finally { isSaving.value = false; }
-        };
+        const confirmSave = async () => { if (!projectName.value) { alert("請輸入專案名稱"); return; } isSaving.value = true; const cur = data.value; const now = new Date().toISOString(); const payload = { userId: userProfile.value.userId || 'GUEST', displayName: userProfile.value.displayName || '訪客', cardId: 'ID_' + Date.now(), cardType: 'card', cardTitle: projectName.value, isActive: true, 'header.name': cur.headerName, 'header.subtitle': cur.headerDescription, 'header.avatarUrl': cur.headerImg, 'header.bgColor': cur.headerBgColor, 'hero.mode': cur.visualMode, 'hero.video.url': cur.videoUrl, 'hero.image.url': cur.previewUrl, createdAt: now, updatedAt: now, cardJson: JSON.stringify(flexJson.value), flexPayload: flexJson.value }; try { const res = await fetch(workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await res.json(); if (result.status === 'success') { alert("商務型名片專案已成功儲存！"); showSaveModal.value = false; projectName.value = ''; } } catch (e) { alert("儲存連線失敗"); } finally { isSaving.value = false; } };
 
         const pushCard = (specificFlexMessage = null) => {
             const contentToSend = specificFlexMessage || flexJson.value;
-
             return new Promise((resolve, reject) => {
                 if (!liff.isLoggedIn()) { liff.login(); return reject('Not logged in'); }
-                
-                liff.shareTargetPicker([{ type: "flex", altText: "名片分享", contents: contentToSend }])
-                .then(res => {
-                    if (res) {
-                        if (isAutoMode.value) liff.closeWindow();
-                        else alert("商務型名片推播成功！");
-                        resolve(res);
-                    } else {
-                        if (isAutoMode.value) liff.closeWindow();
-                        resolve(null);
-                    }
-                })
-                .catch(err => {
-                    if (isAutoMode.value) liff.closeWindow();
-                    reject(err);
-                });
+                liff.shareTargetPicker([{ type: "flex", altText: "名片分享", contents: contentToSend }]).then(res => { if (res) { if (isAutoMode.value) liff.closeWindow(); else alert("商務型名片推播成功！"); resolve(res); } else { if (isAutoMode.value) liff.closeWindow(); resolve(null); } }).catch(err => { if (isAutoMode.value) liff.closeWindow(); reject(err); });
             });
         };
 
         onMounted(async () => {
-            try { 
-                await liff.init({ liffId: "2008924519-1qRqocsa" }); 
-                isLoggedIn.value = liff.isLoggedIn();
-                if (isLoggedIn.value) userProfile.value = await liff.getProfile();
-
-                const params = new URLSearchParams(window.location.search);
-                if (params.get('action') === 'share') {
-                    isAutoMode.value = true;
-                    const uid = params.get('uid');
-                    
-                    const executeShare = (flexContent) => {
-                        if (isLoggedIn.value) pushCard(flexContent);
-                        else liff.login();
-                    };
-
-                    if (uid && uid !== 'GUEST') {
-                        try {
-                            const res = await fetch(workerUrl, {
-                                method: 'POST',
-                                body: JSON.stringify({ action: 'getUserData', userId: uid })
-                            });
-                            const result = await res.json();
-                            if (result.status === 'success' && result.data && result.data.cardJson) {
-                                const savedData = JSON.parse(result.data.cardJson);
-                                executeShare(generateSharedFlex(savedData, uid));
-                                return;
-                            }
-                        } catch(e) { console.error("Fetch shared data error:", e); }
-                    }
-
-                    // Fallback
-                    const fallbackData = {
-                        name: "訪客",
-                        headImg: "https://placehold.co/150",
-                        desc: "歡迎聯繫",
-                        heroImg: "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png",
-                        headerBgColor: "#1A1B1E",
-                        headerTextColor: "#D4AF37",
-                        grids: [],
-                        footerBtns: []
-                    };
-                    executeShare(generateSharedFlex(fallbackData, uid || 'GUEST'));
-                }
-            } catch (e) {}
-            finally { isLoaded.value = true; }
+            try { await liff.init({ liffId: "2008924519-1qRqocsa" }); isLoggedIn.value = liff.isLoggedIn(); if (isLoggedIn.value) userProfile.value = await liff.getProfile(); const params = new URLSearchParams(window.location.search); if (params.get('action') === 'share') { isAutoMode.value = true; const uid = params.get('uid'); const executeShare = (flexContent) => { if (isLoggedIn.value) pushCard(flexContent); else liff.login(); }; if (uid && uid !== 'GUEST') { try { const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify({ action: 'getUserData', userId: uid }) }); const result = await res.json(); if (result.status === 'success' && result.data && result.data.cardJson) { const savedData = JSON.parse(result.data.cardJson); executeShare(generateSharedFlex(savedData, uid)); return; } } catch(e) { console.error("Fetch shared data error:", e); } } const fallbackData = { name: "訪客", headImg: "https://placehold.co/150", desc: "歡迎聯繫", heroImg: "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png", headerBgColor: "#1A1B1E", headerTextColor: "#D4AF37", grids: [], footerBtns: [] }; executeShare(generateSharedFlex(fallbackData, uid || 'GUEST')); } } catch (e) {} finally { isLoaded.value = true; }
         });
-
-        return { 
-            isSidebarCollapsed, data, flexJson, isLoggedIn, userProfile, pushCard, 
-            copyJson: () => { 
-                navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); 
-                alert("JSON 代碼已複製"); 
-            }, 
-            initSave, confirmSave, showSaveModal, projectName, isSaving, isAutoMode, isLoaded 
-        };
+        return { isSidebarCollapsed, data, flexJson, isLoggedIn, userProfile, pushCard, copyJson: () => { navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); alert("JSON 代碼已複製"); }, initSave, confirmSave, showSaveModal, projectName, isSaving, isAutoMode, isLoaded };
     }
 }).mount('#app');
 </script>
