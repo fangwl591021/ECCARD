@@ -30,8 +30,8 @@
         .header-box { padding: 10px; display: flex; align-items: center; gap: 10px; }
         
         /* Hero 樣式：模擬內縮邊框 */
-        .hero-box { padding: 15px; /* 邊框厚度 */ } 
-        .hero-img { width: 100%; aspect-ratio: 20/13; object-fit: cover; border-radius: 8px; /* 圖片圓角 */ }
+        .hero-box { padding: 15px; } 
+        .hero-img { width: 100%; aspect-ratio: 20/13; object-fit: cover; border-radius: 8px; }
         
         .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; }
         .grid-item { padding: 8px; border-radius: 8px; text-align: center; }
@@ -172,7 +172,7 @@
                             <h4 class="text-sm font-bold text-gray-700">底部行為按鈕設定</h4>
                             <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Footer 背景</span><input type="color" v-model="data.footerBgColor"></div>
                         </div>
-                        <!-- 修正：這裡使用 footerBtns -->
+                        <!-- 修正：使用 footerBtns -->
                         <div v-for="(vBtn, idx) in data.footerBtns" :key="idx" class="flex gap-3 items-center p-4 bg-white border rounded-xl shadow-sm group hover:border-line-green transition-all">
                             <input type="color" v-model="vBtn.color">
                             <div class="flex-1"><input type="text" v-model="vBtn.label" class="w-full border rounded-lg p-2 text-sm font-bold shadow-sm" placeholder="文字"></div>
@@ -268,7 +268,7 @@ createApp({
             visualMode: 'video', 
             imageActionUrl: 'https://line.me',
             headerName: 'TONY',
-            headerDescription: '系統開發與 AI 顧問服務，提供專業的自動化解決方案。',
+            headerDescription: '系統開發與 AI 顧問服務',
             headerImg: 'https://placehold.co/150',
             headerBgColor: '#1A1B1E',
             headerTextColor: '#D4AF37',
@@ -281,14 +281,14 @@ createApp({
                 { emoji: '🧾', label: '服務項目', uri: 'https://line.me' }, 
                 { emoji: '📍', label: '預約面談', uri: 'https://line.me' } 
             ], 
-            // 統一更名 footerBtns
+            // 統一使用 footerBtns
             footerBtns: [ 
                 { label: '🚀 立即啟動 AI 合作', uri: 'https://line.me', color: '#C9A24D' }, 
                 { label: '📤 推薦給好友', uri: 'https://liff.line.me/2008924519-1qRqocsa?page=card&action=share', color: '#2A2C31' } 
             ]
         });
 
-        // 產生分享名片 JSON 函數 (含邊框邏輯)
+        // 產生分享名片 JSON (支援 UID + 邊框)
         const generateSharedFlex = (sharedData, uid) => {
             const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&uid=${uid}`;
             const themeColor = sharedData.cardBgColor || sharedData.headerBgColor || "#1A1B1E";
@@ -329,11 +329,8 @@ createApp({
             const cur = data.value;
             const bubble = {
                 type: "bubble", size: "mega",
-                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "image", url: forceHttps(cur.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [
-                    // 修正：補上 text: 鍵名
-                    { type: "text", text: cur.headerName || "姓名", weight: "bold", size: "lg", color: cur.headerTextColor }, 
-                    { type: "text", text: cur.headerDescription || "描述", size: "xs", color: cur.headerTextColor, wrap: true }
-                ] }] },
+                // 關鍵修正：補上 text: 鍵名
+                header: { type: "box", layout: "horizontal", spacing: "md", paddingAll: "8px", backgroundColor: cur.headerBgColor, contents: [{ type: "image", url: forceHttps(cur.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [{ type: "text", text: cur.headerName || "姓名", weight: "bold", size: "lg", color: cur.headerTextColor }, { type: "text", text: cur.headerDescription || "描述", size: "xs", color: cur.headerTextColor, wrap: true }] }] },
                 body: { 
                     type: "box", layout: "vertical", paddingAll: "0px", backgroundColor: cur.headerBgColor, 
                     contents: [
