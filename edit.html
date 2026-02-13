@@ -15,8 +15,10 @@
         [v-cloak] { display: none !important; }
 
         .card-container { max-width: 450px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
+        
         .edit-highlight { border: 2px dashed rgba(0, 185, 0, 0.5); cursor: pointer; transition: all 0.2s; position: relative; border-radius: 8px; }
         .edit-highlight:hover { background-color: rgba(0, 185, 0, 0.15); border-color: #00B900; }
+        
         .edit-icon { position: absolute; top: -10px; right: -10px; background: #00B900; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.5); pointer-events: none; }
         .edit-highlight-circle { border-radius: 50%; }
 
@@ -24,11 +26,11 @@
         .modal-content { background: white; color: #333; padding: 24px; border-radius: 24px; width: 90%; max-width: 340px; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        .flex-bubble { border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6); border: 1px solid #333; transition: background-color 0.3s; }
+        /* 背景動態綁定 */
+        .flex-bubble { border-radius: 16px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.6); border: 1px solid #333; }
         .header-box { padding: 20px; display: flex; align-items: center; gap: 15px; }
-        .hero-box { padding: 15px; }
+        .hero-box { padding: 15px; } 
         .hero-img { width: 100%; aspect-ratio: 20/13; object-fit: cover; border-radius: 8px; }
-        
         .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
         .grid-item { background-color: #2A2C31; padding: 15px; text-align: center; }
         .footer-box { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
@@ -55,6 +57,7 @@
     </div>
 
     <div class="card-container">
+        <!-- 主題配色入口 -->
         <div class="flex gap-2 mb-6">
             <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 flex-1 flex items-center justify-center text-center shadow-inner">
                 <p class="text-yellow-400 text-xs font-bold tracking-wider">👆 點擊虛線框區域修改內容</p>
@@ -65,7 +68,8 @@
             </button>
         </div>
 
-        <div class="flex-bubble" :style="{ backgroundColor: card.cardBgColor || '#1A1B1E' }">
+        <!-- 名片預覽：綁定動態漸層背景 -->
+        <div class="flex-bubble" :style="previewBgStyle">
             <div class="header-box">
                 <div class="relative group cursor-pointer edit-highlight edit-highlight-circle p-1" @click="openEdit('image', 'headImg', '更換個人頭像')">
                     <img :src="card.headImg" class="w-14 h-14 rounded-full object-cover border border-gray-600" onerror="this.src='https://placehold.co/150'">
@@ -83,7 +87,8 @@
                 </div>
             </div>
 
-            <div class="hero-box" :style="{ backgroundColor: card.cardBgColor || '#1A1B1E' }">
+            <!-- Hero (Box + Padding for Border) -->
+            <div class="hero-box">
                 <div class="relative group edit-highlight" @click="openEdit('image', 'heroImg', '更換名片主視覺圖片')">
                     <img :src="card.heroImg" class="hero-img" onerror="this.src='https://placehold.co/800x520'">
                     <div class="edit-icon" style="top: 10px; right: 10px; width: 32px; height: 32px; font-size: 14px;"><i class="fas fa-image"></i></div>
@@ -117,18 +122,43 @@
                 <button @click="editing.show = false" class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"><i class="fas fa-times"></i></button>
             </div>
             
+            <!-- 全域主題配色 (支援漸層) -->
             <div v-if="editing.type === 'theme'" class="space-y-6 text-center">
-                <p class="text-xs text-gray-500 font-bold mb-4">設定您的專屬名片配色，打造一體成型的視覺風格。</p>
-                <div class="grid grid-cols-2 gap-4">
+                <p class="text-xs text-gray-500 font-bold mb-4">設定名片配色，可切換單色或質感漸層。</p>
+                
+                <div class="flex justify-center mb-4">
+                     <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-2 rounded-lg border">
+                        <input type="checkbox" v-model="card.useGradient" class="accent-green-500 w-5 h-5">
+                        <span class="text-sm font-bold text-gray-700">啟用漸層背景</span>
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4" v-if="!card.useGradient">
                     <div class="flex flex-col items-center">
                         <label class="text-xs font-bold text-gray-600 mb-2">外框主色</label>
                         <input type="color" v-model="tempValue" class="w-24 h-24 cursor-pointer shadow-inner border-4 border-gray-100 rounded-2xl">
-                        <p class="text-xs font-mono text-gray-400 mt-2">{{ tempValue.toUpperCase() }}</p>
                     </div>
                     <div class="flex flex-col items-center">
                         <label class="text-xs font-bold text-gray-600 mb-2">文字顏色</label>
                         <input type="color" v-model="tempTextColor" class="w-24 h-24 cursor-pointer shadow-inner border-4 border-gray-100 rounded-2xl">
-                        <p class="text-xs font-mono text-gray-400 mt-2">{{ tempTextColor.toUpperCase() }}</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4" v-else>
+                     <div class="flex justify-between items-center px-2">
+                        <div class="flex flex-col items-center">
+                            <label class="text-xs font-bold text-gray-600 mb-1">起始色</label>
+                            <input type="color" v-model="tempGradientStart" class="w-16 h-16 cursor-pointer rounded-xl border-2">
+                        </div>
+                        <i class="fas fa-arrow-right text-gray-300"></i>
+                        <div class="flex flex-col items-center">
+                            <label class="text-xs font-bold text-gray-600 mb-1">結束色</label>
+                            <input type="color" v-model="tempGradientEnd" class="w-16 h-16 cursor-pointer rounded-xl border-2">
+                        </div>
+                     </div>
+                     <div class="flex flex-col items-center border-t pt-4">
+                        <label class="text-xs font-bold text-gray-600 mb-2">文字顏色</label>
+                        <input type="color" v-model="tempTextColor" class="w-full h-10 cursor-pointer rounded-lg border-2">
                     </div>
                 </div>
             </div>
@@ -154,13 +184,6 @@
                             <span v-else><i class="fas fa-upload mr-1"></i>上傳圖片</span>
                             <input type="file" class="hidden" accept="image/*" @change="handleImageUpload" :disabled="isUploading">
                         </label>
-                    </div>
-                    <p class="text-[10px] text-gray-400 mt-1 ml-1 italic">* 檔案限制: 5MB 以下 (將自動存至 Google Drive)</p>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">圖片預覽</label>
-                    <div class="relative w-full h-32 bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200 shadow-inner">
-                        <img :src="tempValue" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/300x200?text=Image+Error'">
                     </div>
                 </div>
             </div>
@@ -199,9 +222,6 @@
                     <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">跳轉連結 (URL)</label>
                     <input v-model="tempBtn.uri" class="w-full border-2 border-gray-200 p-3 rounded-xl outline-none focus:border-green-500 text-xs font-mono transition-all" placeholder="https://...">
                 </div>
-                <div v-else class="bg-blue-50 p-3 rounded-xl border border-blue-100">
-                    <p class="text-[10px] text-blue-600 font-bold"><i class="fas fa-info-circle mr-1"></i> 此為【推薦分享】按鈕，系統將自動套用您的專屬分享連結，無需設定網址。</p>
-                </div>
             </div>
 
             <div class="flex gap-2 pt-2">
@@ -213,8 +233,8 @@
 </div>
 
 <script>
-const { createApp, ref, onMounted } = Vue;
-const workerUrl = "https://lineoa.fangwl591021.workers.dev"; 
+const { createApp, ref, computed, onMounted } = Vue;
+const workerUrl = "https://lineoa.fangwl591021.workers.dev";
 
 createApp({
     setup() {
@@ -225,12 +245,10 @@ createApp({
         const isLoaded = ref(false);
         
         const card = ref({
-            name: '載入中...',
-            desc: '...',
-            headImg: 'https://placehold.co/150',
-            heroImg: 'https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png',
-            cardBgColor: '#1A1B1E', 
-            headerTextColor: '#D4AF37',
+            name: '載入中...', desc: '...', headImg: 'https://placehold.co/150', heroImg: 'https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png',
+            cardBgColor: '#1A1B1E', headerTextColor: '#D4AF37',
+            // 漸層初始值
+            useGradient: false, gradientStart: '#1A1B1E', gradientEnd: '#333333',
             grids: [
                 { emoji: '🤖', label: 'AI 諮詢', uri: 'https://line.me' },
                 { emoji: '🎥', label: '實績案例', uri: 'https://line.me' },
@@ -246,22 +264,28 @@ createApp({
         const editing = ref({ show: false, type: '', key: '', title: '' });
         const tempValue = ref('');
         const tempTextColor = ref(''); 
+        const tempGradientStart = ref(''); 
+        const tempGradientEnd = ref('');
         const tempGrid = ref({});
         const tempBtn = ref({});
+
+        // 計算預覽區的背景樣式
+        const previewBgStyle = computed(() => {
+            if (card.value.useGradient) {
+                return { backgroundImage: `linear-gradient(45deg, ${card.value.gradientStart}, ${card.value.gradientEnd})` };
+            }
+            return { backgroundColor: card.value.cardBgColor || '#1A1B1E' };
+        });
 
         const initLiff = async () => {
             try {
                 await liff.init({ liffId: "2008924519-1qRqocsa" });
-                if (!liff.isLoggedIn()) {
-                    liff.login({ redirectUri: window.location.href });
-                    return;
-                }
+                if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
                 userId.value = profile.userId;
                 fetchUserData(profile.userId);
             } catch (e) {
-                console.error("LIFF Init Error:", e);
-                alert("LIFF 載入失敗: " + e.message);
+                console.error(e);
                 loading.value = false;
                 isLoaded.value = true;
             }
@@ -269,63 +293,44 @@ createApp({
 
         const fetchUserData = async (uid) => {
             try {
-                const res = await fetch(workerUrl, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'getUserData', userId: uid })
-                });
+                const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify({ action: 'getUserData', userId: uid }) });
                 const result = await res.json();
-                
                 if (result.status === 'success' && result.data) {
                     const d = result.data;
                     if (d.cardJson && d.cardJson.length > 10) {
                         try {
                             const saved = JSON.parse(d.cardJson);
-                            if (saved.name && saved.grids) {
-                                card.value = saved;
-                                if (!card.value.cardBgColor) card.value.cardBgColor = '#1A1B1E';
-                                if (!card.value.headerTextColor) card.value.headerTextColor = '#D4AF37';
-                            } else {
-                                useDefaultData(d); 
-                            }
+                            if (saved.name) { card.value = { ...card.value, ...saved }; } else { useDefaultData(d); }
                         } catch(e) { useDefaultData(d); }
                     } else { useDefaultData(d); }
                 } else {
-                    liff.getProfile().then(p => {
-                        useDefaultData({ displayName: p.displayName, statusMessage: p.statusMessage, pictureUrl: p.pictureUrl });
-                    }).catch(() => {
-                        useDefaultData({ displayName: '訪客', statusMessage: '歡迎聯繫', pictureUrl: 'https://placehold.co/150' });
-                    });
+                    liff.getProfile().then(p => { useDefaultData({ displayName: p.displayName, statusMessage: p.statusMessage, pictureUrl: p.pictureUrl }); }).catch(() => { useDefaultData({ displayName: '訪客', statusMessage: '歡迎聯繫', pictureUrl: 'https://placehold.co/150' }); });
                 }
-            } catch (e) {
-                console.error("Fetch Error:", e);
-                alert("讀取資料失敗，請檢查網路連線。");
-            } finally {
-                loading.value = false;
-                isLoaded.value = true;
-            }
+            } catch (e) { console.error(e); } finally { loading.value = false; isLoaded.value = true; }
         };
 
         const useDefaultData = (d) => {
             card.value.name = d.displayName || '使用者';
             card.value.desc = d.statusMessage || '歡迎聯繫';
             card.value.headImg = d.pictureUrl || 'https://placehold.co/150';
-            card.value.cardBgColor = '#1A1B1E';
-            card.value.headerTextColor = '#D4AF37';
         };
 
         const openEdit = (type, key, title) => {
             editing.value = { show: true, type, key, title };
-            if (type === 'text' || type === 'image' || type === 'theme') {
+            if (type === 'theme') {
+                tempValue.value = card.value.cardBgColor || '#1A1B1E';
+                tempTextColor.value = card.value.headerTextColor || '#D4AF37';
+                tempGradientStart.value = card.value.gradientStart || '#1A1B1E';
+                tempGradientEnd.value = card.value.gradientEnd || '#333333';
+            } else if (type === 'text' || type === 'image') {
                 tempValue.value = card.value[key] || '';
-                if (type === 'theme') { tempValue.value = card.value.cardBgColor || '#1A1B1E'; tempTextColor.value = card.value.headerTextColor || '#D4AF37'; }
             } else if (type === 'grid') { tempGrid.value = { ...card.value.grids[key] }; } 
             else if (type === 'button') { tempBtn.value = { ...card.value.footerBtns[key] }; }
         };
 
-        const handleImageUpload = async (event) => {
+        const handleImageUpload = async (event) => { /* ... upload logic ... */ 
             const file = event.target.files[0];
             if (!file) return;
-            if (file.size > 5 * 1024 * 1024) { alert('圖片檔案過大，請上傳小於 5MB 的圖片。'); return; }
             isUploading.value = true;
             try {
                 const base64Data = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = error => reject(error); reader.readAsDataURL(file); });
@@ -338,8 +343,12 @@ createApp({
 
         const confirmEdit = () => {
             const { type, key } = editing.value;
-            if (type === 'theme') { card.value.cardBgColor = tempValue.value; card.value.headerTextColor = tempTextColor.value; }
-            else if (type === 'text' || type === 'image') {
+            if (type === 'theme') {
+                card.value.cardBgColor = tempValue.value;
+                card.value.headerTextColor = tempTextColor.value;
+                card.value.gradientStart = tempGradientStart.value;
+                card.value.gradientEnd = tempGradientEnd.value;
+            } else if (type === 'text' || type === 'image') {
                 let val = tempValue.value.trim();
                 if (type === 'image' && val && !val.startsWith('http')) val = 'https://' + val;
                 card.value[key] = val;
@@ -361,14 +370,14 @@ createApp({
                 const payload = { action: 'saveUserCard', userId: userId.value, cardJson: JSON.stringify(card.value), displayName: card.value.name, statusMessage: card.value.desc, pictureUrl: card.value.headImg };
                 const res = await fetch(workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const result = await res.json();
-                if (result.status === 'success') { alert("✅ 名片設定已成功更新！\n請回到聊天室重新輸入「顯示名片」查看結果。"); if(liff.isInClient()) liff.closeWindow(); } 
+                if (result.status === 'success') { alert("✅ 更新成功！請回 LINE 再次顯示名片。"); if(liff.isInClient()) liff.closeWindow(); } 
                 else { alert("儲存失敗"); }
             } catch (e) { alert("連線錯誤"); } finally { saving.value = false; }
         };
 
         onMounted(() => { initLiff(); });
 
-        return { loading, saving, isUploading, card, editing, tempValue, tempTextColor, tempGrid, tempBtn, openEdit, handleImageUpload, confirmEdit, saveCard, isLoaded };
+        return { loading, saving, isUploading, card, editing, tempValue, tempTextColor, tempGradientStart, tempGradientEnd, tempGrid, tempBtn, openEdit, handleImageUpload, confirmEdit, saveCard, isLoaded, previewBgStyle };
     }
 }).mount('#app');
 </script>
