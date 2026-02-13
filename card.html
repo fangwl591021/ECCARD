@@ -7,6 +7,7 @@
     <!-- 引入 LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 關鍵修正：引入 Vue.js -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -27,7 +28,10 @@
         .flex-bubble-container { width: 100%; max-width: 300px; position: relative; }
         .flex-bubble { background: #FFFFFF; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
         .header-box { padding: 10px; display: flex; align-items: center; gap: 10px; }
-        .hero-box { position: relative; background: #000; width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        /* Hero 樣式：模擬內縮邊框 */
+        .hero-box { padding: 15px; } 
+        .hero-img { width: 100%; aspect-ratio: 20/13; object-fit: cover; border-radius: 8px; }
+        
         .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; }
         .grid-item { padding: 8px; border-radius: 8px; text-align: center; }
         .input-label { @apply block text-[11px] font-bold text-gray-500 uppercase mb-1 ml-1 tracking-wider; }
@@ -44,7 +48,7 @@
 </head>
 <body>
 
-<div id="app" :class="{ 'loaded': isLoaded }">
+<div id="app" v-cloak>
     
     <div v-if="isAutoMode" class="auto-mode-overlay">
         <div class="text-line-green text-5xl mb-4"><i class="fas fa-paper-plane animate-bounce"></i></div>
@@ -78,10 +82,7 @@
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">專案管理系統</span>
             </a>
         </nav>
-
-        <button @click="isSidebarCollapsed = !isSidebarCollapsed" 
-            class="p-4 w-full flex items-center border-t border-gray-700 hover:text-white transition-colors bg-gray-900/30"
-            :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
+        <button @click="isSidebarCollapsed = !isSidebarCollapsed" class="p-4 w-full flex items-center border-t border-gray-700 hover:text-white transition-colors bg-gray-900/30" :class="isSidebarCollapsed ? 'justify-center' : 'px-6'">
             <i class="fas" :class="isSidebarCollapsed ? 'fa-indent text-xl' : 'fa-outdent text-lg'"></i>
             <span v-if="!isSidebarCollapsed" class="ml-3 text-xs font-bold uppercase tracking-widest">收合選單</span>
         </button>
@@ -110,20 +111,17 @@
         <div class="flex-grow flex overflow-hidden">
             <div class="flex-grow overflow-y-auto p-8 bg-white border-r no-scrollbar">
                 <div class="max-w-4xl mx-auto space-y-8 pb-20">
-                    
                     <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 shadow-sm">
                         <label class="input-label text-blue-800">聊天室通知文字 (altText)</label>
                         <input type="text" v-model="data.altText" class="w-full px-4 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-200 shadow-sm">
                     </div>
 
-                    <!-- 視覺內容模式 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                         <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-film mr-2 text-line-green"></i> 視覺內容設定</h4>
                         <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-300 shadow-inner">
                             <button @click="data.visualMode = 'video'" :class="data.visualMode === 'video' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">影片模式</button>
                             <button @click="data.visualMode = 'image'" :class="data.visualMode === 'image' ? 'bg-white shadow-sm text-line-green font-bold' : 'text-slate-500'" class="flex-1 py-2 text-xs rounded transition-all">靜態圖片模式</button>
                         </div>
-                        
                         <div v-if="data.visualMode === 'video'" class="space-y-4 animate-in fade-in duration-300">
                             <div><label class="input-label">商務影片連結 (.mp4)</label><input type="text" v-model="data.videoUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
                             <div><label class="input-label">影片封面縮圖網址</label><input type="text" v-model="data.previewUrl" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-line-green outline-none shadow-sm"></div>
@@ -134,7 +132,6 @@
                         </div>
                     </div>
 
-                    <!-- Header 品牌與配色 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-6">
                         <h4 class="text-sm font-bold text-gray-700 flex items-center"><i class="fas fa-id-card mr-2 text-line-green"></i> 品牌身份與 Header 配色</h4>
                         <div class="grid grid-cols-2 gap-4">
@@ -146,7 +143,6 @@
                         </div>
                     </div>
 
-                    <!-- 功能網格：寬度與按鈕切齊 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="text-sm font-bold text-gray-700">商務功能網格設定</h4>
@@ -160,12 +156,12 @@
                         </div>
                     </div>
 
-                    <!-- 底部按鈕 -->
                     <div class="bg-[#f8fafc] p-6 rounded-2xl border shadow-sm space-y-4">
                         <div class="flex justify-between items-center">
                             <h4 class="text-sm font-bold text-gray-700">底部行為按鈕設定</h4>
                             <div class="flex items-center gap-2"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Footer 背景</span><input type="color" v-model="data.footerBgColor"></div>
                         </div>
+                        <!-- 修正：v-for 遍歷 footerBtns -->
                         <div v-for="(vBtn, idx) in data.footerBtns" :key="idx" class="flex gap-3 items-center p-4 bg-white border rounded-xl shadow-sm group hover:border-line-green transition-all">
                             <input type="color" v-model="vBtn.color">
                             <div class="flex-1"><input type="text" v-model="vBtn.label" class="w-full border rounded-lg p-2 text-sm font-bold shadow-sm" placeholder="文字"></div>
@@ -175,12 +171,11 @@
                 </div>
             </div>
 
-            <!-- 右側：即時預覽 (修正對齊) -->
+            <!-- 右側：即時預覽 -->
             <div class="w-[450px] shrink-0 open-preview-area shadow-inner bg-slate-200/50 overflow-y-auto no-scrollbar">
                 <div class="chat-room-bg no-scrollbar">
-                    <div class="flex-bubble-container animate-in zoom-in duration-300">
-                        <div class="flex-bubble">
-                            <!-- Header 預覽 -->
+                    <div class="flex-bubble-container">
+                        <div class="flex-bubble" :style="{ backgroundColor: data.headerBgColor }">
                             <div class="header-box" :style="{ backgroundColor: data.headerBgColor }">
                                 <img :src="data.headerImg" class="w-10 h-10 rounded-full object-cover border border-white/20 shadow-sm">
                                 <div class="flex flex-col overflow-hidden">
@@ -188,19 +183,16 @@
                                     <span class="text-[8px] leading-tight truncate" :style="{ color: data.headerTextColor, opacity: 0.8 }">{{ data.headerDescription || '敘述' }}</span>
                                 </div>
                             </div>
-                            <!-- Hero 預覽 -->
-                            <div class="hero-box">
-                                <img :src="data.previewUrl" class="w-full h-full object-cover opacity-60">
-                                <i v-if="data.visualMode === 'video'" class="fas fa-play-circle text-white text-4xl absolute opacity-90 drop-shadow-2xl"></i>
+                            <!-- Hero (Box + Padding) -->
+                            <div class="hero-box" :style="{ backgroundColor: data.headerBgColor, padding: '15px' }">
+                                <img :src="data.previewUrl" class="hero-img" onerror="this.src='https://placehold.co/800x520'">
                             </div>
-                            <!-- Grid 預覽：調整 padding 至 5px 以對齊下方按鈕 -->
                             <div class="grid-box" :style="{ backgroundColor: data.headerBgColor, padding: '5px !important' }">
-                                <div v-for="grid in data.gridButtons" class="grid-item shadow-md transition-transform active:scale-95" :style="{ backgroundColor: data.gridBgColor }">
+                                <div v-for="grid in data.gridButtons" class="grid-item shadow-md" :style="{ backgroundColor: data.gridBgColor }">
                                     <div class="text-lg mb-1">{{ grid.emoji }}</div>
-                                    <div class="text-[8px] text-gray-300 font-bold uppercase truncate px-1">{{ grid.label || '選單' }}</div>
+                                    <div class="text-[8px] font-bold uppercase truncate px-1" :style="{ color: data.headerTextColor }">{{ grid.label || '選單' }}</div>
                                 </div>
                             </div>
-                            <!-- Footer 預覽：統一使用 5px 內距與網格切齊 -->
                             <div class="space-y-1.5" :style="{ backgroundColor: data.footerBgColor, padding: '5px !important' }">
                                 <button v-for="vBtn in data.footerBtns" class="w-full py-2 text-[10px] font-bold rounded shadow-md text-white mb-1.5 last:mb-0" :style="{ backgroundColor: vBtn.color }">{{ vBtn.label }}</button>
                             </div>
@@ -261,7 +253,7 @@ createApp({
             visualMode: 'video', 
             imageActionUrl: 'https://line.me',
             headerName: 'TONY',
-            headerDescription: '系統開發與 AI 顧問服務，提供專業的自動化解決方案。',
+            headerDescription: '系統開發與 AI 顧問服務',
             headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png',
             headerBgColor: '#1A1B1E',
             headerTextColor: '#D4AF37',
@@ -274,13 +266,14 @@ createApp({
                 { emoji: '🧾', label: '服務項目', uri: 'https://line.me' }, 
                 { emoji: '📍', label: '預約面談', uri: 'https://line.me' } 
             ], 
+            // 統一更名 footerBtns
             footerBtns: [ 
                 { label: '🚀 立即啟動 AI 合作', uri: 'https://line.me', color: '#C9A24D' }, 
                 { label: '📤 推薦給好友', uri: 'https://liff.line.me/2008924519-1qRqocsa?page=card&action=share', color: '#2A2C31' } 
             ]
         });
 
-        // 產生分享名片 JSON 函數 (含邊框邏輯，且統一使用 footerBtns)
+        // 產生分享名片 JSON 函數 (含邊框邏輯)
         const generateSharedFlex = (sharedData, uid) => {
             const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&uid=${uid}`;
             const themeColor = sharedData.cardBgColor || sharedData.headerBgColor || "#1A1B1E";
@@ -414,13 +407,13 @@ createApp({
 
                     // Fallback
                     const fallbackData = {
-                        headerName: "訪客",
-                        headerImg: "https://placehold.co/150",
-                        headerDescription: "歡迎聯繫",
-                        previewUrl: "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png",
+                        name: "訪客",
+                        headImg: "https://placehold.co/150",
+                        desc: "歡迎聯繫",
+                        heroImg: "https://aiwe.cc/wp-content/uploads/2026/02/57490900246d39710f4e3dda991c0d60.png",
                         headerBgColor: "#1A1B1E",
                         headerTextColor: "#D4AF37",
-                        gridButtons: [],
+                        grids: [],
                         footerBtns: []
                     };
                     executeShare(generateSharedFlex(fallbackData, uid || 'GUEST'));
