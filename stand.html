@@ -156,9 +156,12 @@
 
                 <button
                     @click="handlePush"
-                    class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all"
+                    :disabled="isShareBusy"
+                    class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                    <i class="fas fa-paper-plane"></i> 🚀 直接推播
+                    <i v-if="isShareBusy" class="fas fa-circle-notch animate-spin"></i>
+                    <i v-else class="fas fa-paper-plane"></i>
+                    🚀 直接推播
                 </button>
             </div>
         </header>
@@ -414,12 +417,34 @@ const postJson = async (payload) => {
     return result;
 };
 
+const getCleanRedirectUri = () => {
+    const url = new URL(window.location.href);
+    [
+        "code",
+        "state",
+        "friendship_status_changed",
+        "liff.state",
+        "access_token",
+        "id_token"
+    ].forEach(key => url.searchParams.delete(key));
+    return url.toString();
+};
+
+const canUseShareTargetPicker = () => {
+    try {
+        return typeof liff !== "undefined" && liff.isApiAvailable("shareTargetPicker");
+    } catch (e) {
+        return false;
+    }
+};
+
 createApp({
     setup() {
         const isSidebarCollapsed = ref(false);
         const isCardMenuOpen = ref(true);
         const isLoggedIn = ref(false);
         const isLiffReady = ref(false);
+        const isShareBusy = ref(false);
 
         const userProfile = ref({
             userId: "",
@@ -664,15 +689,30 @@ createApp({
         };
 
         const handlePush = async () => {
+            if (isShareBusy.value) return;
+
             if (!isLiffReady.value) {
                 showToast("LIFF 尚未完成初始化");
                 return;
             }
 
             if (!liff.isLoggedIn()) {
-                liff.login();
+                liff.login({
+                    redirectUri: getCleanRedirectUri()
+                });
                 return;
             }
+
+            if (!canUseShareTargetPicker()) {
+                if (!liff.isInClient()) {
+                    showToast("請從 LINE 內開啟此頁後再使用分享");
+                } else {
+                    showToast("目前環境不支援分享功能");
+                }
+                return;
+            }
+
+            isShareBusy.value = true;
 
             try {
                 const res = await liff.shareTargetPicker([
@@ -684,11 +724,21 @@ createApp({
                 ]);
 
                 if (res) {
-                    showToast("推播發送成功！");
+                    showToast("分享成功！");
+                } else {
+                    showToast("已取消分享");
                 }
             } catch (e) {
                 console.error("shareTargetPicker error:", e);
-                showToast("推播失敗或被取消");
+
+                const msg = String(e?.message || "");
+                if (msg.includes("permission") || msg.includes("unauthorized")) {
+                    showToast("LINE 分享權限不足，請確認 LIFF 設定");
+                } else {
+                    showToast("分享失敗");
+                }
+            } finally {
+                isShareBusy.value = false;
             }
         };
 
@@ -735,12 +785,20 @@ createApp({
 
         onMounted(async () => {
             try {
-                await liff.init({ liffId: APP_CONFIG.liffId });
+                await liff.init({
+                    liffId: APP_CONFIG.liffId,
+                    withLoginOnExternalBrowser: true
+                });
+
                 isLiffReady.value = true;
 
                 if (liff.isLoggedIn()) {
-                    userProfile.value = await liff.getProfile();
-                    isLoggedIn.value = true;
+                    try {
+                        userProfile.value = await liff.getProfile();
+                        isLoggedIn.value = true;
+                    } catch (profileErr) {
+                        console.warn("getProfile failed:", profileErr);
+                    }
                 }
             } catch (e) {
                 console.error("LIFF init error:", e);
@@ -753,6 +811,7 @@ createApp({
             isCardMenuOpen,
             isLoggedIn,
             isLiffReady,
+            isShareBusy,
             userProfile,
             showSaveModal,
             isSaving,
