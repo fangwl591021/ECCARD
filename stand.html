@@ -61,11 +61,13 @@
         .submenu-enter-active, .submenu-leave-active { transition: max-height 0.3s ease-out; overflow: hidden; }
         .submenu-enter-from, .submenu-leave-to { max-height: 0; }
         .submenu-enter-to, .submenu-leave-from { max-height: 300px; }
+
+        [v-cloak] { display: none !important; }
     </style>
 </head>
 <body>
 
-<div id="app" class="flex h-screen overflow-hidden text-gray-800">
+<div id="app" class="flex h-screen overflow-hidden text-gray-800" v-cloak>
     <!-- Toast 通知 -->
     <div v-if="toast.show" class="toast-msg">{{ toast.text }}</div>
 
@@ -90,16 +92,16 @@
                 <div @click="isCardMenuOpen = !isCardMenuOpen" class="flex items-center justify-between py-4 px-6 hover:bg-gray-700 transition-all cursor-pointer text-gray-300">
                     <div class="flex items-center">
                         <i class="fas fa-address-book w-8 text-center text-lg"></i>
-                        <span class="ml-2 font-medium">名片專區</span>
+                        <span v-if="!isSidebarCollapsed" class="ml-2 font-medium">名片專區</span>
                     </div>
-                    <i class="fas fa-chevron-down text-[10px] transition-transform duration-300" :class="isCardMenuOpen ? 'rotate-180' : ''"></i>
+                    <i v-if="!isSidebarCollapsed" class="fas fa-chevron-down text-[10px] transition-transform duration-300" :class="isCardMenuOpen ? 'rotate-180' : ''"></i>
                 </div>
                 <transition name="submenu">
                     <div v-if="isCardMenuOpen" class="bg-gray-900/50">
                         <div class="sidebar-item-active flex items-center py-3 pl-14 pr-6 text-sm font-bold text-line-green">
                             <span>標準版插件</span>
                         </div>
-                        <a href="video.html" class="flex items-center py-3 pl-14 pr-6 hover:text-white transition-colors text-sm font-medium">商務型名片</a>
+                        <a href="card.html" class="flex items-center py-3 pl-14 pr-6 hover:text-white transition-colors text-sm font-medium">商務型名片</a>
                         <a href="ec.html" class="flex items-center py-3 pl-14 pr-6 hover:text-white transition-colors text-sm font-medium">電商插件</a>
                         <a href="mix.html" class="flex items-center py-3 pl-14 pr-6 hover:text-white transition-colors text-sm font-medium">混合多頁</a>
                     </div>
@@ -140,13 +142,13 @@
                     <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                     <span class="text-[10px] text-green-700 font-bold uppercase tracking-widest">{{ userProfile.displayName }}</span>
                 </div>
-                <button @click="showSaveModal = true" class="px-5 py-2 border border-line-green text-line-green rounded-xl text-sm font-bold hover:bg-green-50 flex items-center gap-2 transition-all">
+                <button @click="showSaveModal = true" :disabled="!isLiffReady" class="px-5 py-2 border border-line-green text-line-green rounded-xl text-sm font-bold hover:bg-green-50 flex items-center gap-2 transition-all disabled:opacity-50">
                     <i class="fas fa-cloud-upload-alt"></i> 儲存專案
                 </button>
                 <button @click="copyJson" class="px-5 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2 transition-all">
                     <i class="fas fa-copy"></i> 複製 JSON
                 </button>
-                <button @click="handlePush" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all">
+                <button @click="handlePush" :disabled="!isLiffReady" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all disabled:opacity-50">
                     <i class="fas fa-paper-plane"></i> 🚀 直接推播
                 </button>
             </div>
@@ -245,7 +247,7 @@
                         <!-- 內文預覽 -->
                         <div class="p-4 text-center">
                             <div class="text-base font-bold truncate text-gray-800">{{ data.title || '標準版分頁標題' }}</div>
-                            <div class="text-[9px] text-gray-500 mt-2 h-20 leading-relaxed whitespace-pre-wrap text-left px-2 overflow-hidden">{{ data.subtitle || '內容描述文字預覽大小為 xs，質感呈現中...' }}</div>
+                            <div class="text-[9px] text-gray-500 mt-2 h-20 leading-relaxed whitespace-pre-wrap text-left px-2 overflow-hidden">{{ data.subtitle || '內容描述文字預覽大小為 xs，質感細膩呈現。' }}</div>
                         </div>
                         
                         <!-- 底部功能區預覽 -->
@@ -303,13 +305,13 @@ createApp({
         const isSidebarCollapsed = ref(false);
         const isCardMenuOpen = ref(true);
         const isLoggedIn = ref(false); 
+        const isLiffReady = ref(false);
         const userProfile = ref({ userId: '', displayName: '', pictureUrl: '' });
         const showSaveModal = ref(false); 
         const isSaving = ref(false); 
         const projectName = ref('');
         const toast = ref({ show: false, text: '' });
 
-        // 正確的圖像規格參數
         const socialTypes = {
             fb: { label: 'Facebook', icon: 'https://aiwe.cc/wp-content/uploads/2025/12/4d44f67acaa0c5dedc0d1d12a98711eb.png' },
             ig: { label: 'Instagram', icon: 'https://aiwe.cc/wp-content/uploads/2025/11/6bb61e3b7bce0931da574d19d1d82c88.png' },
@@ -339,7 +341,6 @@ createApp({
             if (cur.showBadge) { const b = { type: "box", layout: "vertical", position: "absolute", backgroundColor: cur.badgeColor, cornerRadius: "xl", paddingTop: "7px", paddingBottom: "7px", paddingStart: "20px", paddingEnd: "20px", offsetTop: "10px", action: { type: "uri", label: "badge", uri: forceHttps(cur.badgeUri) }, contents: [{ type: "text", text: cur.badgeText || " ", color: "#ffffff", size: "10px", weight: "bold" }] }; if (cur.badgeAlign === 'left') b.offsetStart = "10px"; else b.offsetEnd = "10px"; bodyC.push(b); }
             const footerC = []; 
             
-            // 社群圖像列：對齊 xxl 規格
             if (cur.social.enabled && hasSocialLinks.value) {
                 const row = { type: "box", layout: "horizontal", spacing: "md", justifyContent: "center", margin: "sm", contents: [] };
                 Object.keys(socialTypes).forEach(key => {
@@ -347,7 +348,7 @@ createApp({
                     if (link && link.trim()) {
                         row.contents.push({
                             type: "box", layout: "vertical", width: "32px", height: "32px", 
-                            cornerRadius: "xxl", // 嚴格遵守 xxl 規格
+                            cornerRadius: "xxl", 
                             action: { type: "uri", label: key, uri: key==='tel' ? `tel:${link.trim()}` : forceHttps(link) },
                             contents: [{ type: "image", url: forceHttps(socialTypes[key].icon), size: "full", aspectMode: "fit" }]
                         });
@@ -362,28 +363,56 @@ createApp({
 
         const showToast = (t) => { toast.value = { show: true, text: t }; setTimeout(() => toast.value.show = false, 3000); };
 
-        const handlePush = () => {
-            if (!liff.isLoggedIn()) { liff.login(); return; }
-            liff.shareTargetPicker([{ type: "flex", altText: data.value.title || "推薦訊息", contents: flexJson.value }])
-            .then(res => { if(res) showToast("推播發送成功！"); }).catch(e => showToast("推播被取消"));
+        const handlePush = async () => {
+            if (!isLiffReady.value) return;
+            if (!liff.isLoggedIn()) { 
+                liff.login({ redirectUri: window.location.href }); 
+                return; 
+            }
+            try {
+                const res = await liff.shareTargetPicker([{ type: "flex", altText: data.value.title || "推薦訊息", contents: flexJson.value }]);
+                if(res) showToast("推播發送成功！"); 
+            } catch (err) { 
+                showToast("推播被取消"); 
+            }
         };
 
         const confirmSave = async () => {
-            if(!projectName.value) return; isSaving.value = true;
+            if(!projectName.value) { showToast("請輸入專案名稱"); return; }
+            isSaving.value = true;
             const payload = { userId: userProfile.value.userId || 'GUEST', displayName: userProfile.value.displayName || '訪客', cardId: 'ID_' + Date.now(), cardType: 'article', cardTitle: projectName.value, cardJson: JSON.stringify(flexJson.value), flexPayload: flexJson.value, 'hero.image.url': data.value.imageUrl, createdAt: new Date().toISOString() };
             try { 
                 const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify(payload) }); 
-                if ((await res.json()).status === 'success') { showToast("儲存成功"); showSaveModal.value = false; } 
-            } catch (e) { showToast("錯誤"); } finally { isSaving.value = false; }
+                const result = await res.json();
+                if (result.status === 'success') { showToast("儲存成功"); showSaveModal.value = false; } 
+            } catch (e) { showToast("連線失敗"); } 
+            finally { isSaving.value = false; }
         };
 
-        const copyJson = () => { navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); showToast("JSON 已複製到剪貼簿"); };
+        const initLiff = async () => {
+            try { 
+                await liff.init({ liffId: "2008541971-Wgvz6gD8" }); 
+                isLiffReady.value = true;
+                isLoggedIn.value = liff.isLoggedIn();
+                if(isLoggedIn.value) { 
+                    userProfile.value = await liff.getProfile(); 
+                }
+            } catch (e) {
+                console.error("LIFF init error:", e);
+            }
+        };
 
-        onMounted(async () => {
-            try { await liff.init({ liffId: "2008541971-Wgvz6gD8" }); if(liff.isLoggedIn()) { userProfile.value = await liff.getProfile(); isLoggedIn.value = true; } } catch (e) {}
+        onMounted(() => {
+            initLiff();
         });
 
-        return { isSidebarCollapsed, isCardMenuOpen, data, flexJson, showSaveModal, projectName, isSaving, confirmSave, handlePush, isLoggedIn, userProfile, toast, copyJson, socialTypes, hasSocialLinks, addButton: () => { if(data.value.buttons.length < 4) data.value.buttons.push({ label: '了解更多', uri: 'https://line.me', color: '#00B900' }); } };
+        return { 
+            isSidebarCollapsed, isCardMenuOpen, data, flexJson, showSaveModal, projectName, isSaving, 
+            confirmSave, handlePush, isLoggedIn, userProfile, toast, isLiffReady,
+            copyJson: () => { navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); showToast("JSON 已複製到剪貼簿"); }, 
+            socialTypes, hasSocialLinks, 
+            addButton: () => { if(data.value.buttons.length < 4) data.value.buttons.push({ label: '了解更多', uri: 'https://line.me', color: '#00B900' }); } 
+        };
     }
 }).mount('#app');
 </script>
