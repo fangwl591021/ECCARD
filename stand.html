@@ -419,7 +419,6 @@ const postJson = async (payload) => {
 
 const getStandEntryUrl = () => {
     const url = new URL(window.location.href);
-
     [
         "code",
         "state",
@@ -428,7 +427,6 @@ const getStandEntryUrl = () => {
         "access_token",
         "id_token"
     ].forEach(key => url.searchParams.delete(key));
-
     return url.toString();
 };
 
