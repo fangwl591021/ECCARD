@@ -376,7 +376,7 @@ const { createApp, ref, computed, onMounted } = Vue;
 
 const APP_CONFIG = {
     workerUrl: "https://lineoa.fangwl591021.workers.dev",
-    liffId: "2008924519-1qRqocsa",
+    liffId: "2008541971-Wgvz6gD8",
     defaultFallbackUrl: "https://line.me"
 };
 
@@ -419,9 +419,17 @@ const postJson = async (payload) => {
 
 const getStandEntryUrl = () => {
     const url = new URL(window.location.href);
-    const path = url.pathname;
-    const baseDir = path.replace(/[^/]*$/, "");
-    return `${url.origin}${baseDir}index.html?page=stand`;
+
+    [
+        "code",
+        "state",
+        "friendship_status_changed",
+        "liff.state",
+        "access_token",
+        "id_token"
+    ].forEach(key => url.searchParams.delete(key));
+
+    return url.toString();
 };
 
 const canUseShareTargetPicker = () => {
