@@ -63,7 +63,7 @@
     <!-- 自動模式：分享中畫面 -->
     <div v-if="isAutoMode" class="auto-mode-overlay">
         <div class="text-line-green text-5xl mb-4"><i class="fas fa-paper-plane animate-bounce"></i></div>
-        <p class="text-gray-500 font-bold text-sm tracking-widest">啟動 LINE 分享中...</p>
+        <p class="text-gray-500 font-bold text-sm tracking-widest">{{ loadingStatus }}</p>
     </div>
 
     <!-- 側邊欄導覽 (只在非自動模式顯示) -->
@@ -111,13 +111,13 @@
                     <img :src="userProfile.pictureUrl || 'https://placehold.co/24'" class="w-6 h-6 rounded-full">
                     <span class="text-xs text-green-700 font-bold">{{ userProfile.displayName }}</span>
                 </div>
-                <button @click="initSave" class="px-5 py-2 border border-line-green text-line-green rounded-xl text-sm font-bold hover:bg-green-50 flex items-center gap-2 transition-all">
+                <button @click="initSave" :disabled="!isLiffReady" class="px-5 py-2 border border-line-green text-line-green rounded-xl text-sm font-bold hover:bg-green-50 flex items-center gap-2 transition-all disabled:opacity-50">
                     <i class="fas fa-cloud-upload-alt"></i> 儲存專案
                 </button>
                 <button @click="copyJson" class="px-5 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2 transition-all">
                     <i class="fas fa-copy"></i> 複製 JSON
                 </button>
-                <button @click="pushCard" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all">
+                <button @click="pushCard()" :disabled="!isLiffReady" class="px-6 py-2 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-blue-600 flex items-center gap-2 transition-all disabled:opacity-50">
                     <i class="fas fa-paper-plane"></i> 🚀 直接推播
                 </button>
             </div>
@@ -262,7 +262,6 @@ const forceHttps = (u) => {
 
 const workerUrl = "https://lineoa.fangwl591021.workers.dev"; 
 
-// 建立 Vue 應用
 const app = createApp({
     setup() {
         const isSidebarCollapsed = ref(false);
@@ -273,13 +272,14 @@ const app = createApp({
         const projectName = ref('');
         const isAutoMode = ref(false);
         const isLiffReady = ref(false);
+        const loadingStatus = ref('啟動 LINE 分享中...');
 
         const data = ref({
             altText: '商務名片訊息',
             visualMode: 'video', 
             imageActionUrl: 'https://line.me',
             headerName: 'TONY',
-            headerDescription: '系統開發與 AI 顧問服務，提供專業的自動化解決方案。',
+            headerDescription: '系統開發與 AI 顧問服務',
             headerImg: 'https://aiwe.cc/wp-content/uploads/2025/04/f9ebd0672d3b0ac370272909a493d4db.png',
             headerBgColor: '#1A1B1E',
             headerTextColor: '#D4AF37',
@@ -306,11 +306,7 @@ const app = createApp({
                 type: "bubble", 
                 size: "mega",
                 header: {
-                    type: "box", 
-                    layout: "horizontal", 
-                    spacing: "md", 
-                    paddingAll: "8px", 
-                    backgroundColor: cur.headerBgColor,
+                    type: "box", layout: "horizontal", spacing: "md", paddingAll: "8px", backgroundColor: cur.headerBgColor,
                     contents: [
                         { type: "image", url: forceHttps(cur.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" },
                         { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [
@@ -320,37 +316,22 @@ const app = createApp({
                     ]
                 },
                 body: {
-                    type: "box", 
-                    layout: "vertical", 
-                    paddingAll: "8px", 
-                    backgroundColor: cur.headerBgColor,
+                    type: "box", layout: "vertical", paddingAll: "8px", backgroundColor: cur.headerBgColor,
                     contents: []
                 },
                 footer: {
-                    type: "box", 
-                    layout: "vertical", 
-                    spacing: "sm", 
-                    paddingAll: "5px", 
-                    backgroundColor: cur.footerBgColor,
+                    type: "box", layout: "vertical", spacing: "sm", paddingAll: "5px", backgroundColor: cur.footerBgColor,
                     contents: cur.videoFooterButtons.map(b => ({
-                        type: "button", 
-                        style: "primary", 
-                        height: "sm", 
-                        color: b.color,
+                        type: "button", style: "primary", height: "sm", color: b.color,
                         action: { type: "uri", label: b.label || "了解更多", uri: forceHttps(b.uri) }
                     }))
                 }
             };
             
-            // 處理 Grid 內容
             const gridRows = [];
             for (let i = 0; i < cur.gridButtons.length; i += 2) {
                 const rowItems = cur.gridButtons.slice(i, i + 2).map(g => ({
-                    type: "box", 
-                    layout: "vertical", 
-                    paddingAll: "10px", 
-                    backgroundColor: cur.gridBgColor, 
-                    cornerRadius: "12px",
+                    type: "box", layout: "vertical", paddingAll: "10px", backgroundColor: cur.gridBgColor, cornerRadius: "12px",
                     action: { type: "uri", label: g.label || "grid", uri: forceHttps(g.uri) },
                     contents: [
                         { type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, 
@@ -361,302 +342,118 @@ const app = createApp({
             }
             
             bubble.body.contents.push({
-                type: "box", 
-                layout: "vertical", 
-                spacing: "sm", 
-                paddingAll: "12px", 
-                backgroundColor: cur.headerBgColor, 
-                cornerRadius: "14px", 
-                contents: gridRows
+                type: "box", layout: "vertical", spacing: "sm", paddingAll: "12px", backgroundColor: cur.headerBgColor, cornerRadius: "14px", contents: gridRows
             });
             
-            // 處理 Hero (影片或圖片)
             if (cur.visualMode === 'video' && cur.videoUrl) {
-                bubble.hero = { 
-                    type: "video", 
-                    url: forceHttps(cur.videoUrl), 
-                    previewUrl: forceHttps(cur.previewUrl), 
-                    aspectRatio: "16:9", 
-                    altContent: { 
-                        type: "image", 
-                        url: forceHttps(cur.previewUrl), 
-                        size: "full", 
-                        aspectMode: "cover" 
-                    } 
-                };
+                bubble.hero = { type: "video", url: forceHttps(cur.videoUrl), previewUrl: forceHttps(cur.previewUrl), aspectRatio: "16:9", altContent: { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectMode: "cover" } };
             } else {
-                bubble.hero = { 
-                    type: "image", 
-                    url: forceHttps(cur.previewUrl), 
-                    size: "full", 
-                    aspectRatio: "16:9", 
-                    aspectMode: "cover", 
-                    action: { type: "uri", label: "hero", uri: forceHttps(cur.imageActionUrl) } 
-                };
+                bubble.hero = { type: "image", url: forceHttps(cur.previewUrl), size: "full", aspectRatio: "16:9", aspectMode: "cover", action: { type: "uri", label: "hero", uri: forceHttps(cur.imageActionUrl) } };
             }
             
             return bubble;
         });
 
-        // 產生分享用的 Flex
-        const generateSharedFlex = (sharedData, uid) => {
-            const shareUrl = `https://liff.line.me/2008924519-1qRqocsa?page=card&action=share&uid=${uid}`;
-            const themeColor = sharedData.headerBgColor || "#1A1B1E";
-            
-            // 處理 Grid
-            const gridRows = [];
-            const gridButtons = sharedData.gridButtons || [];
-            for (let i = 0; i < gridButtons.length; i += 2) {
-                const rowItems = gridButtons.slice(i, i + 2).map(g => ({
-                    type: "box", 
-                    layout: "vertical", 
-                    paddingAll: "10px", 
-                    backgroundColor: sharedData.gridBgColor || "#2A2C31", 
-                    cornerRadius: "12px",
-                    action: { type: "uri", label: g.label || "btn", uri: forceHttps(g.uri) },
-                    contents: [
-                        { type: "text", text: g.emoji || "🔘", align: "center", size: "xl" }, 
-                        { type: "text", text: g.label || "按鈕", size: "sm", align: "center", color: sharedData.headerTextColor || "#E6E6E6" }
-                    ]
-                }));
-                gridRows.push({ type: "box", layout: "horizontal", spacing: "sm", contents: rowItems });
+        // 核心推播功能：加入延遲與狀態判斷避免迴圈
+        const pushCard = async (specificFlexMessage = null) => {
+            if (!isLiffReady.value) return;
+
+            if (!liff.isLoggedIn()) {
+                console.log("Not logged in, redirecting to login...");
+                liff.login({ redirectUri: window.location.href });
+                return;
             }
 
-            // 處理 Footer
-            const footerBtns = (sharedData.videoFooterButtons || []).map((btn, index) => {
-                let uri = btn.uri || "https://line.me";
-                if (index === 1 || (btn.label && btn.label.includes("推薦"))) uri = shareUrl;
-                return { 
-                    type: "button", 
-                    style: "primary", 
-                    height: "sm", 
-                    color: btn.color || "#00B900", 
-                    action: { type: "uri", label: btn.label || "按鈕", uri: forceHttps(uri) } 
-                };
-            });
-
-            return {
-                type: "bubble", 
-                size: "mega",
-                header: { 
-                    type: "box", 
-                    layout: "horizontal", 
-                    spacing: "md", 
-                    paddingAll: "12px", 
-                    backgroundColor: themeColor, 
-                    contents: [
-                        { type: "image", url: forceHttps(sharedData.headerImg), size: "xs", aspectRatio: "1:1", aspectMode: "cover", gravity: "center" }, 
-                        { type: "box", layout: "vertical", spacing: "xs", flex: 3, contents: [
-                            { type: "text", text: sharedData.headerName || "姓名", weight: "bold", size: "lg", color: sharedData.headerTextColor || "#D4AF37" }, 
-                            { type: "text", text: sharedData.headerDescription || "描述", size: "xs", color: sharedData.headerTextColor || "#D4AF37", wrap: true }
-                        ]}
-                    ] 
-                },
-                hero: { 
-                    type: "image", 
-                    url: forceHttps(sharedData.previewUrl), 
-                    size: "full", 
-                    aspectRatio: "16:9", 
-                    aspectMode: "cover", 
-                    action: { type: "uri", label: "hero", uri: forceHttps("https://lin.ee/qFYBr0z") } 
-                },
-                body: { 
-                    type: "box", 
-                    layout: "vertical", 
-                    paddingAll: "8px", 
-                    backgroundColor: themeColor,
-                    contents: [{
-                        type: "box", 
-                        layout: "vertical", 
-                        spacing: "sm", 
-                        paddingAll: "12px", 
-                        backgroundColor: themeColor, 
-                        cornerRadius: "14px",
-                        contents: gridRows
-                    }]
-                },
-                footer: { 
-                    type: "box", 
-                    layout: "vertical", 
-                    spacing: "sm", 
-                    paddingAll: "5px", 
-                    backgroundColor: themeColor, 
-                    contents: footerBtns 
-                }
-            };
-        };
-
-        const initSave = () => { 
-            showSaveModal.value = true; 
-        };
-
-        const confirmSave = async () => {
-            if (!projectName.value) { 
-                alert("請輸入專案名稱"); 
-                return; 
-            }
-            isSaving.value = true;
-            const cur = data.value;
-            const now = new Date().toISOString();
-            const payload = {
-                userId: userProfile.value.userId || 'GUEST',
-                displayName: userProfile.value.displayName || '訪客',
-                cardId: 'ID_' + Date.now(),
-                cardType: 'card', 
-                cardTitle: projectName.value,
-                isActive: true,
-                'header.name': cur.headerName,
-                'header.subtitle': cur.headerDescription,
-                'header.avatarUrl': cur.headerImg,
-                'header.bgColor': cur.headerBgColor,
-                'hero.mode': cur.visualMode,
-                'hero.video.url': cur.videoUrl,
-                'hero.image.url': cur.previewUrl,
-                createdAt: now, 
-                updatedAt: now,
-                cardJson: JSON.stringify(flexJson.value),
-                flexPayload: flexJson.value 
-            };
             try {
-                const res = await fetch(workerUrl, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
-                });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    alert("商務型名片專案已成功儲存！");
-                    showSaveModal.value = false;
-                    projectName.value = '';
-                }
-            } catch (e) { 
-                alert("儲存連線失敗: " + e.message); 
-            } finally { 
-                isSaving.value = false; 
-            }
-        };
-
-        const pushCard = (specificFlexMessage = null) => {
-            return new Promise((resolve, reject) => {
-                if (!liff.isLoggedIn()) { 
-                    liff.login(); 
-                    return reject('Not logged in');
-                }
-                
                 const contentToSend = specificFlexMessage || flexJson.value;
+                loadingStatus.value = "準備發送訊息...";
                 
-                liff.shareTargetPicker([{ 
+                const res = await liff.shareTargetPicker([{ 
                     type: "flex", 
                     altText: data.value.altText || "商務名片", 
                     contents: contentToSend 
-                }])
-                .then(res => {
-                    if (res) {
-                        if (isAutoMode.value) {
-                            setTimeout(() => liff.closeWindow(), 1000);
-                        } else {
-                            alert("商務型名片推播成功！");
-                        }
-                        resolve(res);
+                }]);
+
+                if (res) {
+                    if (isAutoMode.value) {
+                        loadingStatus.value = "推播完成，正在關閉視窗...";
+                        setTimeout(() => liff.closeWindow(), 1500);
                     } else {
-                        if (isAutoMode.value) liff.closeWindow();
-                        resolve(null);
+                        alert("商務型名片推播成功！");
                     }
-                })
-                .catch(err => {
-                    console.error("ShareTargetPicker error:", err);
+                } else {
                     if (isAutoMode.value) liff.closeWindow();
-                    alert("推播失敗: " + err.message);
-                    reject(err);
-                });
-            });
+                }
+            } catch (err) {
+                console.error("ShareTargetPicker error:", err);
+                if (!isAutoMode.value) alert("推播失敗: " + err.message);
+                else liff.closeWindow();
+            }
         };
 
-        const copyJson = () => { 
-            navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); 
-            alert("JSON 代碼已複製"); 
+        const initSave = () => { showSaveModal.value = true; };
+
+        const confirmSave = async () => {
+            if (!projectName.value) { alert("請輸入專案名稱"); return; }
+            isSaving.value = true;
+            const cur = data.value;
+            const payload = {
+                userId: userProfile.value.userId || 'GUEST',
+                cardId: 'ID_' + Date.now(),
+                cardType: 'card', 
+                cardTitle: projectName.value,
+                cardJson: JSON.stringify(flexJson.value),
+                createdAt: new Date().toISOString()
+            };
+            try {
+                const res = await fetch(workerUrl, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert("儲存成功！");
+                    showSaveModal.value = false;
+                }
+            } catch (e) { alert("儲存連線失敗"); } 
+            finally { isSaving.value = false; }
         };
 
-        // LIFF 初始化
         const initLiff = async () => {
             try { 
                 await liff.init({ liffId: "2008924519-1qRqocsa" }); 
+                
+                // 確保初始化完成後才開放按鈕
                 isLiffReady.value = true;
                 isLoggedIn.value = liff.isLoggedIn();
                 
                 if (isLoggedIn.value) {
-                    try {
-                        userProfile.value = await liff.getProfile();
-                    } catch (profileError) {
-                        console.error("Get profile error:", profileError);
-                    }
+                    userProfile.value = await liff.getProfile();
                 }
 
-                // 檢查是否為分享模式
+                // 處理自動分享模式 (?action=share)
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('action') === 'share') {
                     isAutoMode.value = true;
-                    const uid = params.get('uid');
-                    
-                    // 執行分享
-                    const executeShare = async () => {
-                        if (isLoggedIn.value) {
-                            try {
-                                if (uid && uid !== 'GUEST') {
-                                    // 嘗試獲取用戶資料
-                                    const res = await fetch(workerUrl, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ action: 'getUserData', userId: uid })
-                                    });
-                                    const result = await res.json();
-                                    if (result.status === 'success' && result.data) {
-                                        const sharedFlex = generateSharedFlex(result.data, uid);
-                                        await pushCard(sharedFlex);
-                                        return;
-                                    }
-                                }
-                                // 使用當前資料分享
-                                await pushCard(generateSharedFlex(data.value, uid || 'GUEST'));
-                            } catch (shareError) {
-                                console.error("Share error:", shareError);
-                                liff.closeWindow();
-                            }
-                        } else {
-                            liff.login({ redirectUri: window.location.href });
-                        }
-                    };
-                    
-                    executeShare();
+                    if (!isLoggedIn.value) {
+                        liff.login({ redirectUri: window.location.href });
+                    } else {
+                        // 稍微延遲以確保 LIFF 環境完全穩定
+                        setTimeout(() => pushCard(), 1000);
+                    }
                 }
             } catch (e) {
                 console.error("LIFF init error:", e);
             }
         };
 
-        onMounted(() => {
-            initLiff();
-        });
+        onMounted(() => { initLiff(); });
 
         return { 
-            isSidebarCollapsed, 
-            data, 
-            flexJson, 
-            isLoggedIn, 
-            userProfile, 
-            pushCard, 
-            copyJson,
-            initSave, 
-            confirmSave, 
-            showSaveModal, 
-            projectName, 
-            isSaving,
-            isAutoMode
+            isSidebarCollapsed, data, flexJson, isLoggedIn, userProfile, pushCard, 
+            initSave, confirmSave, showSaveModal, projectName, isSaving, isAutoMode, isLiffReady, loadingStatus,
+            copyJson: () => { navigator.clipboard.writeText(JSON.stringify(flexJson.value, null, 2)); alert("JSON 代碼已複製"); }
         };
     }
 });
 
-// 掛載 Vue 應用
 app.mount('#app');
 </script>
 </body>
