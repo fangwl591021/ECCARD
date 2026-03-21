@@ -87,7 +87,7 @@
                 <span v-if="!isSidebarCollapsed" class="ml-2 font-medium sidebar-link-text">控制中心</span>
             </a>
 
-            <!-- 名片專區：摺疊目錄 -->
+            <!-- 名片專區 -->
             <div v-if="!isSidebarCollapsed">
                 <div @click="isCardMenuOpen = !isCardMenuOpen" class="flex items-center justify-between py-4 px-6 hover:bg-gray-700 transition-all cursor-pointer text-gray-300">
                     <div class="flex items-center">
@@ -111,6 +111,7 @@
                 <i class="fas fa-address-book text-lg"></i>
             </div>
 
+            <!-- 工具欄 -->
             <div class="mt-4 border-t border-gray-800 pt-4">
                 <a href="find.html" class="flex items-center py-4 px-6 hover:bg-gray-700 transition-all text-gray-400 font-medium">
                     <i class="fab fa-line w-8 text-center text-lg"></i>
@@ -180,7 +181,7 @@
 
                         <div class="space-y-6">
                             <div><label class="input-label">主要標題內容 (限30字)</label><input type="text" v-model="data.title" maxlength="30" class="w-full border rounded-xl p-3 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-line-green"></div>
-                            <div><label class="input-label">描述文字 (xs 字級預覽)</label><textarea v-model="data.subtitle" rows="6" class="w-full border rounded-xl p-3 text-sm shadow-sm outline-none focus:ring-2 focus:ring-line-green" placeholder="請輸入分頁內容描述..."></textarea></div>
+                            <div><label class="input-label">描述文字 (xs 字級預覽)</label><textarea v-model="data.subtitle" rows="6" class="w-full border rounded-xl p-3 text-sm shadow-sm outline-none focus:ring-2 focus:ring-line-green" placeholder="請輸入描述文字..."></textarea></div>
                         </div>
                     </div>
 
@@ -235,19 +236,21 @@
                             <div v-if="data.showBadge" class="flex-badge-preview" :class="data.badgeAlign === 'left' ? 'badge-left' : 'badge-right'" :style="{ backgroundColor: data.badgeColor }">{{ data.badgeText || '分享' }}</div>
                         </div>
                         <div class="p-4 text-center">
-                            <div class="text-base font-bold truncate text-gray-800">{{ data.title || '標準版分頁標題' }}</div>
-                            <div class="text-[9px] text-gray-500 mt-2 h-20 leading-relaxed whitespace-pre-wrap text-left px-2 overflow-hidden">{{ data.subtitle || '內容描述文字預覽大小為 xs，質感細膩呈現。' }}</div>
+                            <div class="text-base font-bold truncate text-gray-800">{{ data.title || '標題' }}</div>
+                            <div class="text-[9px] text-gray-500 mt-2 h-20 leading-relaxed whitespace-pre-wrap text-left px-2 overflow-hidden">{{ data.subtitle || '內容描述文字...' }}</div>
                         </div>
                         <div :style="{ backgroundColor: data.footerBgColor, padding: '5px' }" class="space-y-2">
+                            <!-- 社群圖標預覽 -->
                             <div v-if="data.social.enabled && hasSocialLinks" class="flex justify-center gap-3 py-1">
                                 <template v-for="(val, key) in socialTypes">
-                                    <div v-if="data.social.links[key]" class="w-8 h-8 rounded-lg overflow-hidden shadow-sm border border-slate-50 transition-transform active:scale-90">
+                                    <div v-if="data.social.links[key] && data.social.links[key].trim()" class="w-8 h-8 rounded-lg overflow-hidden shadow-sm border border-slate-50 transition-transform active:scale-90">
                                         <img :src="val.icon" class="w-full h-full object-contain">
                                     </div>
                                 </template>
                             </div>
+                            <!-- 按鈕預覽 -->
                             <div class="space-y-1">
-                                <button v-for="btn in data.buttons" class="w-full py-2 text-white text-[10px] font-bold rounded shadow-sm transition-transform active:scale-95" :style="{ backgroundColor: btn.color }">{{ btn.label }}</button>
+                                <button v-for="btn in data.buttons" class="w-full py-2 text-white text-[10px] font-bold rounded shadow-sm transition-transform active:scale-95" :style="{ backgroundColor: btn.color }">{{ btn.label || '了解更多' }}</button>
                             </div>
                         </div>
                     </div>
@@ -314,7 +317,7 @@ createApp({
             buttons: [{ label: '了解更多', uri: 'https://line.me', color: '#00B900' }]
         });
 
-        const hasSocialLinks = computed(() => Object.values(data.value.social.links).some(l => l.trim() !== ''));
+        const hasSocialLinks = computed(() => Object.values(data.value.social.links).some(l => l && l.trim() !== ''));
 
         const flexJson = computed(() => {
             const cur = data.value;
@@ -342,7 +345,8 @@ createApp({
                     const link = cur.social.links[key];
                     if (link && link.trim()) {
                         row.contents.push({
-                            type: "box", layout: "vertical", width: "32px", height: "32px", cornerRadius: "xxl", 
+                            type: "box", layout: "vertical", width: "32px", height: "32px", 
+                            cornerRadius: "xl", // 修正：從 xxl 改為官方支援的 xl
                             action: { type: "uri", label: key, uri: key==='tel' ? `tel:${link.trim()}` : forceHttps(link) },
                             contents: [{ type: "image", url: forceHttps(socialTypes[key].icon), size: "full", aspectMode: "fit" }]
                         });
@@ -376,8 +380,7 @@ createApp({
                 const res = await liff.shareTargetPicker([{ type: "flex", altText: data.value.title || "推薦訊息", contents: json }]);
                 if(res) showToast("推播發送成功！"); 
             } catch (err) { 
-                console.error("Push Error:", err);
-                showToast("推播失敗或被取消"); 
+                showToast("推播被取消"); 
             }
         };
 
